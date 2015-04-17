@@ -27,10 +27,11 @@
 
 (declare
   (block)
-  (uses srfi-1
-	data-structures
+  (uses data-structures
 	posix
 	utils))
+
+(include "mini-srfi-1.scm")
 
 (define symbol-table-size 3001)
 
@@ -228,15 +229,15 @@ EOF
 	   [alignments (list #f #t #t #t #t)]
 	   [spacing 2]
 	   [spacer (make-string spacing #\space)]
-	   [column-widths (fold
-			   (lambda (row max-widths)
+	   [column-widths (foldl
+			   (lambda (max-widths row)
 			     (map max (map string-length row) max-widths))
 			   (list 0 0 0 0 0)
 			   (cons headers data))])
       (define (print-row row)
 	(print (string-intersperse (map format-string row column-widths alignments) spacer)))
       (print-row headers)
-      (print (make-string (+ (reduce + 0 column-widths)
+      (print (make-string (+ (foldl + 0 column-widths)
 			     (* spacing (- (length alignments) 1)))
 			  #\-))
       (for-each print-row data))))

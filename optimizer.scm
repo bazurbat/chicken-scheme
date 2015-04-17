@@ -27,7 +27,7 @@
 
 (declare
   (unit optimizer)
-  (uses srfi-1 data-structures
+  (uses data-structures
 	support) )
 
 (module chicken.compiler.optimizer
@@ -36,10 +36,11 @@
      eq-inline-operator membership-test-operators membership-unfold-limit
      default-optimization-passes rewrite)
 
-(import chicken scheme srfi-1 data-structures
+(import chicken scheme data-structures
 	chicken.compiler.support)
 
 (include "tweaks")
+(include "mini-srfi-1.scm")
 
 (define-constant maximal-number-of-free-variables-for-liftable 16)
 
@@ -82,7 +83,7 @@
 	     (when (and (not (memq var e)) 
 			(not (memq var unsafe)))
 	       (set! unsafe (cons var unsafe)) )
-	     (set! previous (remove (lambda (p) (eq? (car p) var)) previous)))]
+	     (set! previous (filter (lambda (p) (not (eq? (car p) var))) previous)))]
 
 	  [(if ##core#cond ##core#switch)
 	   (scan (first subs) e)
@@ -121,7 +122,7 @@
     (debugging 'p "scanning toplevel assignments...")
     (scan node '())
     (when (pair? safe)
-      (debugging 'o "safe globals" (delete-duplicates safe eq?)))
+      (debugging 'o "safe globals" (delete-duplicates safe)))
     (for-each (cut mark-variable <> '##compiler#always-bound) safe)))
 
 
@@ -213,7 +214,7 @@
 			     (cond ((not ok)
 				    (unless odirty (set! dirty #f))
 				    (set! broken-constant-nodes
-				      (lset-adjoin eq? broken-constant-nodes n1))
+				      (lset-adjoin/eq? broken-constant-nodes n1))
 				    n1)
 				   (else
 				    (touch)
@@ -419,7 +420,7 @@
 							   (map (cut walk <> fids gae)
 								(cons 
 								 fun
-								 (append-reverse used args))) ) )
+								 (append (reverse used) args))) ) )
 						      (invalidate-gae! gae)
 						      (make-node '##core#call params args))]
 						   [(test (car vars) 'unused)
@@ -589,7 +590,7 @@
 		      (body (first (node-subexpressions lnode))) 
 		      (bodysubs (node-subexpressions body)) )
 		 ;; Continuation has one parameter?
-		 (if (and (proper-list? llist) (null? (cdr llist)))
+		 (if (and (list? llist) (null? (cdr llist)))
 		     (let* ((var (car llist))
 			    (refs (db-get-list db var 'references)) )
 		       ;; Parameter is only used once?
@@ -814,7 +815,7 @@
    (d1 op x clist y z)
    ,(lambda (db may-rewrite d1 op x clist y z)
       (and-let* ([opa (assoc op (membership-test-operators))]
-		 [(proper-list? clist)]
+		 [(list? clist)]
 		 [(< (length clist) (membership-unfold-limit))] )
 	(let ([var (gensym)]
 	      [eop (list (cdr opa))] )
@@ -825,7 +826,7 @@
 	    (make-node
 	     'if d1
 	     (list
-	      (fold-right
+	      (foldr
 	       (lambda (c rest)
 		 (make-node
 		  '##core#cond '()
@@ -884,7 +885,7 @@
 	       (alist-cons 
 		id
 		(filter-map
-		 (lambda (g2) (and (not (eq? g2 g)) (lset<= eq? (cdr g2) deps) (car g2))) 
+		 (lambda (g2) (and (not (eq? g2 g)) (lset<=/eq? (cdr g2) deps) (car g2)))
 		 groups)
 		cgraph) ) ) )
 	 groups) 
@@ -894,9 +895,9 @@
 	      [optimized '()] )
 
 	  ;; Construct new bindings:
-	  (let ([n2
-		 (fold
-		  (lambda (gn body)
+	  (let ((n2
+		 (foldl
+		  (lambda (body gn)
 		    (let* ([svars (cdr (assq gn groups))]
 			   [svar (car svars)] )
 		      (cond [(and (null? (cdr svars))
@@ -904,12 +905,12 @@
 			     (set! optimized (cons svar optimized))
 			     (make-node 'let svars (list (cdr (assq svar valmap)) body)) ]
 			    [else
-			     (fold-right
+			     (foldr
 			      (lambda (var rest)
 				(make-node
 				 'let (list var)
 				 (list (make-node '##core#undefined '() '()) rest) ) )
-			      (fold-right
+			      (foldr
 			       (lambda (var rest)
 				 (make-node
 				  'let (list (gensym))
@@ -919,7 +920,7 @@
 			       svars)
 			      svars) ] ) ) )
 		  body
-		  sgraph) ] )
+		  sgraph) ) )
 	    (cond [(pair? optimized)
 		   (debugging 'o "converted assignments to bindings" optimized)
 		   (values n2 #t) ]
@@ -987,7 +988,7 @@
      (and may-rewrite
 	  (intrinsic? name)
 	  (or (not (second classargs)) (= (length callargs) (second classargs)))
-	  (fold-right
+	  (foldr
 	   (lambda (val body)
 	     (make-node 'let (list (gensym)) (list val body)) )
 	   (make-node '##core#call (list #t) (list cont (varnode (first classargs))))
@@ -1062,20 +1063,24 @@
 		       (and (eq? number-type 'flonum) (fourth classargs)) )
 		   (let* ((names (map (lambda (z) (gensym)) callargs))
 			  (vars (map varnode names)) )
-		     (fold-right
-		      (lambda (x n y) (make-node 'let (list n) (list x y)))
-		      (make-node
-		       '##core#call (list #t)
-		       (list 
-			cont
-			(let ((op (list
-				   (if (eq? number-type 'fixnum)
-				       (first classargs)
-				       (second classargs) ) ) ) )
-			  (fold-boolean
-			   (lambda (x y) (make-node '##core#inline op (list x y))) 
-			   vars) ) ) )
-		      callargs names) ) ) ) ) )
+		     (let loop ((callargs callargs)
+				(names names))
+		       (if (null? callargs)
+			   (make-node
+			    '##core#call (list #t)
+			    (list 
+			     cont
+			     (let ((op (list
+					(if (eq? number-type 'fixnum)
+					    (first classargs)
+					    (second classargs) ) ) ) )
+			       (fold-boolean
+				(lambda (x y) (make-node '##core#inline op (list x y))) 
+				vars) ) ) )
+			   (make-node 'let 
+				      (list (car names))
+				      (list (car callargs)
+					    (loop (cdr callargs) (cdr names)))))))))))
 
     ;; (<op> a [b]) -> (<primitiveop> a (quote <i>) b)
     ((10) ; classargs = (<primitiveop> <i> <bvar> <safe>)
@@ -1225,10 +1230,10 @@
 	  (let* ((id (first classargs))
 		 (fixop (if unsafe (third classargs) (second classargs)))
 		 (callargs 
-		  (remove
+		  (filter
 		   (lambda (x)
-		     (and (eq? 'quote (node-class x))
-			  (eq? id (first (node-parameters x))) ) ) 
+		     (not (and (eq? 'quote (node-class x))
+			       (eq? id (first (node-parameters x))) ) ) )
 		   callargs) ) )
 	    (cond ((null? callargs) (make-node '##core#call (list #t) (list cont (qnode id))))
 		  ((null? (cdr callargs))
@@ -1274,10 +1279,10 @@
 		 (genop (fourth classargs))
 		 (fixop (if unsafe (third classargs) (second classargs)))
 		 (callargs 
-		  (remove
+		  (filter
 		   (lambda (x)
-		     (and (eq? 'quote (node-class x))
-			  (eq? id (first (node-parameters x))) ) ) 
+		     (not (and (eq? 'quote (node-class x))
+			       (eq? id (first (node-parameters x))) ) ) )
 		   callargs) ) )
 	    (cond ((null? callargs) (make-node '##core#call (list #t) (list cont (qnode id))))
 		  ((null? (cdr callargs))
@@ -1370,7 +1375,7 @@
 	     (if (and d
 		      (second params)
 		      (not (db-get db d 'unknown))
-		      (proper-list? llist)
+		      (list? llist)
 		      (and-let* ((val (db-get db d 'value))
 				 (refs (db-get-list db d 'references))
 				 (sites (db-get-list db d 'call-sites)) )
@@ -1467,7 +1472,7 @@
 	(set! hoistable '())
 	(set! allocated 0)
 	(and (rec n #f #f env)
-	     (lset= eq? closures (delete kvar inner-ks eq?)) ) ) )
+	     (lset=/eq? closures (delete kvar inner-ks eq?)))))
 
     (define (transform n fnvar ks hoistable destn allocated)
       (if (pair? hoistable)
@@ -1556,14 +1561,17 @@
 			'##core#direct_call
 			(list #t #f id allocated)
 			(cons (car nsubs) (cddr nsubs)) ) ) ) ) )
-	    (lset-difference (lambda (s1 s2) (eq? (cdr s1) (cdr s2))) sites ksites) )
+	    (filter (lambda (site)
+		      (let ((s2 (cdr site)))
+			(not (any (lambda (ksite) (eq? (cdr ksite) s2)) ksites))))
+		    sites))
 
 	   ;; Hoist direct lambdas out of container:
 	   (when (and destn (pair? hoistable))
 	     (let ([destn0 (make-node #f #f #f)])
 	       (copy-node! destn destn0) ; get copy of container binding
 	       (let ([hoisted
-		      (fold-right	; build cascade of bindings for each hoistable direct lambda...
+		      (foldr	; build cascade of bindings for each hoistable direct lambda...
 		       (lambda (h rest)
 			 (make-node
 			  'let (list (car h))

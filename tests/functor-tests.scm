@@ -1,7 +1,7 @@
 ;;;; functor-tests.scm
 
 
-(use srfi-1 data-structures extras)
+(use data-structures extras)
 
 
 (include "test.scm")
@@ -12,6 +12,11 @@
 
 (include "test-queue")
 (include "breadth-first")
+
+(define (take lst n)
+  (if (fx<= n 0)
+      '()
+      (cons (car lst) (take (cdr lst) (fx- n 1)))))
 
 
 (module queue1 QUEUE
@@ -68,6 +73,12 @@
 (import (rename test-q1 (list->queue l2q1) (queue->list q2l1)))
 (import (rename test-q2 (list->queue l2q2) (queue->list q2l2)))
 (import (rename test-q3 (list->queue l2q3) (queue->list q2l3)))
+
+(define (list-tabulate n proc)
+  (let loop ((i 0))
+    (if (fx>= i n)
+	'()
+	(cons (proc i) (loop (fx+ i 1))))))
 
 (define long-list (list-tabulate (cond-expand (csi 500) (else 1000)) identity))
 

@@ -26,14 +26,16 @@
 
 (require-library
  setup-api
- srfi-1 posix data-structures utils ports irregex files)
+ posix data-structures utils ports irregex files)
 
 
 (module main ()
   
   (import scheme chicken foreign)
   (import setup-api)
-  (import srfi-1 posix data-structures utils ports irregex files)
+  (import posix data-structures utils ports irregex files)
+
+  (include "mini-srfi-1.scm")
 
   (define-foreign-variable C_TARGET_LIB_HOME c-string)
   (define-foreign-variable C_BINARY_VERSION int)
@@ -53,12 +55,10 @@
     (filter (cut irregex-search rx <>) lst))
 
   (define (gather-eggs patterns)
-    (let ((eggs (map pathname-file 
-		     (glob (make-pathname (repo-path) "*" "setup-info")))))
-      (delete-duplicates
-       (concatenate 
-	(map (cut grep <> eggs) patterns))
-       string=?)))
+    (let* ((eggs (map pathname-file 
+		      (glob (make-pathname (repo-path) "*" "setup-info"))))
+	   (pats (concatenate (map (cut grep <> eggs) patterns))))
+      (delete-duplicates pats)))
 
   (define (fini code)
     (print "aborted.")

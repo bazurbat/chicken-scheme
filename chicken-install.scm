@@ -25,15 +25,17 @@
 
 
 (require-library setup-download setup-api)
-(require-library srfi-1 posix data-structures utils irregex ports extras files)
+(require-library posix data-structures utils irregex ports extras files)
 
 (module main ()
 
-  (import scheme chicken srfi-1 posix data-structures utils irregex ports extras
+  (import scheme chicken posix data-structures utils irregex ports extras
           files)
   (import setup-download setup-api)
 
   (import foreign)
+
+  (include "mini-srfi-1.scm")
 
   (define +default-repository-files+
     ;;XXX keep this up-to-date!
@@ -566,8 +568,8 @@
   (define (install eggs)
     (when *keep-existing*
       (set! eggs
-	(remove 
-	 (lambda (egg) (extension-information (if (pair? egg) (car egg) egg)))
+	(filter
+	 (lambda (egg) (not (extension-information (if (pair? egg) (car egg) egg))))
 	 eggs)))
     (retrieve eggs)
     (unless *retrieve-only*
@@ -650,7 +652,10 @@
 		   (fluid-let ((*host-extension* #f))
 		     (setup tmpcopy)))))))
 	 eggs+dirs+vers
-	 (iota num num -1)))))
+	 (let loop ((i num))
+	   (if (zero? i)
+	       '()
+	       (cons num (loop (fx- i 1)))))))))
 
   (define (delete-stale-binaries)
     (print* "deleting stale binaries ...")
@@ -722,7 +727,8 @@
 		     (else (list egg))))
 	     eggs)
 	    same?)))
-      (unless (lset= same? eggs eggs2)
+      (unless (and (= (length eggs) (length eggs2))
+		   (every (lambda (egg) (find (cut same? <> egg) eggs2)) eggs))
 	(print "mapped " eggs " to " eggs2))
       eggs2))
 

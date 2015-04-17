@@ -4,7 +4,7 @@
 (module mini-salmonella ()
 
 (import scheme chicken)
-(use posix files extras data-structures srfi-1 setup-api utils)
+(use posix files extras data-structures setup-api utils)
 
 (define (usage code)
   (print "usage: mini-salmonella [-h] [-test] [-debug] [-download] [-trunk] EGGDIR [PREFIX]")
@@ -41,10 +41,12 @@
   (for-each 
    (lambda (f)
      (let ((f2 (make-pathname *repository* f)))
-       (if (directory? f2)
-	   (remove-directory f2)
-	   (delete-file f2))))
-   (lset-difference string=? (directory *repository*) *snapshot*)))
+       (cond ((member f2 *snapshot*))
+             ((directory? f2)
+              (remove-directory f2))
+             (else
+              (delete-file f2)))))
+   (directory *repository*)))
 
 (define *chicken-install*
   (normalize-pathname (make-pathname *prefix* "bin/chicken-install")))
@@ -60,7 +62,7 @@
 	   (let ((tags (sort (directory tagsdir) version>=?)))
 	     (if (null? tags)
 		 (or trunkdir ed)
-		 (make-pathname ed (string-append "tags/" (first tags))))))
+		 (make-pathname ed (string-append "tags/" (car tags))))))
 	  (else (or trunkdir ed)))))
 
 (define (report egg msg . args)

@@ -30,7 +30,7 @@
 ;; Same goes for "backend" and "driver".
 (declare
   (unit c-platform)
-  (uses srfi-1 data-structures
+  (uses data-structures
 	optimizer support compiler))
 
 (module chicken.compiler.c-platform
@@ -42,13 +42,13 @@
      target-include-file words-per-flonum
      parameter-limit small-parameter-limit)
 
-(import chicken scheme srfi-1 data-structures
+(import chicken scheme data-structures
 	chicken.compiler.optimizer
 	chicken.compiler.support
 	chicken.compiler.core)
 
 (include "tweaks")
-
+(include "mini-srfi-1.scm")
 
 ;;; Parameters:
 
@@ -225,10 +225,10 @@
    ;; - Remove "1" from arguments.
    ;; - Replace multiplications with 2 by shift left. [fixnum-mode]
    (let ([callargs 
-	  (remove
+	  (filter
 	   (lambda (x)
-	     (and (eq? 'quote (node-class x))
-		  (eq? 1 (first (node-parameters x))) ) ) 
+	     (not (and (eq? 'quote (node-class x))
+		       (eq? 1 (first (node-parameters x))) ) ) )
 	   callargs) ] )
      (cond [(null? callargs) (make-node '##core#call (list #t) (list cont (qnode 0)))]
 	   [(null? (cdr callargs))
@@ -266,10 +266,10 @@
 	 [else
 	  (let ([callargs
 		 (cons (car callargs)
-		       (remove
+		       (filter
 			(lambda (x)
-			  (and (eq? 'quote (node-class x))
-			       (zero? (first (node-parameters x))) ) ) 
+			  (not (and (eq? 'quote (node-class x))
+				    (zero? (first (node-parameters x))) ) ) )
 			(cdr callargs) ) ) ] )
 	    (and (eq? number-type 'fixnum)
 		 (>= (length callargs) 2)
@@ -293,10 +293,10 @@
    (and (>= (length callargs) 2)
 	(let ([callargs
 	       (cons (car callargs)
-		     (remove
+		     (filter
 		      (lambda (x)
-			(and (eq? 'quote (node-class x))
-			     (eq? 1 (first (node-parameters x))) ) ) 
+			(not (and (eq? 'quote (node-class x))
+				  (eq? 1 (first (node-parameters x))) ) ) )
 		      (cdr callargs) ) ) ] )
 	  (and (eq? number-type 'fixnum)
 	       (>= (length callargs) 2)
@@ -493,7 +493,7 @@
 			  (val (db-get db sym 'value)) )
 		 (and (eq? '##core#lambda (node-class val))
 		      (let ((llist (third (node-parameters val))))
-			(and (proper-list? llist)
+			(and (list? llist)
 			     (= 2 (length llist))
 			     (let ((tmp (gensym))
 				   (tmpk (gensym 'r)) )

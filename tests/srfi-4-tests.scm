@@ -1,7 +1,7 @@
 ;;;; srfi-4-tests.scm
 
 
-(use srfi-1 srfi-4 ports)
+(use srfi-4 ports)
 
 
 (define-syntax test1
@@ -20,9 +20,9 @@
 	  (assert (= 99 (,(conc "vector-ref") x 1)))
 	  (assert (= 2 (,(conc "vector-length") x)))
 	  (assert
-	   (every =
-		  '(100 99)
-		  (,(conc "vector->list") x))))))))
+	   (let ((result (,(conc "vector->list") x)))
+	     (and (= 100 (car result))
+		  (= 99 (cadr result))))))))))
 
 (test1 u8)
 (test1 u16)

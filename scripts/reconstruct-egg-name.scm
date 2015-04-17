@@ -4,7 +4,7 @@
 ; (minimally modified by felix)
 
 
-(use extras files posix srfi-1 miscmacros)
+(use extras files posix miscmacros)
 
 ;; Write the elements of the list `ls' to the output-port or output-file,
 ;; using
@@ -69,7 +69,10 @@
     (newline)
     (let* ((egdrnms (directory eggdir))
            (siflnms (info-filenames repdir))
-           (eggnams (lset-intersection string=? egdrnms siflnms)) )
+           (eggnams (foldl (lambda (a e)
+                             (if (member e siflnms) (cons e a) a))
+                           '()
+                           egdrnms)))
     (for-each
       (lambda (eggnam)
         (print eggnam)

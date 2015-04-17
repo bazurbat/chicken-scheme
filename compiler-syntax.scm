@@ -26,17 +26,18 @@
 
 (declare 
   (unit compiler-syntax)
-  (uses srfi-1 data-structures
+  (uses data-structures
 	support compiler) )
 
 (module chicken.compiler.compiler-syntax
     (compiler-syntax-statistics)
 
-(import chicken scheme srfi-1 data-structures
+(import chicken scheme data-structures
 	chicken.compiler.support
 	chicken.compiler.core)
 
 (include "tweaks.scm")
+(include "mini-srfi-1.scm")
 
 
 ;;; Compiler macros (that operate in the expansion phase)
@@ -144,7 +145,7 @@
   (if (and (fx> (length x) 1)
 	   (memq 'o extended-bindings) ) ; s.a.
       (let ((%tmp (r 'tmp)))
-	`(,(r 'lambda) (,%tmp) ,(fold-right list %tmp (cdr x)))) ;XXX use foldr
+	`(,(r 'lambda) (,%tmp) ,(foldr list %tmp (cdr x))))
       x))
 
 (define-internal-compiler-syntax ((sprintf #%sprintf format #%format) x r c)

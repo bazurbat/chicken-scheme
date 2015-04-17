@@ -40,13 +40,11 @@
   (define (bar) 99))
 
 (define foo-env (module-environment 'foo))
-(define srfi-1-env (module-environment 'srfi-1))
-
-(require-library srfi-1)
+(define ds-env (module-environment 'data-structures))
 
 (test-equal (eval '(bar) foo-env) 99)
 (test-error (eval 'baz foo-env))
-(test-equal (eval '(xcons 1 2) srfi-1-env) '(2 . 1))
-(test-error (eval 'baz srf-1-env))
+(test-equal (eval '(conc 1 2) ds-env) "12")
+(test-error (eval 'baz ds-env))
 
 (test-end)
