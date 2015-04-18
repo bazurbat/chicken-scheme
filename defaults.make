@@ -256,7 +256,7 @@ endif
 CHICKEN_OPTIONS += $(EXTRA_CHICKEN_OPTIONS)
 CHICKEN_LIBRARY_OPTIONS = $(CHICKEN_OPTIONS) -explicit-use -no-trace
 CHICKEN_PROGRAM_OPTIONS = $(CHICKEN_OPTIONS) -no-lambda-info -local
-CHICKEN_COMPILER_OPTIONS = $(CHICKEN_PROGRAM_OPTIONS) -extend private-namespace.scm
+CHICKEN_COMPILER_OPTIONS = $(CHICKEN_OPTIONS) -no-lambda-info -extend private-namespace.scm
 CHICKEN_DYNAMIC_OPTIONS = $(CHICKEN_OPTIONS) -feature chicken-compile-shared -dynamic
 CHICKEN_IMPORT_LIBRARY_OPTIONS = $(CHICKEN_DYNAMIC_OPTIONS) -no-trace
 
