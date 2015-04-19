@@ -336,6 +336,7 @@ C_TLS C_word
   *C_scratchspace_start,
   *C_scratchspace_top,
   *C_scratchspace_limit,
+   C_scratch_usage,
    C_bignum_type_tag,
    C_ratnum_type_tag,
    C_cplxnum_type_tag;
@@ -829,6 +830,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
   C_scratchspace_start = NULL;
   C_scratchspace_top = NULL;
   C_scratchspace_limit = NULL;
+  C_scratch_usage = 0;
   scratchspace_size = 0;
   live_finalizer_count = 0;
   allocated_finalizer_count = 0;
@@ -2904,13 +2906,13 @@ C_regparm C_word C_fcall C_scratch_alloc(C_uword size)
   
   if (C_scratchspace_top + size + 2 >= C_scratchspace_limit) {
     C_word *new_scratch_start, *new_scratch_top, *new_scratch_limit;
-    C_uword needed = scratchspace_size + size + 2,
-            new_size = nmax(scratchspace_size, DEFAULT_SCRATCH_SPACE_SIZE);
+    C_uword needed = C_scratch_usage + size + 2,
+            new_size = nmax(scratchspace_size << 1, 2UL << C_ilen(needed));
 
-    /* Increase by a factor of 2^n so we can store the requested size */
-    while (new_size < needed) new_size <<= 1;
+    /* Shrink if the needed size is much smaller, but not below minimum */
+    if (needed < (new_size >> 4)) new_size >>= 1;
+    new_size = nmax(new_size, DEFAULT_SCRATCH_SPACE_SIZE);
     
-  scratchspace_realloc:
     /* TODO: Maybe we should work with two semispaces to reduce mallocs? */
     new_scratch_start = (C_word *)C_malloc(C_wordstobytes(new_size));
     if (new_scratch_start == NULL)
@@ -2992,14 +2994,9 @@ C_regparm C_word C_fcall C_scratch_alloc(C_uword size)
     C_scratchspace_start = new_scratch_start;
     C_scratchspace_top = new_scratch_top;
     C_scratchspace_limit = new_scratch_limit;
+    /* Scratch space is now tightly packed */
+    C_scratch_usage = (new_scratch_top - new_scratch_start);
     scratchspace_size = new_size;
-
-    needed = nmax(C_scratch_usage + size + 2, DEFAULT_SCRATCH_SPACE_SIZE);
-    /* Allow scratch space to shrink if we go below an eighth of its usage */
-    if (needed < (new_size >> 3)) {
-      new_size = nmax(new_size >> 2, DEFAULT_SCRATCH_SPACE_SIZE);
-      goto scratchspace_realloc;
-    }
   }
   assert(C_scratchspace_top + size + 2 <= C_scratchspace_limit);
 
@@ -3007,6 +3004,8 @@ C_regparm C_word C_fcall C_scratch_alloc(C_uword size)
   *(C_scratchspace_top+1) = (C_word)NULL; /* Nothing points here 'til mutated */
   result = (C_word)(C_scratchspace_top+2);
   C_scratchspace_top += size + 2;
+  /* This will only be marked as "used" when it's claimed by a pointer */
+  /* C_scratch_usage += size + 2; */
   return result;
 }
 
@@ -3062,7 +3061,10 @@ C_migrate_buffer_object(C_word **ptr, C_word *start, C_word *end, C_word obj)
             C_word *sp = (C_word *)slot;
 
             if (*(sp-1) == ALIGNMENT_HOLE_MARKER) --sp;
+            if (*(sp-1) != (C_word)NULL && p == NULL)
+              C_scratch_usage -= *(sp-2) + 2;
             *(sp-1) = (C_word)p; /* This is why we traverse even if p = NULL */
+
             *data = C_SCHEME_UNBOUND; /* Ensure old reference is killed dead */
           }
         } else { /* Slot is not a scratchspace object: check sub-objects */
@@ -3087,6 +3089,10 @@ C_regparm C_word C_fcall C_mutate_scratch_slot(C_word *slot, C_word val)
   assert(C_in_scratchspacep(val));
   assert(slot == NULL || C_in_stackp((C_word)slot));
   if (*(ptr-1) == ALIGNMENT_HOLE_MARKER) --ptr;
+  if (*(ptr-1) == (C_word)NULL && slot != NULL)
+    C_scratch_usage += *(ptr-2) + 2;
+  if (*(ptr-1) != (C_word)NULL && slot == NULL)
+    C_scratch_usage -= *(ptr-2) + 2;
   *(ptr-1) = (C_word)slot; /* Remember the slot pointing here, for realloc */
   if (slot != NULL) *slot = val;
   return val; 
@@ -3455,6 +3461,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
     C_scratchspace_start = NULL;
     C_scratchspace_top = NULL;
     C_scratchspace_limit = NULL;
+    C_scratch_usage = 0;
     scratchspace_size = 0;
   }
 

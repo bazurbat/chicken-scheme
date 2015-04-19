@@ -1217,8 +1217,6 @@ extern double trunc(double);
  * stack or reclaim, but in a clever way so it's only done at the
  * "end" of a C function.
  */
-#define C_scratch_usage           (C_scratchspace_top - C_scratchspace_start)
-
 #if C_STACK_GROWS_DOWNWARD
 # define C_demand(n)              (C_stress && ((C_word)(C_stack_pointer - C_stack_limit) > ((n)+C_scratch_usage)))
 # define C_stack_probe(p)         (C_stress && (((C_word *)(p)-C_scratch_usage) >= C_stack_limit))
@@ -1767,6 +1765,7 @@ C_varextern C_TLS C_word
   *C_scratchspace_start,
   *C_scratchspace_top,
   *C_scratchspace_limit,
+   C_scratch_usage,
    C_bignum_type_tag,
    C_ratnum_type_tag,
    C_cplxnum_type_tag;
