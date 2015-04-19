@@ -527,6 +527,9 @@ static C_word bignum_minus_unsigned(C_word **ptr, C_word x, C_word y);
 static C_regparm void integer_divrem(C_word **ptr, C_word x, C_word y, C_word *q, C_word *r);
 static C_regparm C_word bignum_remainder_unsigned_halfdigit(C_word x, C_word y);
 static C_regparm void bignum_divrem(C_word **ptr, C_word x, C_word y, C_word *q, C_word *r);
+static C_regparm C_word bignum_divide_burnikel_ziegler(C_word **ptr, C_word x, C_word y, C_word *q, C_word *r);
+static C_regparm void burnikel_ziegler_3n_div_2n(C_word **ptr, C_word a12, C_word a3, C_word b, C_word b1, C_word b2, C_word n, C_word *q, C_word *r);
+static C_regparm void burnikel_ziegler_2n_div_1n(C_word **ptr, C_word a, C_word b, C_word b1, C_word b2, C_word n, C_word *q, C_word *r);
 static C_word rat_cmp(C_word x, C_word y);
 static void flo_to_int_2(C_word c, C_word self, C_word result) C_noret;
 static void fabs_frexp_to_digits(C_uword exp, double sign, C_uword *start, C_uword *scan);
@@ -5897,7 +5900,8 @@ C_regparm C_word C_fcall C_i_integer_length(C_word x)
   }
 }
 
-/* This is currently only used by Karatsuba multiplication. */
+/* This is currently only used by Karatsuba multiplication and
+ * Burnikel-Ziegler division. */
 static C_regparm C_word
 bignum_extract_digits(C_word **ptr, C_word n, C_word x, C_word start, C_word end)
 {
@@ -8571,7 +8575,7 @@ static C_regparm void
 bignum_divrem(C_word **ptr, C_word x, C_word y, C_word *q, C_word *r)
 {
   C_word q_negp = C_mk_bool(C_bignum_negativep(y) != C_bignum_negativep(x)),
-         r_negp = C_mk_bool(C_bignum_negativep(x));
+         r_negp = C_mk_bool(C_bignum_negativep(x)), res, size;
 
   switch(bignum_cmp_unsigned(x, y)) {
   case 0:
@@ -8584,12 +8588,278 @@ bignum_divrem(C_word **ptr, C_word x, C_word y, C_word *q, C_word *r)
     break;
   case 1:
   default:
-    bignum_divide_unsigned(ptr, x, y, q, q_negp, r, r_negp);
-    if (q != NULL) *q = C_bignum_simplify(*q);
-    if (r != NULL) *r = C_bignum_simplify(*r);
+    res = C_SCHEME_FALSE;
+    size = C_bignum_size(x);
+    if (size >= C_BURNIKEL_ZIEGLER_THRESHOLD &&
+        /* This avoids endless recursion for odd Ns just above threshold */
+        !(size & 1 && size < (C_BURNIKEL_ZIEGLER_THRESHOLD << 1))) {
+      res = bignum_divide_burnikel_ziegler(ptr, x, y, q, r);
+    }
+
+    if (!C_truep(res)) {
+      bignum_divide_unsigned(ptr, x, y, q, q_negp, r, r_negp);
+      if (q != NULL) *q = C_bignum_simplify(*q);
+      if (r != NULL) *r = C_bignum_simplify(*r);
+    }
     break;
   }
 }
+
+C_inline int integer_length_abs(C_word x)
+{
+  if (x & C_FIXNUM_BIT) {
+    return C_ilen(labs(C_unfix(x)));
+  } else {
+    C_uword result = (C_bignum_size(x) - 1) * C_BIGNUM_DIGIT_LENGTH,
+            *last_digit = C_bignum_digits(x) + C_bignum_size(x) - 1,
+            last_digit_length = C_ilen(*last_digit);
+    return result + last_digit_length;
+  }
+}
+
+/* Burnikel-Ziegler recursive division: Split high number (x) in three
+ * or four parts and divide by the lowest number (y), split in two
+ * parts.  There are descriptions in [MpNT, 4.2], [MCA, 1.4.3] and the
+ * paper "Fast Recursive Division" by Christoph Burnikel & Joachim
+ * Ziegler is freely available.  There is also a description in Karl
+ * Hasselstrom's thesis "Fast Division of Integers".
+ *
+ * The complexity of this is supposedly O(r*s^{log(3)-1} + r*log(s)),
+ * where s is the length of x, and r is the length of y (in digits).
+ *
+ * TODO: See if it's worthwhile to implement "division without remainder"
+ * from the Burnikel-Ziegler paper.
+ */
+static C_regparm C_word
+bignum_divide_burnikel_ziegler(C_word **ptr, C_word x, C_word y, C_word *q, C_word *r)
+{
+  C_word ab[C_SIZEOF_FIX_BIGNUM*9], *a = ab,
+         lab[2][C_SIZEOF_FIX_BIGNUM*10], *la,
+         q_negp = (C_bignum_negativep(y) ? C_mk_nbool(C_bignum_negativep(x)) :
+                   C_mk_bool(C_bignum_negativep(x))),
+         r_negp = C_mk_bool(C_bignum_negativep(x)), s, m, n, i, j, l, shift,
+         yhi, ylo, zi, zi_orig, newx, newy, quot, qi, ri;
+
+  /* Ran out of stack?  Fall back to non-recursive division */
+  C_stack_check1(return C_SCHEME_FALSE);
+
+  x = C_s_a_u_i_integer_abs(&a, 1, x);
+  y = C_s_a_u_i_integer_abs(&a, 1, y);
+
+  /* Define m as min{2^k|(2^k)*BURNIKEL_ZIEGLER_THRESHOLD > s}
+   * This ensures we shift as little as possible (less pressure
+   * on the GC) while maintaining a power of two until we drop
+   * below the threshold, so we can always split N in half.
+   */
+  s = C_bignum_size(y);
+  m = 1 << C_ilen(s / C_BURNIKEL_ZIEGLER_THRESHOLD);
+  j = (s+m-1) / m;              /* j = s/m, rounded up */
+  n = j * m;
+
+  shift = (C_BIGNUM_DIGIT_LENGTH * n) - integer_length_abs(y);
+  newx = C_s_a_i_arithmetic_shift(&a, 2, x, C_fix(shift));
+  newy = C_s_a_i_arithmetic_shift(&a, 2, y, C_fix(shift));
+  if (shift != 0) {
+    clear_buffer_object(ab, x);
+    clear_buffer_object(ab, y);
+  }
+  x = newx;
+  y = newy;
+
+  /* l needs to be the smallest value so that a < base^{l*n}/2 */
+  l = (C_bignum_size(x) + n) / n;
+  if ((C_BIGNUM_DIGIT_LENGTH * l) == integer_length_abs(x)) l++;
+  l = nmax(l, 2);
+
+  yhi = bignum_extract_digits(&a, 3, y, C_fix(n >> 1), C_SCHEME_FALSE);
+  ylo = bignum_extract_digits(&a, 3, y, C_fix(0), C_fix(n >> 1));
+
+  s = (l - 2) * n * C_BIGNUM_DIGIT_LENGTH;
+  zi_orig = zi = C_s_a_i_arithmetic_shift(&a, 2, x, C_fix(-s));
+  quot = C_fix(0);
+
+  for(i = l - 2; i >= 0; --i) {
+    la = lab[i&1];
+
+    burnikel_ziegler_2n_div_1n(&la, zi, y, yhi, ylo, C_fix(n), &qi, &ri);
+
+    newx = C_s_a_i_arithmetic_shift(&la, 2, quot, C_fix(n*C_BIGNUM_DIGIT_LENGTH));
+    clear_buffer_object(lab, quot);
+    quot = C_s_a_u_i_integer_plus(&la, 2, newx, qi);
+    move_buffer_object(&la, lab[(i+1)&1], quot);
+    clear_buffer_object(lab, newx);
+    clear_buffer_object(lab, qi);
+
+    if (i > 0) {  /* Set z_{i-1} = [r{i}, x{i-1}] */
+      newx = bignum_extract_digits(&la, 3, x, C_fix(n * (i-1)), C_fix(n * i));
+      newy = C_s_a_i_arithmetic_shift(&la, 2, ri, C_fix(n*C_BIGNUM_DIGIT_LENGTH));
+      clear_buffer_object(lab, zi);
+      zi = C_s_a_u_i_integer_plus(&la, 2, newx, newy);
+      move_buffer_object(&la, lab[(i+1)&1], zi);
+      move_buffer_object(&la, lab[(i+1)&1], quot);
+      clear_buffer_object(lab, newx);
+      clear_buffer_object(lab, newy);
+      clear_buffer_object(lab, ri);
+    }
+  }
+  clear_buffer_object(ab, x);
+  clear_buffer_object(ab, y);
+  clear_buffer_object(ab, yhi);
+  clear_buffer_object(ab, ylo);
+  clear_buffer_object(ab, zi_orig);
+  clear_buffer_object(lab, zi);
+
+  if (q != NULL) {
+    if (C_truep(q_negp)) {
+      newx = C_s_a_u_i_integer_negate(&la, 1, quot);
+      clear_buffer_object(lab, quot);
+      quot = newx;
+    }
+    *q = move_buffer_object(ptr, lab, quot);
+  }
+  clear_buffer_object(lab, quot);
+
+  if (r != NULL) {
+    newx = C_s_a_i_arithmetic_shift(&la, 2, ri, C_fix(-shift));
+    if (C_truep(r_negp)) {
+      newy = C_s_a_u_i_integer_negate(ptr, 1, newx);
+      clear_buffer_object(lab, newx);
+      newx = newy;
+    }
+    *r = move_buffer_object(ptr, lab, newx);
+  }
+  clear_buffer_object(lab, ri);
+
+  return C_SCHEME_TRUE;
+}
+
+static C_regparm void
+burnikel_ziegler_3n_div_2n(C_word **ptr, C_word a12, C_word a3, C_word b, C_word b1, C_word b2, C_word n, C_word *q, C_word *r)
+{
+  C_word kab[C_SIZEOF_FIX_BIGNUM*6 + C_SIZEOF_BIGNUM(2)], *ka = kab,
+         lab[2][C_SIZEOF_FIX_BIGNUM*4], *la,
+         size, tmp, less, qhat, rhat, r1, r1a3, i = 0;
+
+  size = C_unfix(n) * C_BIGNUM_DIGIT_LENGTH;
+  tmp = C_s_a_i_arithmetic_shift(&ka, 2, a12, C_fix(-size));
+  less = C_i_integer_lessp(tmp, b1); /* a1 < b1 ? */
+  clear_buffer_object(kab, tmp);
+
+  if (C_truep(less)) {
+    C_word atmpb[C_SIZEOF_FIX_BIGNUM*2], *atmp = atmpb, b11, b12, halfn;
+
+    halfn = C_fix(C_unfix(n) >> 1);
+    b11 = bignum_extract_digits(&atmp, 3, b1, halfn, C_SCHEME_FALSE);
+    b12 = bignum_extract_digits(&atmp, 3, b1, C_fix(0), halfn);
+
+    burnikel_ziegler_2n_div_1n(&ka, a12, b1, b11, b12, n, &qhat, &r1);
+    qhat = move_buffer_object(&ka, atmpb, qhat);
+    r1 = move_buffer_object(&ka, atmpb, r1);
+
+    clear_buffer_object(atmpb, b11);
+    clear_buffer_object(atmpb, b12);
+  } else {
+    C_word atmpb[C_SIZEOF_FIX_BIGNUM*5], *atmp = atmpb, tmp2;
+
+    tmp = C_s_a_i_arithmetic_shift(&atmp, 2, C_fix(1), C_fix(size));
+    qhat = C_s_a_u_i_integer_minus(&ka, 2, tmp, C_fix(1));  /* B^n - 1 */
+    qhat = move_buffer_object(&ka, atmpb, qhat);
+    clear_buffer_object(atmpb, tmp);
+
+    /* r1 = (a12 - b1*B^n) + b1 */
+    tmp = C_s_a_i_arithmetic_shift(&atmp, 2, b1, C_fix(size));
+    tmp2 = C_s_a_u_i_integer_minus(&atmp, 2, a12, tmp);
+    r1 = C_s_a_u_i_integer_plus(&ka, 2, tmp2, b1);
+    r1 = move_buffer_object(&ka, atmpb, r1);
+    clear_buffer_object(atmpb, tmp);
+    clear_buffer_object(atmpb, tmp2);
+  }
+
+  tmp = C_s_a_i_arithmetic_shift(&ka, 2, r1, C_fix(size));
+  clear_buffer_object(kab, r1);
+  r1a3 = C_s_a_u_i_integer_plus(&ka, 2, tmp, a3);
+  b2 = C_s_a_u_i_integer_times(&ka, 2, qhat, b2);
+
+  la = lab[0];
+  rhat = C_s_a_u_i_integer_minus(&la, 2, r1a3, b2);
+  rhat = move_buffer_object(&la, kab, rhat);
+  qhat = move_buffer_object(&la, kab, qhat);
+
+  clear_buffer_object(kab, tmp);
+  clear_buffer_object(kab, r1a3);
+  clear_buffer_object(kab, b2);
+
+  while(C_truep(C_i_negativep(rhat))) {
+    la = lab[(++i)&1];
+    /* rhat += b */
+    r1 = C_s_a_u_i_integer_plus(&la, 2, rhat, b);
+    tmp = move_buffer_object(&la, lab[(i-1)&1], r1);
+    clear_buffer_object(lab[(i-1)&1], r1);
+    clear_buffer_object(lab[(i-1)&1], rhat);
+    clear_buffer_object(kab, rhat);
+    rhat = tmp;
+
+    /* qhat -= 1 */
+    r1 = C_s_a_u_i_integer_minus(&la, 2, qhat, C_fix(1));
+    tmp = move_buffer_object(&la, lab[(i-1)&1], r1);
+    clear_buffer_object(lab[(i-1)&1], r1);
+    clear_buffer_object(lab[(i-1)&1], qhat);
+    clear_buffer_object(kab, qhat);
+    qhat = tmp;
+  }
+
+  if (q != NULL) *q = move_buffer_object(ptr, lab, qhat);
+  if (r != NULL) *r = move_buffer_object(ptr, lab, rhat);
+  clear_buffer_object(lab, qhat);
+  clear_buffer_object(lab, rhat);
+}
+
+static C_regparm void
+burnikel_ziegler_2n_div_1n(C_word **ptr, C_word a, C_word b, C_word b1, C_word b2, C_word n, C_word *q, C_word *r)
+{
+  C_word kab[2][C_SIZEOF_FIX_BIGNUM*7], *ka, a12, a3, a4,
+         q1 = C_fix(0), r1, q2 = C_fix(0), r2, *qp;
+  int stack_full = 0;
+
+  C_stack_check1(stack_full = 1);
+
+  n = C_unfix(n);
+  if (stack_full || (n & 1) || (n < C_BURNIKEL_ZIEGLER_THRESHOLD)) {
+    integer_divrem(ptr, a, b, q, r);
+  } else {
+    ka = kab[0];
+    a12 = bignum_extract_digits(&ka, 3, a, C_fix(n), C_SCHEME_FALSE);
+    a3 = bignum_extract_digits(&ka, 3, a, C_fix(n >> 1), C_fix(n));
+
+    qp = (q == NULL) ? NULL : &q1;
+    ka = kab[1];
+    burnikel_ziegler_3n_div_2n(&ka, a12, a3, b, b1, b2, C_fix(n >> 1), qp, &r1);
+    q1 = move_buffer_object(&ka, kab[0], q1);
+    r1 = move_buffer_object(&ka, kab[0], r1);
+    clear_buffer_object(kab[0], a12);
+    clear_buffer_object(kab[0], a3);
+
+    a4 = bignum_extract_digits(&ka, 3, a, C_fix(0), C_fix(n >> 1));
+
+    qp = (q == NULL) ? NULL : &q2;
+    ka = kab[0];
+    burnikel_ziegler_3n_div_2n(&ka, r1, a4, b, b1, b2, C_fix(n >> 1), qp, r);
+    if (r != NULL) *r = move_buffer_object(ptr, kab[0], *r);
+    clear_buffer_object(kab[1], r1);
+
+    if (q != NULL) {
+      C_word halfn_bits = (n >> 1) * C_BIGNUM_DIGIT_LENGTH;
+      r1 = C_s_a_i_arithmetic_shift(&ka, 2, q1, C_fix(halfn_bits));
+      *q = C_s_a_i_plus(ptr, 2, r1, q2); /* q = [q1, q2] */
+      *q = move_buffer_object(ptr, kab[0], *q);
+      clear_buffer_object(kab[0], r1);
+      clear_buffer_object(kab[1], q1);
+      clear_buffer_object(kab[0], q2);
+    }
+    clear_buffer_object(kab[1], a4);
+  }
+}
+
 
 static C_regparm C_word bignum_remainder_unsigned_halfdigit(C_word x, C_word y)
 {
@@ -10044,18 +10314,6 @@ void C_ccall C_string_to_symbol(C_word c, C_word closure, C_word k, C_word strin
     s = add_symbol(&a, key, string, symbol_table);
 
   C_kontinue(k, s);
-}
-
-C_inline int integer_length_abs(C_word x)
-{
-  if (x & C_FIXNUM_BIT) {
-    return C_ilen(labs(C_unfix(x)));
-  } else {
-    C_uword result = (C_bignum_size(x) - 1) * C_BIGNUM_DIGIT_LENGTH,
-            *last_digit = C_bignum_digits(x) + C_bignum_size(x) - 1,
-            last_digit_length = C_ilen(*last_digit);
-    return result + last_digit_length;
-  }
 }
 
 /* This will usually return a flonum, but it may also return a cplxnum
