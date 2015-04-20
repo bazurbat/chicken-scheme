@@ -318,7 +318,7 @@ void *alloca ();
 
 /* Have a GUI? */
 
-#if defined(C_WINDOWS_GUI) || defined(C_GUI) || defined(C_PRIVATE_REPOSITORY)
+#if defined(C_GUI) || defined(C_PRIVATE_REPOSITORY)
 # ifdef _WIN32
 #  include <windows.h>
 #  ifndef WINAPI
@@ -1608,7 +1608,7 @@ extern double trunc(double);
 #endif
 
 #if !defined(C_EMBEDDED) && !defined(C_SHARED)
-# if (defined(C_WINDOWS_GUI) || defined(C_GUI)) && defined(_WIN32)
+# if defined(C_GUI) && defined(_WIN32)
 #  define C_main_entry_point            \
   int WINAPI WinMain(HINSTANCE me, HINSTANCE you, LPSTR cmdline, int show) \
   { \
