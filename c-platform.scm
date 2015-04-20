@@ -463,11 +463,7 @@
   (rewrite-c..r '##sys#cdr "C_i_cdr" "C_u_i_cdr" 0)
   (rewrite-c..r 'cadr "C_i_cadr" "C_u_i_cadr" 1)
   (rewrite-c..r 'caddr "C_i_caddr" "C_u_i_caddr" 2)
-  (rewrite-c..r 'cadddr "C_i_cadddr" "C_u_i_cadddr" 3)
-  (rewrite-c..r 'first "C_i_car" "C_u_i_car" 0)
-  (rewrite-c..r 'second "C_i_cadr" "C_u_i_cadr" 1)
-  (rewrite-c..r 'third "C_i_caddr" "C_u_i_caddr" 2)
-  (rewrite-c..r 'fourth "C_i_cadddr" "C_u_i_cadddr" 3) )
+  (rewrite-c..r 'cadddr "C_i_cadddr" "C_u_i_cadddr" 3))
 
 (let ([rvalues
        (lambda (db classargs cont callargs)
@@ -988,9 +984,7 @@
 (rewrite 'f32vector-length 2 1 "C_u_i_32vector_length" #f)
 (rewrite 'f64vector-length 2 1 "C_u_i_64vector_length" #f)
 
-(rewrite 'not-pair? 17 1 "C_i_not_pair_p")
 (rewrite 'atom? 17 1 "C_i_not_pair_p")
-(rewrite 'null-list? 17 1 "C_i_null_list_p" "C_i_nullp")
 
 (rewrite 'u8vector->blob/shared 7 1 "C_slot" 1 #f)
 (rewrite 's8vector->blob/shared 7 1 "C_slot" 1 #f)
@@ -1138,36 +1132,4 @@
 (rewrite 'get-keyword 7 2 "C_i_get_keyword" #f #t)
 (rewrite '##sys#get-keyword 7 2 "C_i_get_keyword" #f #t)
 
-(rewrite 
- 'alist-cons 8
- (lambda (db classargs cont callargs)
-   (and (= 3 (length callargs))
-	(make-node
-	 '##core#call (list #t)
-	 (list cont
-	       (make-node
-		'##core#inline_allocate
-		'("C_a_i_cons" 3) 
-		(list (make-node
-		       '##core#inline_allocate
-		       '("C_a_i_cons" 3)
-		       (list (first callargs) (second callargs)))
-		      (third callargs))))))))
-
-(rewrite 
- 'xcons 8
- (lambda (db classargs cont callargs)
-   (and (= 2 (length callargs))
-	(let ((tmp (gensym)))
-	  (make-node 
-	   'let (list tmp)		; preserve order of argument evaluation
-	   (list
-	    (first callargs)
-	    (make-node
-	     '##core#call (list #t)
-	     (list cont
-		   (make-node
-		    '##core#inline_allocate
-		    '("C_a_i_cons" 3) 
-		    (list (second callargs) (varnode tmp)))))))))))
 )

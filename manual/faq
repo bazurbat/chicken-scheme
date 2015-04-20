@@ -448,7 +448,6 @@ and compiler settings:
 {{exp}}
 {{floor}}
 {{for-each}}
-{{for-each}}
 {{gcd}}
 {{inexact->exact}}
 {{inexact?}}
@@ -510,7 +509,6 @@ and compiler settings:
 The following extended bindings are handled specially: 
 
 {{add1}}
-{{alist-cons}}
 {{any?}}
 {{arithmetic-shift}}
 {{atom?}}
@@ -535,14 +533,12 @@ The following extended bindings are handled specially:
 {{f64vector-length}}
 {{f64vector-ref}}
 {{finite?}}
-{{first}}
 {{fixnum?}}
 {{flonum?}}
 {{flush-output}}
 {{foldl}}
 {{foldr}}
 {{format}}
-{{fourth}}
 {{fp*}}
 {{fp+}}
 {{fp-}}
@@ -604,8 +600,6 @@ The following extended bindings are handled specially:
 {{locative-set!}}
 {{locative?}}
 {{make-record-instance}}
-{{not-pair?}}
-{{null-list?}}
 {{null-pointer?}}
 {{number-of-slots}}
 {{o}}
@@ -643,7 +637,6 @@ The following extended bindings are handled specially:
 {{s8vector-length}}
 {{s8vector-ref}}
 {{s8vector-set!}}
-{{second}}
 {{signum}}
 {{sprintf}}
 {{string-append}}
@@ -654,7 +647,6 @@ The following extended bindings are handled specially:
 {{substring-index-ci}}
 {{substring-index}}
 {{substring=?}}
-{{third}}
 {{u16vector->blob/shared}}
 {{u16vector-length}}
 {{u16vector-ref}}
@@ -668,7 +660,6 @@ The following extended bindings are handled specially:
 {{u8vector-ref}}
 {{u8vector-set!}}
 {{vector->list}}
-{{xcons}}
 
 ==== What's the difference betweem "block" and "local" mode?
 
