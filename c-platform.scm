@@ -140,16 +140,14 @@
     current-input-port current-output-port) )
 
 (set! default-extended-bindings
-  '(bitwise-and alist-cons xcons
-    bitwise-ior bitwise-xor bitwise-not add1 sub1 fx+ fx- fx* fx/
-    fx+? fx-? fx*? fx/? fxmod o fp/?
+  '(bitwise-and bitwise-ior bitwise-xor bitwise-not add1 sub1 o
+    fx+ fx- fx* fx/ fx+? fx-? fx*? fx/? fxmod fp/?
     fx= fx> fx< fx>= fx<= fixnum? fxneg fxmax fxmin identity fp+ fp- fp* fp/ fpmin fpmax fpneg
     fp> fp< fp= fp>= fp<= fxand fxnot fxior fxxor fxshr fxshl bit-set? fxodd? fxeven?
     fpfloor fpceiling fptruncate fpround fpsin fpcos fptan fpasin fpacos fpatan
     fpatan2 fpexp fpexpt fplog fpsqrt fpabs fpinteger?
     arithmetic-shift void flush-output
-    not-pair? atom? null-list? dotted-list? circular-list?
-    print print* error proper-list? call/cc
+    atom? print print* error call/cc
     blob-size u8vector->blob/shared s8vector->blob/shared u16vector->blob/shared
     s16vector->blob/shared u32vector->blob/shared s32vector->blob/shared
     f32vector->blob/shared f64vector->blob/shared
@@ -158,9 +156,8 @@
     blob->f32vector/shared blob->f64vector/shared
     block-ref block-set! number-of-slots substring-index substring-index-ci
     any? read-string substring=? substring-ci=? blob=? equal=?
-    first second third fourth fifth sixth seventh eighth ninth tenth
-    alist-ref length+ rassoc real-part imag-part
-    last last-pair string->symbol symbol-append
+    alist-ref rassoc real-part imag-part
+    string->symbol symbol-append
     make-record-instance foldl foldr
     u8vector-length s8vector-length u16vector-length s16vector-length u32vector-length 
     s32vector-length
