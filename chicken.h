@@ -1587,9 +1587,9 @@ extern double trunc(double);
 #define C_ub_i_pointer_f64_set(p, n)    (*((double *)(p)) = (n))
 
 #ifdef C_PRIVATE_REPOSITORY
-# define C_private_repository(fname)     C_use_private_repository(C_path_to_executable(fname))
+# define C_private_repository()         C_use_private_repository(C_executable_dirname())
 #else
-# define C_private_repository(fname)
+# define C_private_repository()
 #endif
 
 /* left for backwards-compatibility */
@@ -1601,13 +1601,20 @@ extern double trunc(double);
 # define C_set_gui_mode
 #endif
 
+#ifdef SEARCH_EXE_PATH
+# define C_set_main_exe(fname)          C_main_exe = C_resolve_executable_pathname(fname)
+#else
+# define C_set_main_exe(fname)
+#endif
+
 #if !defined(C_EMBEDDED) && !defined(C_SHARED)
 # if (defined(C_WINDOWS_GUI) || defined(C_GUI)) && defined(_WIN32)
 #  define C_main_entry_point            \
   int WINAPI WinMain(HINSTANCE me, HINSTANCE you, LPSTR cmdline, int show) \
   { \
     C_gui_mode = 1; \
-    C_private_repository(NULL);		      \
+    C_set_main_exe(argv[0]);				\
+    C_private_repository();				\
     return CHICKEN_main(0, NULL, (void *)C_toplevel); \
   }
 # else
@@ -1615,7 +1622,8 @@ extern double trunc(double);
   int main(int argc, char *argv[]) \
   { \
     C_set_gui_mode; \
-    C_private_repository(argv[ 0 ]);			\
+    C_set_main_exe(argv[0]);				\
+    C_private_repository();				\
     return CHICKEN_main(argc, argv, (void*)C_toplevel); \
   }
 # endif
@@ -1840,8 +1848,8 @@ C_fctexport int C_do_unregister_finalizer(C_word x);
 C_fctexport C_word C_dbg_hook(C_word x);
 C_fctexport void C_use_private_repository(C_char *path);
 C_fctexport C_char *C_private_repository_path();
+C_fctexport C_char *C_executable_dirname();
 C_fctexport C_char *C_executable_pathname();
-C_fctexport C_char *C_path_to_executable(C_char *fname);
 C_fctexport C_char *C_resolve_executable_pathname(C_char *fname);
 
 C_fctimport void C_ccall C_toplevel(C_word c, C_word self, C_word k) C_noret;

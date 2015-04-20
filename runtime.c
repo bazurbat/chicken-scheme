@@ -1223,10 +1223,6 @@ void CHICKEN_parse_command_line(int argc, char *argv[], C_word *heap, C_word *st
   C_main_argc = argc;
   C_main_argv = argv;
 
-#ifdef SEARCH_EXE_PATH
-  C_main_exe = C_resolve_executable_pathname(argv[0]);
-#endif
-
   *heap = DEFAULT_HEAP_SIZE;
   *stack = DEFAULT_STACK_SIZE;
   *symbols = DEFAULT_SYMBOL_TABLE_SIZE;
@@ -8968,16 +8964,16 @@ C_executable_pathname() {
 #ifdef SEARCH_EXE_PATH
   return C_main_exe == NULL ? NULL : C_strdup(C_main_exe);
 #else
-  return C_resolve_executable_pathname(C_main_argv[0]);
+  return C_resolve_executable_pathname(NULL);
 #endif
 }
 
 C_char *
-C_path_to_executable(C_char *fname) {
+C_executable_dirname() {
   int len;
   C_char *path;
 
-  if((path = C_resolve_executable_pathname(fname)) == NULL)
+  if((path = C_executable_pathname()) == NULL)
     return NULL;
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
