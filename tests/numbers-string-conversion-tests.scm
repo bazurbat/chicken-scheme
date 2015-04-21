@@ -12,12 +12,18 @@
 ;;; It also doesn't try to support Schemes which support *only* integers or
 ;;; *only* flonums (which is also allowed by R5RS).
 ;;;
-(use srfi-1 ports)
+(use ports)
 
 (define the-nan (fp/ 0.0 0.0))
 (define pos-inf (fp/ 1.0 0.0))
 (define neg-inf (fp/ -1.0 0.0))
 (define neg-zero (/ -1.0 +inf.0))
+
+(define (any pred lst)
+  (let loop ((lst lst))
+    (cond ((null? lst) #f)
+	  ((pred (car lst)))
+	  (else (loop (cdr lst))))))
 
 (define (nan? x) (and (number? x) (not (= x x))))
 

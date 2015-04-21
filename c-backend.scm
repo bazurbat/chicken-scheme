@@ -30,7 +30,7 @@
 ;; Same goes for "platform" and "driver".
 (declare
   (unit c-backend)
-  (uses srfi-1 data-structures
+  (uses data-structures
 	c-platform compiler support))
 
 (module chicken.compiler.c-backend
@@ -38,10 +38,12 @@
      ;; For "foreign" (aka chicken-ffi-syntax):
      foreign-type-declaration)
 
-(import chicken scheme foreign srfi-1 data-structures
+(import chicken scheme foreign data-structures
 	chicken.compiler.core
 	chicken.compiler.c-platform
 	chicken.compiler.support)
+
+(include "mini-srfi-1.scm")
 
 ;;; Write atoms to output-port:
 
@@ -175,7 +177,7 @@
 		  (gen "a[" j "]=")
 		  (expr x i)
 		  (gen #\,) )
-		subs (iota n 1 1) )
+		subs (list-tabulate n add1))
 	       (gen "tmp=(C_word)a,a+=" (add1 n) ",tmp)") ) )
 
 	    ((##core#box) 
@@ -254,8 +256,8 @@
 		     (call-id
 		      (cond ((and (eq? call-id (lambda-literal-id ll))
 				  (lambda-literal-looping ll) )
-			     (let* ([temps (lambda-literal-temporaries ll)]
-				    [ts (iota n (+ temps nf) 1)] )
+			     (let* ((temps (lambda-literal-temporaries ll))
+				    (ts (list-tabulate n (lambda (i) (+ temps nf i)))))
 			       (for-each
 				(lambda (arg tr)
 				  (gen #t #\t tr #\=)
@@ -264,7 +266,7 @@
 				args ts)
 			       (for-each
 				(lambda (from to) (gen #t #\t to "=t" from #\;))
-				ts (iota n 1 1) )
+				ts (list-tabulate n add1))
 			       (unless customizable (gen #t "c=" nf #\;))
 			       (gen #t "goto loop;") ) )
 			    (else
@@ -330,8 +332,8 @@
 		    [call-id (second params)] 
 		    [empty-closure (zero? (lambda-literal-closure-size ll))] )
 	       (cond (tailcall
-		      (let* ([temps (lambda-literal-temporaries ll)]
-			     [ts (iota n (+ temps nf) 1)] )
+		      (let* ((temps (lambda-literal-temporaries ll))
+			     (ts (list-tabulate n (cut + temps nf <>))))
 			(for-each
 			 (lambda (arg tr)
 			   (gen #t #\t tr #\=)
@@ -340,7 +342,7 @@
 			 subs ts)
 			(for-each
 			 (lambda (from to) (gen #t #\t to "=t" from #\;))
-			 ts (iota n 1 1) )
+			 ts (list-tabulate n add1))
 			(gen #t "goto loop;") ) )
 		     (else
 		      (gen call-id #\()
@@ -458,11 +460,11 @@
 	    (else (bomb "bad form" (node-class n))) ) ) )
     
       (define (expr-args args i)
-	(pair-for-each
-	 (lambda (xs)
-	   (if (not (eq? xs args)) (gen #\,))
-	   (expr (car xs) i) )
-	 args) )
+	(let loop ((xs args))
+	  (unless (null? xs)
+	    (unless (eq? xs args) (gen #\,))
+	    (expr (car xs) i)
+	    (loop (cdr xs)))))
 
       (expr node temps) )
   
@@ -551,12 +553,12 @@
 		  [direct (lambda-literal-direct ll)] 
 		  [allocated (lambda-literal-allocated ll)] )
 	     (when (>= n small-parameter-limit)
-	       (set! large-signatures (lset-adjoin = large-signatures (add1 n))) )
+	       (set! large-signatures (lset-adjoin/eq? large-signatures (add1 n))))
 	     (gen #t)
 	     (for-each
 	      (lambda (s) 
 		(when (>= s small-parameter-limit)
-		  (set! large-signatures (lset-adjoin = large-signatures (add1 s))) ) )
+		  (set! large-signatures (lset-adjoin/eq? large-signatures (add1 s)))))
 	      (lambda-literal-callee-signatures ll) )
 	     (cond [(not (eq? 'toplevel id))
 		    (gen "C_noret_decl(" id ")" #t)
@@ -652,8 +654,8 @@
 		      (gen ");}") ]
 		     [(or rest (> (lambda-literal-allocated ll) 0) (lambda-literal-external ll))
 		      (if (and rest (not (eq? rest-mode 'none)))
-			  (set! nsr (lset-adjoin = nsr argc)) 
-			  (set! ns (lset-adjoin = ns argc)) ) ] ) ) ) )
+			  (set! nsr (lset-adjoin/eq? nsr argc))
+			  (set! ns (lset-adjoin/eq? ns argc)))]))))
 	 lambda-table)
 	(for-each
 	 (lambda (n)
@@ -683,7 +685,7 @@
 	    [(number? lit) words-per-flonum]
 	    [(symbol? lit) 10]		; size of symbol, and possibly a bucket
 	    [(pair? lit) (+ 3 (literal-size (car lit)) (literal-size (cdr lit)))]
-	    [(vector? lit) (+ 1 (vector-length lit) (reduce + 0 (map literal-size (vector->list lit))))]
+	    [(vector? lit) (+ 1 (vector-length lit) (foldl + 0 (map literal-size (vector->list lit))))]
 	    [(block-variable-literal? lit) 0]
 	    [(##sys#immediate? lit) (bad-literal lit)]
 	    [(##core#inline "C_lambdainfop" lit) 0]
@@ -814,7 +816,7 @@
 		    (gen #t (utype (cdr ubt)) #\space (car ubt) #\;))
 		  ubtemps)))
 	   (cond [(eq? 'toplevel id) 
-		  (let ([ldemand (fold (lambda (lit n) (+ n (literal-size lit))) 0 literals)]
+		  (let ([ldemand (foldl (lambda (n lit) (+ n (literal-size lit))) 0 literals)]
 			[llen (length literals)] )
 		    (gen #t "C_word *a;"
 			 #t "if(toplevel_initialized) C_kontinue(t1,C_SCHEME_UNDEFINED);"
@@ -1116,7 +1118,11 @@
 		     (else ns) ) )
 		  (else ns) ) ) ) )
 
-       (let ((sizestr (fold compute-size "0" argtypes vlist)))
+       (let ((sizestr (let loop ((types argtypes) (vars vlist) (ns "0"))
+			(if (null? types)
+			    ns
+			    (loop (cdr types) (cdr vars) 
+				  (compute-size (car types) (car vars) ns))))))
 	 (gen #t)
 	 (when rname
 	   (gen #t "/* from " (cleanup rname) " */") )
@@ -1145,11 +1151,11 @@
 	 (n (length argtypes))
 	 (vlist (make-argument-list n "t")) )
     (gen #t cls #\space (foreign-type-declaration rtype "") quals #\space name #\()
-    (pair-for-each
-     (lambda (vs ts)
-       (gen (foreign-type-declaration (car ts) (car vs)))
-       (when (pair? (cdr vs)) (gen #\,)) )
-     vlist argtypes)
+    (let loop ((vs vlist) (ts argtypes))
+      (unless (null? vs)
+	(gen (foreign-type-declaration (car ts) (car vs)))
+	(when (pair? (cdr vs)) (gen #\,))
+	(loop (cdr vs) (cdr ts))))
     (gen #\)) ) )
 
 

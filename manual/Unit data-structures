@@ -35,8 +35,7 @@ and defaults to {{eqv?}}. {{alist-update!}} is the destructive version of {{alis
 
 <procedure>(atom? X)</procedure>
 
-Returns {{#t}} if {{X}} is not a pair. This is identical to {{not-pair?}} from [[Unit srfi-1]] but
-kept for historical reasons.
+Returns {{#t}} if {{X}} is not a pair.
 
 
 ==== rassoc

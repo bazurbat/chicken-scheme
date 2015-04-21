@@ -30,7 +30,7 @@
 ;; Same goes for "backend" and "driver".
 (declare
   (unit c-platform)
-  (uses srfi-1 data-structures
+  (uses data-structures
 	optimizer support compiler))
 
 (module chicken.compiler.c-platform
@@ -42,13 +42,13 @@
      target-include-file words-per-flonum
      parameter-limit small-parameter-limit)
 
-(import chicken scheme srfi-1 data-structures
+(import chicken scheme data-structures
 	chicken.compiler.optimizer
 	chicken.compiler.support
 	chicken.compiler.core)
 
 (include "tweaks")
-
+(include "mini-srfi-1.scm")
 
 ;;; Parameters:
 
@@ -222,10 +222,10 @@
    ;; - Remove "1" from arguments.
    ;; - Replace multiplications with 2 by shift left. [fixnum-mode]
    (let ([callargs 
-	  (remove
+	  (filter
 	   (lambda (x)
-	     (and (eq? 'quote (node-class x))
-		  (eq? 1 (first (node-parameters x))) ) ) 
+	     (not (and (eq? 'quote (node-class x))
+		       (eq? 1 (first (node-parameters x))) ) ) )
 	   callargs) ] )
      (cond [(null? callargs) (make-node '##core#call (list #t) (list cont (qnode 0)))]
 	   [(null? (cdr callargs))
@@ -263,10 +263,10 @@
 	 [else
 	  (let ([callargs
 		 (cons (car callargs)
-		       (remove
+		       (filter
 			(lambda (x)
-			  (and (eq? 'quote (node-class x))
-			       (zero? (first (node-parameters x))) ) ) 
+			  (not (and (eq? 'quote (node-class x))
+				    (zero? (first (node-parameters x))) ) ) )
 			(cdr callargs) ) ) ] )
 	    (and (eq? number-type 'fixnum)
 		 (>= (length callargs) 2)
@@ -290,10 +290,10 @@
    (and (>= (length callargs) 2)
 	(let ([callargs
 	       (cons (car callargs)
-		     (remove
+		     (filter
 		      (lambda (x)
-			(and (eq? 'quote (node-class x))
-			     (eq? 1 (first (node-parameters x))) ) ) 
+			(not (and (eq? 'quote (node-class x))
+				  (eq? 1 (first (node-parameters x))) ) ) )
 		      (cdr callargs) ) ) ] )
 	  (and (eq? number-type 'fixnum)
 	       (>= (length callargs) 2)
@@ -486,7 +486,7 @@
 			  (val (db-get db sym 'value)) )
 		 (and (eq? '##core#lambda (node-class val))
 		      (let ((llist (third (node-parameters val))))
-			(and (proper-list? llist)
+			(and (list? llist)
 			     (= 2 (length llist))
 			     (let ((tmp (gensym))
 				   (tmpk (gensym 'r)) )
@@ -505,14 +505,14 @@
   (rewrite 'call-with-values 8 rewrite-c-w-v)
   (rewrite '##sys#call-with-values 8 rewrite-c-w-v) )
 
-(rewrite 'values 13 "C_values" #t)
-(rewrite '##sys#values 13 "C_values" #t)
-(rewrite 'call-with-values 13 "C_u_call_with_values" #f)
-(rewrite 'call-with-values 13 "C_call_with_values" #t)
-(rewrite '##sys#call-with-values 13 "C_u_call_with_values" #f)
-(rewrite '##sys#call-with-values 13 "C_call_with_values" #t)
-(rewrite 'locative-ref 13 "C_locative_ref" #t)
-(rewrite '##sys#continuation-graft 13 "C_continuation_graft" #t)
+(rewrite 'values 13 #f "C_values" #t)
+(rewrite '##sys#values 13 #f "C_values" #t)
+(rewrite 'call-with-values 13 2 "C_u_call_with_values" #f)
+(rewrite 'call-with-values 13 2 "C_call_with_values" #t)
+(rewrite '##sys#call-with-values 13 2 "C_u_call_with_values" #f)
+(rewrite '##sys#call-with-values 13 2 "C_call_with_values" #t)
+(rewrite 'locative-ref 13 1 "C_locative_ref" #t)
+(rewrite '##sys#continuation-graft 13 2 "C_continuation_graft" #t)
 
 (rewrite 'caar 2 1 "C_u_i_caar" #f)
 (rewrite 'cdar 2 1 "C_u_i_cdar" #f)
@@ -767,24 +767,25 @@
 (rewrite '>= 17 2 "C_i_greater_or_equalp")
 (rewrite '<= 17 2 "C_i_less_or_equalp")
 
-(rewrite '* 13 "C_times" #t)
-(rewrite '- 13 "C_minus" #t)
-(rewrite '+ 13 "C_plus" #t)
-(rewrite '/ 13 "C_divide" #t)
-(rewrite '= 13 "C_nequalp" #t)
-(rewrite '> 13 "C_greaterp" #t)
-(rewrite '< 13 "C_lessp" #t)
-(rewrite '>= 13 "C_greater_or_equal_p" #t)
-(rewrite '<= 13 "C_less_or_equal_p" #t)
+(rewrite '= 13 #f "C_nequalp" #t)
+(rewrite '> 13 #f "C_greaterp" #t)
+(rewrite '< 13 #f "C_lessp" #t)
+(rewrite '>= 13 #f "C_greater_or_equal_p" #t)
+(rewrite '<= 13 #f "C_less_or_equal_p" #t)
 
-(rewrite 'number->string 13 "C_number_to_string" #t)
-(rewrite '##sys#call-with-current-continuation 13 "C_call_cc" #t)
-(rewrite '##sys#allocate-vector 13 "C_allocate_vector" #t)
-(rewrite '##sys#ensure-heap-reserve 13 "C_ensure_heap_reserve" #t)
-(rewrite 'return-to-host 13 "C_return_to_host" #t)
-(rewrite '##sys#context-switch 13 "C_context_switch" #t)
-(rewrite '##sys#intern-symbol 13 "C_string_to_symbol" #t)
-(rewrite '##sys#make-symbol 13 "C_make_symbol" #t)
+(rewrite '* 13 #f "C_times" #t)
+(rewrite '+ 13 #f "C_plus" #t)
+(rewrite '/ 13 '(1 . #f) "C_divide" #t)
+(rewrite '- 13 '(1 . #f) "C_minus" #t)
+
+(rewrite 'number->string 13 '(1 . 2) "C_number_to_string" #t)
+(rewrite '##sys#call-with-current-continuation 13 1 "C_call_cc" #t)
+(rewrite '##sys#allocate-vector 13 4 "C_allocate_vector" #t)
+(rewrite '##sys#ensure-heap-reserve 13 1 "C_ensure_heap_reserve" #t)
+(rewrite 'return-to-host 13 0 "C_return_to_host" #t)
+(rewrite '##sys#context-switch 13 1 "C_context_switch" #t)
+(rewrite '##sys#intern-symbol 13 1 "C_string_to_symbol" #t)
+(rewrite '##sys#make-symbol 13 1 "C_make_symbol" #t)
 
 (rewrite 'even? 14 'fixnum 1 "C_i_fixnumevenp" "C_i_fixnumevenp")
 (rewrite 'odd? 14 'fixnum 1 "C_i_fixnumoddp" "C_i_fixnumoddp")

@@ -27,7 +27,9 @@
 
 (declare
   (block)
-  (uses data-structures ports srfi-1 utils files extras))
+  (uses data-structures ports utils files extras))
+
+(include "mini-srfi-1.scm")
 
 (define-foreign-variable INSTALL_BIN_HOME c-string "C_INSTALL_BIN_HOME")
 (define-foreign-variable INSTALL_CC c-string "C_INSTALL_CC")
@@ -777,7 +779,7 @@ EOF
 			      (set! link-options (append link-options (list arg))) ]
 			     [(> (string-length arg) 2)
  			      (let ([opts (cdr (string->list arg))])
- 				(if (null? (lset-difference char=? opts short-options))
+				(if (null? (lset-difference/eq? opts short-options))
  				    (set! rest
  				      (append (map (lambda (o) (string-append "-" (string o))) opts) rest) )
  				    (stop "invalid option `~A'" arg) ) ) ]

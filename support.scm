@@ -27,12 +27,12 @@
 
 (declare (unit support)
 	 (not inline ##sys#user-read-hook) ; XXX: Is this needed?
-	 (uses data-structures srfi-1 files extras ports) )
+	 (uses data-structures files extras ports) )
 
 (module chicken.compiler.support
     (compiler-cleanup-hook bomb collected-debugging-output debugging
      debugging-chicken with-debugging-output quit-compiling
-     emit-syntax-trace-info check-signature posq posv stringify symbolify
+     emit-syntax-trace-info check-signature stringify symbolify
      build-lambda-list string->c-identifier c-ify-string valid-c-identifier?
      bytes->words words->bytes
      check-and-open-input-file close-checked-input-file fold-inner
@@ -75,9 +75,10 @@
      ;; in a lot of other places.
      number-type unsafe)
 
-(import chicken scheme foreign data-structures srfi-1 files extras ports)
+(import chicken scheme foreign data-structures files extras ports)
 
 (include "tweaks")
+(include "mini-srfi-1.scm")
 (include "banner")
 
 ;; Evil globals
@@ -136,7 +137,7 @@
   (define (test-mode mode set)
     (if (symbol? mode)
 	(memq mode set)
-	(pair? (lset-intersection eq? mode set))))
+	(pair? (lset-intersection/eq? mode set))))
   (cond ((test-mode mode debugging-chicken)
 	 (let ((txt (with-output-to-string thunk)))
 	   (display txt)
@@ -194,19 +195,6 @@
 
 
 ;;; Generic utility routines:
-
-;; XXX: Don't posq and posv belong better in library or data-structures?
-(define (posq x lst)
-  (let loop ([lst lst] [i 0])
-    (cond [(null? lst) #f]
-	  [(eq? x (car lst)) i]
-	  [else (loop (cdr lst) (add1 i))] ) ) )
-
-(define (posv x lst)
-  (let loop ([lst lst] [i 0])
-    (cond [(null? lst) #f]
-	  [(eqv? x (car lst)) i]
-	  [else (loop (cdr lst) (add1 i))] ) ) )
 
 (define (stringify x)
   (cond ((string? x) x)
@@ -359,9 +347,14 @@
 			  (if (exn? ex) 
 			      (exn-msg ex)
 			      (->string ex) ) ) 
-	(let ([xs (with-input-from-string
+	(let ((xs (with-input-from-string
 		      str
-		    (lambda () (unfold eof-object? values (lambda (x) (read)) (read))))])
+		    (lambda ()
+		      (let loop ((lst '()))
+			(let ((x (read)))
+			  (if (eof-object? x)
+			      (apply values (reverse lst))
+			      (loop (cons x lst)))))))))
 	  (cond [(null? xs) '(##core#undefined)]
 		[(null? (cdr xs)) (car xs)]
 		[else `(begin ,@xs)] ) ) ) ) ) )
@@ -490,7 +483,7 @@
     (define (walk x)
       (cond ((symbol? x) (varnode x))
 	    ((node? x) x)
-	    ((not-pair? x) (bomb "bad expression" x))
+	    ((not (pair? x)) (bomb "bad expression" x))
 	    ((symbol? (car x))
 	     (case (car x)
 	       ((if ##core#undefined) (make-node (car x) '() (map walk (cdr x))))
@@ -559,7 +552,7 @@
 		  (make-node
 		   '##core#foreign-callback-wrapper
 		   (list name (cadr (third x)) (cadr (fourth x)) (cadr (fifth x)))
-		   (list (walk (sixth x))) ) ) )
+		   (list (walk (list-ref x 5))) ) ) )
 	       ((##core#inline_allocate ##core#inline_ref ##core#inline_update
 					##core#inline_loc_ref ##core#inline_loc_update)
 		(make-node (first x) (second x) (map walk (cddr x))) )
@@ -653,25 +646,27 @@
    llist
    (lambda (vars argc rest)
      (receive (largs rargs) (split-at args argc)
-       (let* ([rlist (if copy? (map gensym vars) vars)]
-	      [body (if copy? 
+       (let* ((rlist (if copy? (map gensym vars) vars))
+	      (body (if copy? 
 			(copy-node-tree-and-rename body vars rlist db cfk)
-			body) ] )
-	 (fold-right
-	  (lambda (var val body) (make-node 'let (list var) (list val body)) )
-	  (if rest
-	      (make-node
-	       'let (list (last rlist))
-	       (list (if (null? rargs)
-			 (qnode '())
-			 (make-node
-			  '##core#inline_allocate
-			  (list "C_a_i_list" (* 3 (length rargs))) 
-			  rargs) )
-		     body) )
-	      body)
-	  (take rlist argc)
-	  largs) ) ) ) ) )
+			body) ) )
+	 (let loop ((vars (take rlist argc))
+		    (vals largs))
+	   (if (null? vars)
+	       (if rest
+		   (make-node
+		    'let (list (last rlist))
+		    (list (if (null? rargs)
+			      (qnode '())
+			      (make-node
+			       '##core#inline_allocate
+			       (list "C_a_i_list" (* 3 (length rargs))) 
+			       rargs) )
+			  body) )
+		   body)
+	       (make-node 'let (list (car vars))
+			  (list (car vals)
+				(loop (cdr vars) (cdr vals)))))))))))
 
 ;; Copy along with the above
 (define (copy-node-tree-and-rename node vars aliases db cfk)
@@ -812,20 +807,20 @@
 	    (else (eq? v x)) ) )
 
     (define (match1 x p)
-      (cond ((not-pair? p) (resolve p x))
-	    ((not-pair? x) #f)
+      (cond ((not (pair? p)) (resolve p x))
+	    ((not (pair? x)) #f)
 	    ((match1 (car x) (car p)) (match1 (cdr x) (cdr p)))
 	    (else #f) ) )
     
     (define (matchn n p)
-      (if (not-pair? p)
+      (if (not (pair? p))
 	  (resolve p n)
 	  (and (eq? (node-class n) (first p))
 	       (match1 (node-parameters n) (second p))
 	       (let loop ((ns (node-subexpressions n))
 			  (ps (cddr p)) )
 		 (cond ((null? ps) (null? ns))
-		       ((not-pair? ps) (resolve ps ns))
+		       ((not (pair? ps)) (resolve ps ns))
 		       ((null? ns) #f)
 		       (else (and (matchn (car ns) (car ps))
 				  (loop (cdr ns) (cdr ps)) ) ) ) ) ) ) )
@@ -1299,12 +1294,12 @@
 	  ((##core#variable) 
 	   (let ((var (first params)))
 	     (unless (memq var e)
-	       (set! vars (lset-adjoin eq? vars var))
+	       (set! vars (lset-adjoin/eq? vars var))
 	       (unless (variable-visible? var block-compilation) 
-		 (set! hvars (lset-adjoin eq? hvars var))))))
+		 (set! hvars (lset-adjoin/eq? hvars var))))))
 	  ((set!)
 	   (let ((var (first params)))
-	     (unless (memq var e) (set! vars (lset-adjoin eq? vars var)))
+	     (unless (memq var e) (set! vars (lset-adjoin/eq? vars var)))
 	     (walk (car subs) e) ) )
 	  ((let) 
 	   (walk (first subs) e)

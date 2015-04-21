@@ -15,7 +15,8 @@
 - Security fixes
   - CVE-2014-6310: Use POSIX poll() on Android platform to avoid
     potential select() buffer overrun.
-  - substring-index no longer scans beyond string boundaries.
+  - CVE-2014-9651: substring-index[-ci] no longer scans beyond string
+    boundaries.
 
 - Core libraries
   - alist-ref from unit data-structures now gives an error when passed

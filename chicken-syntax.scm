@@ -38,6 +38,9 @@
   (no-bound-checks)
   (no-procedure-checks))
 
+(include "mini-srfi-1.scm")
+
+
 (##sys#provide 'chicken-syntax)
 
 
@@ -763,7 +766,6 @@
 	(if (fx>= i n)
 	    '()
 	    (cons (r (gensym)) (loop (fx+ i 1))) ) ) )
-    (require 'srfi-1)			; ugh...
     (let* ((mincount (apply min (map (lambda (c)
 				       (##sys#decompose-lambda-list 
 					(car c)
@@ -781,20 +783,20 @@
 	,(append minvars rvar)
 	(##core#let
         ((,lvar (,%length ,rvar)))
-	 ,(fold-right
+	 ,(foldr
 	   (lambda (c body)
 	     (##sys#decompose-lambda-list
 	      (car c)
 	      (lambda (vars argc rest)
 		(##sys#check-syntax 'case-lambda (car c) 'lambda-list)
-		`(##core#if ,(let ([a2 (fx- argc mincount)])
+		`(##core#if ,(let ((a2 (fx- argc mincount)))
 			       (if rest
 				   (if (zero? a2)
 				       #t
 				       `(,%>= ,lvar ,a2) )
 				   `(,%eq? ,lvar ,a2) ) )
 			    ,(receive (vars1 vars2)
-				 (split-at! (take vars argc) mincount)
+				 (split-at (take vars argc) mincount)
 			       (let ((bindings
 				      (let build ((vars2 vars2) (vrest rvar))
 					(if (null? vars2)

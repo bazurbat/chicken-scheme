@@ -310,21 +310,29 @@ evaluate the expression at compile-time.
 ==== define-inline
 
 <macro>(define-inline (NAME VAR ...) BODY ...)</macro><br>
-<macro>(define-inline (NAME VAR1 ... VARn . VARn+1) BODY ...)</macro><br>
+<macro>(define-inline (NAME VAR ... . VAR) BODY ...)</macro><br>
 <macro>(define-inline NAME EXP)</macro>
 
-Defines an inline procedure. Any occurrence of {{NAME}} will be
-replaced by {{EXP}} or {{(lambda (VAR ... [. VAR]) BODY ...)}}. 
-This is similar to a macro, but variable-names and -scope will
-be correctly handled.  Inline substitutions take place '''after'''
-macro-expansion.  {{EXP}} should be a lambda-expression. Any
-reference to {{NAME}} should appear textually '''after'''
-its definition. Note that inline procedures are local to the current
-compilation unit and are not available outside of the source file in
-which they are defined. Names of inline procedures still exist in the
-Scheme namespace and can be lexically shadowed.  This construct is
-equivalent to {{define}} when evaluated or interpreted. Inline
-definitions should only appear at toplevel.
+Defines an inline procedure. Any occurrence of {{NAME}} will be replaced
+by {{EXP}} or {{(lambda (VAR ... [. VAR]) BODY ...)}}. This is similar
+to a macro, but variable names and scope are handled correctly.
+
+Inline substitutions take place '''after''' macro-expansion, and any
+reference to {{NAME}} should appear textually '''after''' its
+definition. Inline procedures are local to the current compilation unit
+and are not available outside of the source file in which they are
+defined. Names of inline procedures still exist in the Scheme namespace
+and can be lexically shadowed. Inline definitions should only appear at
+the toplevel.
+
+Note that the {{inline-limit}} compiler option does not affect inline
+procedure expansion, and self-referential inline procedures may cause
+the compiler to enter an infinite loop.
+
+In the third form, {{EXP}} must be a lambda expression.
+
+This construct is equivalent to {{define}} when evaluated or
+interpreted.
 
 ==== define-for-syntax
 
@@ -535,7 +543,7 @@ Expands by selecting feature clauses. This form is allowed to appear in non-topl
 
 Predefined feature-identifiers are "situation" specific:
 
-; compile : {{chicken}}, {{compiling}}, {{library}}, {{eval}}, {{extras}}, {{utils}}, {{regex}}, {{srfi-0}}, {{srfi-1}}, {{srfi-2}}, {{srfi-4}}, {{srfi-6}}, {{srfi-8}}, {{srfi-9}}, {{srfi-10}}, {{srfi-11}}, {{srfi-12}}, {{srfi-15}}, {{srfi-16}}, {{srfi-17}}, {{srfi-23}}, {{srfi-26}}, {{srfi-28}}, {{srfi-30}}, {{srfi-31}}, {{srfi-39}}, {{srfi-55}}, {{srfi-61}}, {{srfi-62}}
+; compile : {{chicken}}, {{compiling}}, {{library}}, {{eval}}, {{extras}}, {{utils}}, {{regex}}, {{srfi-0}}, {{srfi-2}}, {{srfi-4}}, {{srfi-6}}, {{srfi-8}}, {{srfi-9}}, {{srfi-10}}, {{srfi-11}}, {{srfi-12}}, {{srfi-15}}, {{srfi-16}}, {{srfi-17}}, {{srfi-23}}, {{srfi-26}}, {{srfi-28}}, {{srfi-30}}, {{srfi-31}}, {{srfi-39}}, {{srfi-55}}, {{srfi-61}}, {{srfi-62}}
 
 ; load : {{chicken}}, {{extras}}, {{srfi-0}}, {{srfi-2}}, {{srfi-6}}, {{srfi-8}}, {{srfi-9}}, {{srfi-10}}, {{srfi-12}}, {{srfi-17}}, {{srfi-23}}, {{srfi-28}}, {{srfi-30}}, {{srfi-39}}, {{srfi-55}}, {{srfi-61}}, {{srfi-62}}. {{library}} is implicit.
 

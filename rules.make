@@ -36,7 +36,7 @@ VPATH=$(SRCDIR)
 SETUP_API_OBJECTS_1 = setup-api setup-download
 
 LIBCHICKEN_SCHEME_OBJECTS_1 = \
-       library eval data-structures ports files extras lolevel utils tcp srfi-1 srfi-4 \
+       library eval data-structures ports files extras lolevel utils tcp srfi-4 \
        $(POSIXFILE) irregex scheduler \
        profiler stub expand modules chicken-syntax chicken-ffi-syntax build-version
 LIBCHICKEN_OBJECTS_1 = $(LIBCHICKEN_SCHEME_OBJECTS_1) runtime
@@ -500,10 +500,10 @@ $(foreach lib, $(SETUP_API_OBJECTS_1),\
 $(foreach lib, $(filter-out chicken,$(COMPILER_OBJECTS_1)),\
           $(eval $(call declare-emitted-compiler-import-lib-dependency,$(lib))))
 
-chicken.c: chicken.scm \
+chicken.c: chicken.scm mini-srfi-1.scm \
 		chicken.compiler.batch-driver.import.scm \
 		chicken.compiler.c-platform.import.scm
-batch-driver.c: batch-driver.scm \
+batch-driver.c: batch-driver.scm mini-srfi-1.scm \
 		chicken.compiler.core.import.scm \
 		chicken.compiler.compiler-syntax.import.scm \
 		chicken.compiler.optimizer.import.scm \
@@ -512,25 +512,26 @@ batch-driver.c: batch-driver.scm \
 		chicken.compiler.lfa2.import.scm \
 		chicken.compiler.c-backend.import.scm \
 		chicken.compiler.support.import.scm
-c-platform.c: c-platform.scm \
+c-platform.c: c-platform.scm mini-srfi-1.scm \
 		chicken.compiler.optimizer.import.scm \
 		chicken.compiler.support.import.scm \
 		chicken.compiler.core.import.scm
-c-backend.c: c-backend.scm \
+c-backend.c: c-backend.scm mini-srfi-1.scm \
 		chicken.compiler.c-platform.import.scm \
 		chicken.compiler.support.import.scm \
 		chicken.compiler.core.import.scm
-core.c: core.scm \
+core.c: core.scm mini-srfi-1.scm \
 		chicken.compiler.scrutinizer.import.scm \
 		chicken.compiler.support.import.scm
-optimizer.c: optimizer.scm \
+optimizer.c: optimizer.scm mini-srfi-1.scm \
 		chicken.compiler.support.import.scm
-scrutinizer.c: scrutinizer.scm \
+scrutinizer.c: scrutinizer.scm mini-srfi-1.scm \
 		chicken.compiler.support.import.scm
-lfa2.c: lfa2.scm chicken.compiler.support.import.scm
-compiler-syntax.c: compiler-syntax.scm \
+lfa2.c: lfa2.scm chicken.compiler.support.import.scm mini-srfi-1.scm
+compiler-syntax.c: compiler-syntax.scm mini-srfi-1.scm \
 		chicken.compiler.support.import.scm \
 		chicken.compiler.core.import.scm
+support.c: support.scm mini-srfi-1.scm
 
 define profile-flags
 $(if $(filter $(basename $(1)),$(PROFILE_OBJECTS)),-profile)
@@ -540,11 +541,11 @@ bootstrap-lib = $(CHICKEN) $(call profile-flags, $@) $< $(CHICKEN_LIBRARY_OPTION
 
 library.c: $(SRCDIR)library.scm $(SRCDIR)banner.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
-eval.c: $(SRCDIR)eval.scm $(SRCDIR)common-declarations.scm
+eval.c: $(SRCDIR)eval.scm $(SRCDIR)common-declarations.scm $(SRCDIR)mini-srfi-1.scm
 	$(bootstrap-lib)
 expand.c: $(SRCDIR)expand.scm $(SRCDIR)synrules.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
-modules.c: $(SRCDIR)modules.scm $(SRCDIR)common-declarations.scm
+modules.c: $(SRCDIR)modules.scm $(SRCDIR)common-declarations.scm $(SRCDIR)mini-srfi-1.scm
 	$(bootstrap-lib)
 extras.c: $(SRCDIR)extras.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
@@ -557,9 +558,9 @@ irregex.c: $(SRCDIR)irregex.scm $(SRCDIR)irregex-core.scm $(SRCDIR)irregex-utils
 #
 # The ones below just depend on their matching .scm file and common-declarations
 #
-chicken-syntax.c: $(SRCDIR)chicken-syntax.scm $(SRCDIR)common-declarations.scm
+chicken-syntax.c: $(SRCDIR)chicken-syntax.scm $(SRCDIR)common-declarations.scm $(SRCDIR)mini-srfi-1.scm
 	$(bootstrap-lib)
-chicken-ffi-syntax.c: $(SRCDIR)chicken-ffi-syntax.scm $(SRCDIR)common-declarations.scm
+chicken-ffi-syntax.c: $(SRCDIR)chicken-ffi-syntax.scm $(SRCDIR)common-declarations.scm $(SRCDIR)mini-srfi-1.scm
 	$(bootstrap-lib)
 data-structures.c: $(SRCDIR)data-structures.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
@@ -570,8 +571,6 @@ files.c: $(SRCDIR)files.scm $(SRCDIR)common-declarations.scm
 lolevel.c: $(SRCDIR)lolevel.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) 
 tcp.c: $(SRCDIR)tcp.scm $(SRCDIR)common-declarations.scm
-	$(bootstrap-lib) 
-srfi-1.c: $(SRCDIR)srfi-1.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) 
 srfi-4.c: $(SRCDIR)srfi-4.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) 
@@ -608,23 +607,23 @@ $(foreach obj, $(COMPILER_OBJECTS_1),\
 
 csi.c: $(SRCDIR)csi.scm $(SRCDIR)banner.scm
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@
-chicken-profile.c: $(SRCDIR)chicken-profile.scm
+chicken-profile.c: $(SRCDIR)chicken-profile.scm $(SRCDIR)mini-srfi-1.scm
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ 
-chicken-install.c: $(SRCDIR)chicken-install.scm setup-download.c setup-api.c
+chicken-install.c: $(SRCDIR)chicken-install.scm setup-download.c setup-api.c $(SRCDIR)mini-srfi-1.scm
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ 
-chicken-uninstall.c: $(SRCDIR)chicken-uninstall.scm
+chicken-uninstall.c: $(SRCDIR)chicken-uninstall.scm $(SRCDIR)mini-srfi-1.scm
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ 
-chicken-status.c: $(SRCDIR)chicken-status.scm
+chicken-status.c: $(SRCDIR)chicken-status.scm $(SRCDIR)mini-srfi-1.scm
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ 
-csc.c: $(SRCDIR)csc.scm
+csc.c: $(SRCDIR)csc.scm mini-srfi-1.scm
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ 
 chicken-bug.c: $(SRCDIR)chicken-bug.scm
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ 
 
-setup-api.c: $(SRCDIR)setup-api.scm
+setup-api.c: $(SRCDIR)setup-api.scm $(SRCDIR)mini-srfi-1.scm
 	$(CHICKEN) $< $(CHICKEN_DYNAMIC_OPTIONS) -emit-import-library setup-api \
 	  -output-file $@ 
-setup-download.c: $(SRCDIR)setup-download.scm setup-api.c
+setup-download.c: $(SRCDIR)setup-download.scm setup-api.c $(SRCDIR)mini-srfi-1.scm
 	$(CHICKEN) $< $(CHICKEN_DYNAMIC_OPTIONS) -emit-import-library setup-download \
 	  -output-file $@ 
 

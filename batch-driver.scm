@@ -29,7 +29,7 @@
 ;; Same goes for "backend" and "platform".
 (declare
   (unit batch-driver)
-  (uses extras data-structures files srfi-1
+  (uses extras data-structures files
 	support compiler-syntax compiler optimizer
 	;; TODO: Backend should be configurable
 	scrutinizer lfa2 c-platform c-backend) )
@@ -40,7 +40,7 @@
      user-options-pass user-read-pass user-preprocessor-pass user-pass
      user-post-analysis-pass)
 
-(import chicken scheme extras data-structures files srfi-1
+(import chicken scheme extras data-structures files
 	chicken.compiler.support
 	chicken.compiler.compiler-syntax
 	chicken.compiler.core
@@ -51,6 +51,7 @@
 	chicken.compiler.c-backend)
 
 (include "tweaks")
+(include "mini-srfi-1.scm")
 
 (define-constant funny-message-timeout 60000)
 
@@ -164,7 +165,7 @@
 
 ;;; Compile a complete source file:
 
-(define (compile-source-file filename user-suppplied-options . options)
+(define (compile-source-file filename user-supplied-options . options)
   (define (option-arg p)
     (if (null? (cdr p))
 	(quit-compiling "missing argument to `-~A' option" (car p))
@@ -441,7 +442,7 @@
       (for-each
        (lambda (f) (load (##sys#resolve-include-filename f #f #t))) 
        extends) )
-    (set! ##sys#features (delete #:compiler-extension ##sys#features eq?))
+    (set! ##sys#features (delete #:compiler-extension ##sys#features))
     (set! ##sys#features (cons '#:compiling ##sys#features))
     (set! upap (user-post-analysis-pass))
 
@@ -793,7 +794,7 @@
 			     ;; Code generation
 			     (let ((out (if outfile (open-output-file outfile) (current-output-port))) )
 			       (dribble "generating `~A' ..." outfile)
-			       (generate-code literals lliterals lambda-table out filename user-suppplied-options dynamic db)
+			       (generate-code literals lliterals lambda-table out filename user-supplied-options dynamic db)
 			       (when outfile
 				 (close-output-port out)))
 			     (end-time "code generation")

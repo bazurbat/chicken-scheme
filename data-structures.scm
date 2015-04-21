@@ -90,7 +90,7 @@
   (lambda (lst)
     (let loop ([lst lst])
       (cond [(null? lst) #t]
-	    [(not-pair? lst) #f]
+	    [(not (pair? lst)) #f]
 	    [(pred (##sys#slot lst 0)) (loop (##sys#slot lst 1))]
 	    [else #f] ) ) ) )
 

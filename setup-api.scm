@@ -24,7 +24,7 @@
 ; POSSIBILITY OF SUCH DAMAGE.
 
 
-(require-library srfi-1 irregex utils posix extras ports data-structures files)
+(require-library irregex utils posix extras ports data-structures files)
 
 ; This code is partially quite messy and the API is not overly consistent,
 ; mainly because it has grown "organically" while the old chicken-setup program
@@ -67,7 +67,9 @@
   
   (import scheme chicken foreign
 	  irregex utils posix ports extras data-structures
-	  srfi-1 files)
+	  files)
+
+(include "mini-srfi-1.scm")
 
 ;;; Constants, variables and parameters
 

@@ -112,12 +112,6 @@ irregex.scm:
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
   THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-srfi-1.scm:
-
-  Copyright (c) 1998, 1999 by Olin Shivers. You may do as you please with
-  this code as long as you do not remove this copyright notice or
-  hold me liable for its use. Please send bug reports to shivers@ai.mit.edu.
-
 === Public domain / unencumbered
 
 Since we would still like to acknowledge all the useful contributions

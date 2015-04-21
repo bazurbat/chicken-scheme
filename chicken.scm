@@ -27,23 +27,25 @@
 
 (declare
   (uses chicken-syntax chicken-ffi-syntax 
-	srfi-1 srfi-4 utils files extras data-structures support
+	srfi-4 utils files extras data-structures support
 	compiler optimizer lfa2 compiler-syntax scrutinizer
 	;; TODO: These three need to be made configurable somehow
 	batch-driver c-platform c-backend))
 
 
 (include "tweaks")
+
 (import chicken.compiler.batch-driver 
 	chicken.compiler.c-platform)
+
+(include "mini-srfi-1.scm")
+
 
 ;;; Prefix argument list with default options:
 
 (define compiler-arguments
   (append
-   (remove 
-    (lambda (x) (string=? x ""))
-    (string-split (or (get-environment-variable "CHICKEN_OPTIONS") "")))
+   (string-split (or (get-environment-variable "CHICKEN_OPTIONS") ""))
    (cdr (argv))))
 
 

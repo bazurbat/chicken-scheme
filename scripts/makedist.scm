@@ -1,7 +1,9 @@
 ;;;; makedist.scm - Make distribution tarballs
 
 
-(use irregex srfi-1 setup-api)
+(use irregex setup-api)
+
+(include "mini-srfi-1.scm")
 
 (define *release* #f)
 (define *help* #f)
