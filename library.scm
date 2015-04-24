@@ -299,12 +299,12 @@ EOF
       (##core#inline "C_i_check_char" x) ) )
 
 (define (##sys#check-boolean x . loc)
-  (If (pair? loc)
+  (if (pair? loc)
       (##core#inline "C_i_check_boolean_2" x (car loc))
       (##core#inline "C_i_check_boolean" x) ) )
 
 (define (##sys#check-locative x . loc)
-  (If (pair? loc)
+  (if (pair? loc)
       (##core#inline "C_i_check_locative_2" x (car loc))
       (##core#inline "C_i_check_locative" x) ) )
 
