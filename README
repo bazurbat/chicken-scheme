@@ -282,7 +282,7 @@
 	|       `-- chicken.h
 	|-- lib
 	|   |-- chicken
-	|   |   `-- 6
+	|   |   `-- 7
 	|   |       |-- chicken.import.so
 	|   |       |-- csi.import.so
 	|   |       |-- data-structures.import.so
