@@ -573,17 +573,6 @@ process is currently running, which is one of the following:
  unknown
 
 
-
-==== c-runtime
-
-<procedure>(c-runtime)</procedure>
-
-Returns a symbol that designates what kind of C runtime library has been linked
-with this version of the CHICKEN libraries. Possible return values are
-{{static}}, {{dynamic}} or {{unknown}}. On systems not compiled with the
-Microsoft C compiler, {{c-runtime}} always returns {{unknown}}.
-
-
 ==== system
 
 <procedure>(system STRING)</procedure>

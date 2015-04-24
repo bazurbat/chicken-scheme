@@ -41,7 +41,6 @@
    blob?
    blob=?
    build-platform
-   c-runtime
    call/cc
    case-sensitive
    char-name
