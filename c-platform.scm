@@ -166,7 +166,7 @@
     f32vector-ref f64vector-ref f32vector-set! f64vector-set!
     u8vector-set! s8vector-set! u16vector-set! s16vector-set! u32vector-set! s32vector-set!
     locative-ref locative-set! locative->object locative?
-    null-pointer? pointer->object flonum? finite? address->pointer pointer->address
+    pointer->object flonum? finite? address->pointer pointer->address
     pointer+ pointer=?
     pointer-u8-ref pointer-s8-ref pointer-u16-ref pointer-s16-ref
     pointer-u32-ref pointer-s32-ref pointer-f32-ref pointer-f64-ref
@@ -939,7 +939,6 @@
 (rewrite '##sys#flonum-in-fixnum-range? 17 1 "C_flonum_in_fixnum_range_p")
 (rewrite '##sys#permanent? 17 1 "C_permanentp")
 (rewrite '##sys#null-pointer? 17 1 "C_null_pointerp" "C_null_pointerp")
-(rewrite 'null-pointer? 17 1 "C_i_null_pointerp" "C_null_pointerp")
 (rewrite '##sys#immediate? 17 1 "C_immp")
 (rewrite 'locative->object 17 1 "C_i_locative_to_object")
 (rewrite 'locative-set! 17 2 "C_i_locative_set")
