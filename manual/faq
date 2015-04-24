@@ -604,7 +604,6 @@ The following extended bindings are handled specially:
 {{make-record-instance}}
 {{not-pair?}}
 {{null-list?}}
-{{null-pointer?}}
 {{number-of-slots}}
 {{o}}
 {{pointer+}}

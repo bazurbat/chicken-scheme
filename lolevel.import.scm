@@ -44,7 +44,6 @@
    make-weak-locative
    move-memory!
    mutate-procedure!
-   null-pointer
    number-of-bytes
    number-of-slots
    object->pointer
