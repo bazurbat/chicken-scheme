@@ -548,7 +548,7 @@
 	  - When installing under mingw, with a windows shell
 	    ("cmd.exe"), pass an absolute pathname (including the
 	    drive letter) as PREFIX and use forward slashes. If you
-	    are building the sources from git, but use backslashes to
+	    are building the sources from git, use backslashes to
 	    specify the path to `chicken' (the "CHICKEN" variable).
 
 	  - When installing under mingw without MSYS, make sure that the
