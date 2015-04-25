@@ -247,32 +247,29 @@
 (##sys#extend-macro-environment
  'eval-when '()
  (##sys#er-transformer
-  (lambda (form r c)
+  (lambda (form r compare)
     (##sys#check-syntax 'eval-when form '#(_ 2))
     (let* ((situations (cadr form))
 	   (body `(##core#begin ,@(cddr form)))
-	   (%eval (r 'eval))
-	   (%compile (r 'compile))
-	   (%load (r 'load))
 	   (e #f)
-	   (co #f)
+	   (c #f)
 	   (l #f))
-      (let loop ([ss situations])
+      (let loop ((ss situations))
 	(if (pair? ss)
 	    (let ((s (car ss)))
-	      (cond ((c s %eval) (set! e #t))
-		    ((c s %load) (set! l #t))
-		    ((c s %compile) (set! co #t))
-		    (else (##sys#error "invalid situation specifier" (car ss)) ))
-	      (loop (##sys#slot ss 1)) ) ) )
+	      (cond ((compare s 'eval) (set! e #t))
+		    ((compare s 'load) (set! l #t))
+		    ((compare s 'compile) (set! c #t))
+		    (else (##sys#error "invalid situation specifier" (car ss))))
+	      (loop (cdr ss)))))
       (if (memq '#:compiling ##sys#features)
-	  (cond [(and co l) `(##core#compiletimetoo ,body)]
-		[co `(##core#compiletimeonly ,body)]
-		[l body]
-		[else '(##core#undefined)] )
+	  (cond ((and c l) `(##core#compiletimetoo ,body))
+		(c `(##core#compiletimeonly ,body))
+		(l body)
+		(else '(##core#undefined)))
 	  (if e 
 	      body
-	      '(##core#undefined) ) ) ) ) ) )
+	      '(##core#undefined)))))))
 
 (##sys#extend-macro-environment
  'parameterize '()

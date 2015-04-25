@@ -264,8 +264,7 @@
 
 (declare
  (unit compiler)
- (uses extras data-structures
-       scrutinizer support) )
+ (uses eval extras data-structures scrutinizer support))
 
 (module chicken.compiler.core
     (analyze-expression canonicalize-expression compute-database-statistics
@@ -318,6 +317,7 @@
 	chicken.compiler.scrutinizer
 	chicken.compiler.support
 	chicken.data-structures
+	chicken.eval
 	chicken.extras
 	chicken.foreign)
 
@@ -671,7 +671,18 @@
 				  '(##core#undefined)
 				  (let ((id (car ids)))
 				    (let-values (((exp f realid)
-						  (##sys#do-the-right-thing id #t imp?)))
+						  (##sys#do-the-right-thing
+						   id #t imp?
+						   (lambda (id* syntax?)
+						     (##sys#hash-table-update!
+						      ;; XXX FIXME: This is a bit of a hack.  Why is it needed at all?
+						      file-requirements
+						      (if syntax? 'dynamic/syntax 'dynamic)
+						      (lambda (lst)
+							(if (memq id* lst)
+							    lst
+							    (cons id* lst)))
+						      (lambda () (list id*)))))))
 				      (unless (or f
 						  (and (symbol? id)
 						       (or (feature? id)

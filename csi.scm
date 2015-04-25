@@ -26,7 +26,7 @@
 
 
 (declare
-  (uses data-structures ports extras)
+  (uses data-structures eval extras ports)
   (usual-integrations)
   (disable-interrupts)
   (compile-syntax)
@@ -1053,9 +1053,6 @@ EOF
       (when (member* '("-w" "-no-warnings") args)
 	(unless quiet (display "Warnings are disabled\n"))
 	(set! ##sys#warnings-enabled #f) )
-      (unless quiet
-	(load-verbose #t)
-	(print-banner) )
       (when (member* '("-i" "-case-insensitive") args)
 	(unless quiet (display "Identifiers and symbols are case insensitive\n"))
 	(register-feature! 'case-insensitive)
@@ -1091,8 +1088,16 @@ EOF
 	(keyword-style #:none)
 	(parentheses-synonyms #f)
 	(symbol-escape #f) )
-      (unless (or (member* '("-n" "-no-init") args) script eval?) (loadinit))
-      (when batch 
+      ;; Load the the default modules into the evaluation environment.
+      ;; This is done before setting load-verbose => #t to avoid
+      ;; spurious import messages.
+      (eval '(import scheme chicken))
+      (unless quiet
+	(load-verbose #t)
+	(print-banner))
+      (unless (or (member* '("-n" "-no-init") args) script eval?)
+	(loadinit))
+      (when batch
 	(set! ##sys#notices-enabled #f))
       (do ([args args (cdr args)])
 	  ((null? args)

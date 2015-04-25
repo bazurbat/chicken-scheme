@@ -28,7 +28,6 @@
 (declare
   (unit eval)
   (uses expand modules)
-  (hide pds pdss pxss d) 
   (not inline ##sys#repl-read-hook ##sys#repl-print-hook 
        ##sys#read-prompt-hook ##sys#alias-global-hook ##sys#user-read-hook
        ##sys#syntax-error-hook))
@@ -49,8 +48,22 @@
 #define C_rnd_fix()		(C_fix(rand()))
 <#
 
+(module chicken.eval
+  (chicken-home define-reader-ctor dynamic-load-libraries
+   eval eval-handler extension-information
+   load load-library load-noisily load-relative load-verbose
+   interaction-environment null-environment scheme-report-environment
+   provide provided? repl repl-prompt require
+   repository-path set-dynamic-load-mode!)
+
+;; Exclude values defined within this module.
+(import (except scheme eval load interaction-environment null-environment scheme-report-environment))
+(import chicken chicken.foreign)
+
 (include "common-declarations.scm")
 (include "mini-srfi-1.scm")
+
+(register-feature! 'eval)
 
 (define-syntax d (syntax-rules () ((_ . _) (void))))
 
@@ -62,8 +75,7 @@
 (define-foreign-variable install-lib-name c-string "C_INSTALL_LIB_NAME")
 
 (define ##sys#core-library-modules
-  '(extras lolevel utils files tcp irregex posix srfi-4
-	   data-structures ports))
+  '(eval extras lolevel utils files tcp irregex posix srfi-4 data-structures ports))
 
 (define ##sys#core-syntax-modules
   '(chicken-syntax chicken-ffi-syntax))
@@ -720,12 +732,7 @@
 			  (compile '(##core#undefined) e #f tf cntr se) ]
 
 			 [(##core#declare)
-			  (if (memq #:compiling ##sys#features)
-			      ;; XXX FIXME: This is a bit of a hack.  Why is it needed at all?
-			      (for-each (lambda (d) (chicken.compiler.core#process-declaration d se)) (cdr x)) 
-			      (##sys#notice
-			       "declarations are ignored in interpreted code"
-			       x) )
+			  (##sys#notice "declarations are ignored in interpreted code" x)
 			  (compile '(##core#undefined) e #f tf cntr se) ]
 
 			 [(##core#define-inline ##core#define-constant)
@@ -949,6 +956,10 @@
 	(loop (##sys#slot mode 1)) ) )
     (##sys#set-dlopen-flags! now global) ) )
 
+(define load)
+(define load-noisily)
+(define load-relative)
+
 (let ([read read]
       [write write]
       [display display]
@@ -1165,7 +1176,7 @@
 		   (check (##sys#substring p 0 (fx- n 1))) ]
 		  [else p] ) ) ) ) ) ) )
 
-(define ##sys#repository-path
+(define repository-path
   (let ((rpath
 	 (if (##sys#fudge 22)		; private repository?
 	     (foreign-value "C_private_repository_path()" c-string)
@@ -1180,7 +1191,7 @@
 	  (set! rpath val)
 	  rpath))))
 
-(define repository-path ##sys#repository-path)
+(define ##sys#repository-path repository-path)
 
 (define ##sys#setup-mode #f)
 
@@ -1284,19 +1295,7 @@
 
 (define ##sys#do-the-right-thing
   (let ((vector->list vector->list))
-    (lambda (id comp? imp?)
-      (define (adjoin lst)
-	(if (memq id lst)
-	    lst
-	    (cons id lst)))
-      (define (add-req id syntax?)
-	(when comp?
-	  (##sys#hash-table-update!
-	   ;; XXX FIXME: This is a bit of a hack.  Why is it needed at all?
-	   chicken.compiler.core#file-requirements
-	   (if syntax? 'dynamic/syntax 'dynamic)
-	   adjoin
-	   (lambda () (list id)))))
+    (lambda (id comp? imp? #!optional (add-req void))
       (define (impform x id builtin?)
 	`(##core#begin
 	  ,x
@@ -1692,15 +1691,16 @@
 			       (##sys#read-error port "undefined sharp-comma constructor" spec) ) ) ) ) ) ) )
 	    (else (old char port)) ) ) ) )
 
+) ; eval module
 
 ;;; Simple invocation API:
 
 (declare
   (hide last-error run-safe store-result store-string
-	CHICKEN_yield CHICKEN_apply_to_string
-	CHICKEN_eval CHICKEN_eval_string CHICKEN_eval_to_string CHICKEN_eval_string_to_string
-	CHICKEN_apply CHICKEN_eval_apply CHICKEN_eval_to_string
-	CHICKEN_read CHICKEN_load CHICKEN_get_error_message) )
+	CHICKEN_yield CHICKEN_eval CHICKEN_eval_string
+	CHICKEN_eval_to_string CHICKEN_eval_string_to_string
+	CHICKEN_apply CHICKEN_apply_to_string CHICKEN_eval_apply
+	CHICKEN_read CHICKEN_load CHICKEN_get_error_message))
 	
 (define last-error #f)
 
@@ -1729,13 +1729,13 @@
 (define-external (CHICKEN_eval (scheme-object exp) ((c-pointer "C_word") result)) bool
   (run-safe
    (lambda ()
-     (store-result (eval exp) result) ) ) )
+     (store-result (chicken.eval#eval exp) result))))
 
 (define-external (CHICKEN_eval_string (c-string str) ((c-pointer "C_word") result)) bool
   (run-safe
    (lambda ()
-     (let ([i (open-input-string str)])
-       (store-result (eval (read i)) result)) )))
+     (let ((i (open-input-string str)))
+       (store-result (chicken.eval#eval (read i)) result)))))
 
 #>
 #define C_copy_result_string(str, buf, n)  (C_memcpy((char *)C_block_item(buf, 0), C_c_string(str), C_unfix(n)), ((char *)C_block_item(buf, 0))[ C_unfix(n) ] = '\0', C_SCHEME_TRUE)
@@ -1753,8 +1753,8 @@
   bool
   (run-safe
    (lambda ()
-     (let ([o (open-output-string)])
-       (write (eval exp) o) 
+     (let ((o (open-output-string)))
+       (write (chicken.eval#eval exp) o)
        (store-string (get-output-string o) bufsize buf)) ) ) )
 
 (define-external (CHICKEN_eval_string_to_string (c-string str) ((c-pointer "char") buf)
@@ -1762,8 +1762,8 @@
   bool
   (run-safe
    (lambda ()
-     (let ([o (open-output-string)])
-       (write (eval (read (open-input-string str))) o)
+     (let ((o (open-output-string)))
+       (write (chicken.eval#eval (read (open-input-string str))) o)
        (store-string (get-output-string o) bufsize buf)) ) ) )
 
 (define-external (CHICKEN_apply (scheme-object func) (scheme-object args) 
@@ -1776,18 +1776,18 @@
   bool
   (run-safe
    (lambda ()
-     (let ([o (open-output-string)])
+     (let ((o (open-output-string)))
        (write (apply func args) o) 
        (store-string (get-output-string o) bufsize buf)) ) ) )
 
 (define-external (CHICKEN_read (c-string str) ((c-pointer "C_word") result)) bool
   (run-safe
    (lambda ()
-     (let ([i (open-input-string str)])
+     (let ((i (open-input-string str)))
        (store-result (read i) result) ) ) ) )
 
 (define-external (CHICKEN_load (c-string str)) bool
-  (run-safe (lambda () (load str) #t)) )
+  (run-safe (lambda () (chicken.eval#load str) #t)))
 
 (define-external (CHICKEN_get_error_message ((c-pointer "char") buf) (int bufsize)) void
   (store-string (or last-error "No error") bufsize buf) )

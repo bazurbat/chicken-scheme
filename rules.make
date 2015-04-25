@@ -544,6 +544,7 @@ core.c: core.scm mini-srfi-1.scm \
 		chicken.compiler.scrutinizer.import.scm \
 		chicken.compiler.support.import.scm \
 		chicken.data-structures.import.scm \
+		chicken.eval.import.scm \
 		chicken.extras.import.scm
 optimizer.c: optimizer.scm mini-srfi-1.scm \
 		chicken.compiler.support.import.scm \
@@ -649,6 +650,8 @@ data-structures.c: data-structures.scm \
 		chicken.foreign.import.scm
 extras.c: extras.scm \
 		chicken.data-structures.import.scm
+eval.c: eval.scm \
+		chicken.foreign.import.scm
 files.c: files.scm \
 		chicken.data-structures.import.scm \
 		chicken.extras.import.scm \
@@ -678,7 +681,7 @@ bootstrap-lib = $(CHICKEN) $(call profile-flags, $@) $< $(CHICKEN_LIBRARY_OPTION
 library.c: $(SRCDIR)library.scm $(SRCDIR)banner.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
 eval.c: $(SRCDIR)eval.scm $(SRCDIR)common-declarations.scm $(SRCDIR)mini-srfi-1.scm
-	$(bootstrap-lib)
+	$(bootstrap-lib) -emit-import-library chicken.eval
 expand.c: $(SRCDIR)expand.scm $(SRCDIR)synrules.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
 modules.c: $(SRCDIR)modules.scm $(SRCDIR)common-declarations.scm $(SRCDIR)mini-srfi-1.scm

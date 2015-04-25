@@ -27,7 +27,7 @@
 
 (declare
   (block)
-  (uses data-structures utils files extras))
+  (uses data-structures eval utils files extras))
 
 (import chicken.data-structures
 	chicken.extras

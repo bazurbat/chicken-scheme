@@ -752,7 +752,7 @@
 (open-output-file (#(procedure #:clean #:enforce) open-output-file (string #!rest symbol) output-port))
 (close-input-port (#(procedure #:enforce) close-input-port (input-port) undefined))
 (close-output-port (#(procedure #:enforce) close-output-port (output-port) undefined))
-(load (procedure load (string #!optional (procedure (*) . *)) undefined))
+(chicken.eval#load (procedure chicken.eval#load (string #!optional (procedure (*) . *)) undefined))
 (read (#(procedure #:enforce) read (#!optional input-port) *))
 
 (eof-object? (#(procedure #:pure #:predicate eof) eof-object? (*) boolean))
@@ -796,7 +796,7 @@
 			 (let ((#(tmp2) #(2)))
 			   (#(tmp2) (#(tmp1)))))))
 
-(eval (procedure eval (* #!optional (struct environment)) . *))
+(chicken.eval#eval (procedure chicken.eval#eval (* #!optional (struct environment)) . *))
 (char-ready? (#(procedure #:enforce) char-ready? (#!optional input-port) boolean))
 
 (real-part (#(procedure #:clean #:enforce #:foldable) real-part (number) (or integer float ratnum))
@@ -838,14 +838,14 @@
 	     ((integer) (fixnum) (let ((#(tmp) #(1))) '1))
 	     ((ratnum) (integer) (##sys#slot #(1) '2)))
 
-(scheme-report-environment 
- (#(procedure #:clean #:enforce) scheme-report-environment (#!optional fixnum) (struct environment)))
+(chicken.eval#scheme-report-environment
+ (#(procedure #:clean #:enforce) chicken.eval#scheme-report-environment (#!optional fixnum) (struct environment)))
 
-(null-environment
- (#(procedure #:clean #:enforce) null-environment (#!optional fixnum) (struct environment)))
+(chicken.eval#null-environment
+ (#(procedure #:clean #:enforce) chicken.eval#null-environment (#!optional fixnum) (struct environment)))
 
-(interaction-environment
- (#(procedure #:clean) interaction-environment () (struct environment)))
+(chicken.eval#interaction-environment
+ (#(procedure #:clean) chicken.eval#interaction-environment () (struct environment)))
 
 (port-closed? (#(procedure #:clean #:enforce) port-closed? (port) boolean)
 	      ((port) (##sys#slot #(1) '8)))
@@ -924,7 +924,7 @@
 (call/cc (#(procedure #:enforce) call/cc ((procedure (*) . *)) . *))
 (case-sensitive (#(procedure #:clean) case-sensitive (#!optional *) *))
 (char-name (#(procedure #:clean #:enforce) char-name ((or char symbol) #!optional char) *)) ;XXX -> (or char symbol) ?
-(chicken-home (#(procedure #:clean) chicken-home () string))
+(chicken.eval#chicken-home (#(procedure #:clean) chicken.eval#chicken-home () string))
 (chicken-version (#(procedure #:pure) chicken-version (#!optional *) string))
 (command-line-arguments (#(procedure #:clean) command-line-arguments (#!optional (list-of string)) (list-of string)))
 (condition-predicate (#(procedure #:clean #:enforce) condition-predicate (symbol) (procedure ((struct condition)) boolean)))
@@ -966,7 +966,7 @@
  (#(procedure #:clean) current-read-table (#!optional (struct read-table)) (struct read-table)))
 
 (current-seconds (#(procedure #:clean) current-seconds () integer))
-(define-reader-ctor (#(procedure #:clean #:enforce) define-reader-ctor (symbol procedure) undefined))
+(chicken.eval#define-reader-ctor (#(procedure #:clean #:enforce) chicken.eval#define-reader-ctor (symbol procedure) undefined))
 (delete-file (#(procedure #:clean #:enforce) delete-file (string) string))
 (enable-warnings (#(procedure #:clean) enable-warnings (#!optional *) *))
 
@@ -990,7 +990,7 @@
 (exit (procedure exit (#!optional fixnum) noreturn))
 (exit-handler (#(procedure #:clean #:enforce) exit-handler (#!optional (procedure (fixnum) . *)) procedure))
 (expand (procedure expand (* #!optional list) *))
-(extension-information (#(procedure #:clean) extension-information (symbol) *))
+(chicken.eval#extension-information (#(procedure #:clean) chicken.eval#extension-information (symbol) *))
 (feature? (#(procedure #:clean) feature? (#!rest symbol) boolean))
 (features (#(procedure #:clean) features () (list-of symbol)))
 (file-exists? (#(procedure #:clean #:enforce) file-exists? (string) (or false string)))
@@ -1182,9 +1182,9 @@
 (keyword->string (#(procedure #:clean #:enforce) keyword->string (symbol) string))
 (keyword-style (#(procedure #:clean) keyword-style (#!optional symbol) symbol))
 (keyword? (#(procedure #:pure) keyword? (*) boolean))
-(load-library (#(procedure #:enforce) load-library (symbol #!optional string) undefined))
-(load-relative (#(procedure #:enforce) load-relative (string #!optional (procedure (*) . *)) undefined))
-(load-verbose (#(procedure #:clean) load-verbose (#!optional *) *))
+(chicken.eval#load-library (#(procedure #:enforce) chicken.eval#load-library (symbol #!optional string) undefined))
+(chicken.eval#load-relative (#(procedure #:enforce) chicken.eval#load-relative (string #!optional (procedure (*) . *)) undefined))
+(chicken.eval#load-verbose (#(procedure #:clean) chicken.eval#load-verbose (#!optional *) *))
 (machine-byte-order (#(procedure #:pure) machine-byte-order () symbol))
 (machine-type (#(procedure #:pure) machine-type () symbol))
 
@@ -1234,10 +1234,10 @@
 (register-feature! (#(procedure #:clean #:enforce) register-feature! (#!rest symbol) undefined))
 (remprop! (#(procedure #:clean #:enforce) remprop! (symbol symbol) undefined))
 (rename-file (#(procedure #:clean #:enforce) rename-file (string string) string))
-(repl (#(procedure #:enforce) repl (#!optional (procedure (*) . *)) undefined))
-(repl-prompt (#(procedure #:clean #:enforce) repl-prompt (#!optional (procedure () string)) procedure))
-(repository-path (#(procedure #:clean) repository-path (#!optional *) *))
-(require (#(procedure #:clean) require (#!rest (or string symbol)) undefined))
+(chicken.eval#repl (#(procedure #:enforce) chicken.eval#repl (#!optional (procedure (*) . *)) undefined))
+(chicken.eval#repl-prompt (#(procedure #:clean #:enforce) chicken.eval#repl-prompt (#!optional (procedure () string)) procedure))
+(chicken.eval#repository-path (#(procedure #:clean) chicken.eval#repository-path (#!optional *) *))
+(chicken.eval#require (#(procedure #:clean) chicken.eval#require (#!rest (or string symbol)) undefined))
 (reset (procedure reset () noreturn))
 (reset-handler (#(procedure #:clean #:enforce) reset-handler (#!optional (procedure () . *)) procedure))
 (return-to-host (procedure return-to-host () . *))

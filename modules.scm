@@ -26,6 +26,7 @@
 
 (declare
   (unit modules)
+  (uses eval)
   (disable-interrupts)
   (fixnum)
   (hide lookup merge-se module-indirect-exports)
@@ -304,7 +305,7 @@
 	(ifs (module-import-forms mod))
 	(sexports (module-sexports mod))
 	(mifs (module-meta-import-forms mod)))
-    `(,@(if (pair? ifs) `((eval '(import ,@(##sys#strip-syntax ifs)))) '())
+    `(,@(if (pair? ifs) `((chicken.eval#eval '(import ,@(##sys#strip-syntax ifs)))) '())
       ,@(if (pair? mifs) `((import ,@(##sys#strip-syntax mifs))) '())
       ,@(##sys#fast-reverse (map ##sys#strip-syntax (module-meta-expressions mod)))
       (##sys#register-compiled-module
@@ -891,12 +892,14 @@
 	     call-with-current-continuation input-port? output-port?
 	     current-input-port current-output-port call-with-input-file
 	     call-with-output-file open-input-file open-output-file
-	     close-input-port close-output-port load read eof-object? read-char
-	     peek-char write display write-char newline with-input-from-file
-	     with-output-to-file eval
+	     close-input-port close-output-port (load . chicken.eval#load)
+	     read read-char peek-char write display write-char newline eof-object?
+	     with-input-from-file with-output-to-file (eval . chicken.eval#eval)
 	     char-ready? imag-part real-part make-rectangular make-polar angle
 	     magnitude numerator denominator
-	     scheme-report-environment null-environment interaction-environment
+	     (scheme-report-environment . chicken.eval#scheme-report-environment)
+	     (null-environment . chicken.eval#null-environment)
+	     (interaction-environment . chicken.eval#interaction-environment)
 	     else))
       (r4rs-syntax
        ;;XXX better would be to move these into the "chicken"

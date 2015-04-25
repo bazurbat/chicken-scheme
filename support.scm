@@ -27,7 +27,7 @@
 
 (declare (unit support)
 	 (not inline ##sys#user-read-hook) ; XXX: Is this needed?
-	 (uses data-structures files extras ports) )
+	 (uses data-structures eval extras files ports))
 
 (module chicken.compiler.support
     (compiler-cleanup-hook bomb collected-debugging-output debugging
@@ -1588,7 +1588,7 @@
 ;;; Load support files
 
 (define (load-identifier-database name)	; Used only in batch-driver.scm
-  (and-let* ((rp (repository-path))
+  (and-let* ((rp (##sys#repository-path))
 	     (dbfile (file-exists? (make-pathname rp name))))
     (debugging 'p (sprintf "loading identifier database ~a ...~%" dbfile))
     (for-each

@@ -26,8 +26,7 @@
 
 (declare
   (unit scrutinizer)
-  (uses data-structures extras ports files
-	support) )
+  (uses data-structures eval extras ports files support))
 
 (module chicken.compiler.scrutinizer
     (scrutinize load-type-database emit-type-file
@@ -1788,7 +1787,7 @@
 
 ;;; type-db processing
 
-(define (load-type-database name specialize #!optional (path (repository-path)))
+(define (load-type-database name specialize #!optional (path (##sys#repository-path)))
   (define (clean! name)
     (when specialize (mark-variable name '##compiler#clean #t)))
   (define (pure! name)
