@@ -175,15 +175,18 @@
          ((null) (null) (let ((#(tmp) #(1))) '())))
 
 (memq (forall (a b) (#(procedure #:clean) memq (a (list-of b)) (or false (list-of b))))
+      ((* null) (let ((#(tmp) #(1))) '#f))
       ((* list) (##core#inline "C_u_i_memq" #(1) #(2))))
 
 (memv (forall (a b) (#(procedure #:clean) memv (a (list-of b)) (or false (list-of b))))
+      ((* null) (let ((#(tmp) #(1))) '#f))
       (((or symbol procedure immediate) list)
        (##core#inline "C_u_i_memq" #(1) #(2))))
 
 (member (forall (a b) (#(procedure #:clean) member
 		       (a (list-of b) #!optional (procedure (b a) *)) ; sic
 		       (or false (list-of b))))
+	((* null) (let ((#(tmp) #(1))) '#f))
 	(((or symbol procedure immediate) list)
 	 (##core#inline "C_u_i_memq" #(1) #(2)))
 	((* (list-of (or symbol procedure immediate)))
@@ -191,10 +194,12 @@
 
 (assq (forall (a b) (#(procedure #:clean) assq (* (list-of (pair a b)))
 		     (or false (pair a b))))
+      ((* null) (let ((#(tmp) #(1))) '#f))
       ((* (list-of pair)) (##core#inline "C_u_i_assq" #(1) #(2))))
 
 (assv (forall (a b) (#(procedure #:clean) assv (* (list-of (pair a b))) 
 		     (or false (pair a b))))
+      ((* null) (let ((#(tmp) #(1))) '#f))
       (((or symbol immediate procedure) (list-of pair))
        (##core#inline "C_u_i_assq" #(1) #(2)))
       ((* (list-of (pair (or symbol procedure immediate) *)))
@@ -203,6 +208,7 @@
 (assoc (forall (a b c) (#(procedure #:clean) assoc (a (list-of (pair b c))
 						      #!optional (procedure (b a) *)) ; sic
 			(or false (pair b c))))
+       ((* null) (let ((#(tmp) #(1))) '#f))
        (((or symbol procedure immediate) (list-of pair))
 	(##core#inline "C_u_i_assq" #(1) #(2)))
        ((* (list-of (pair (or symbol procedure immediate) *)))
