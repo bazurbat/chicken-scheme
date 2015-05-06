@@ -3060,17 +3060,12 @@ C_inline C_word C_a_i_fixnum_difference(C_word **ptr, C_word n, C_word x, C_word
 
 C_inline C_word C_a_i_fixnum_plus(C_word **ptr, C_word n, C_word x, C_word y)
 {
-  /* Exceptional situation: this will cause a real underflow */
-  if (x == C_fix(C_MOST_NEGATIVE_FIXNUM) && y == C_fix(C_MOST_NEGATIVE_FIXNUM)) {
-    return C_bignum1(ptr, 1, ((C_uword)-C_MOST_NEGATIVE_FIXNUM) << 1);
-  } else {
-    C_word z = C_unfix(x) + C_unfix(y);
+  C_word z = C_unfix(x) + C_unfix(y);
 
-    if(!C_fitsinfixnump(z)) {
-      return C_bignum1(ptr, z < 0, labs(z));
-    } else {
-      return C_fix(z);
-    }
+  if(!C_fitsinfixnump(z)) {
+    return C_bignum1(ptr, z < 0, labs(z));
+  } else {
+    return C_fix(z);
   }
 }
 
