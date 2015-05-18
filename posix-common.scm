@@ -580,7 +580,7 @@ EOF
     (lambda (tm)
       (check-time-vector 'local-time->seconds tm)
       (let ((t (##core#inline_allocate ("C_a_mktime" 7) tm (##sys#make-string tm-size #\nul))))
-        (if (fp= -1.0 t)
+        (if (= -1 t)
             (##sys#error 'local-time->seconds "cannot convert time vector to seconds" tm)
             t)))))
 
