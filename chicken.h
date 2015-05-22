@@ -2613,17 +2613,18 @@ C_inline C_word C_unsigned_int_to_num(C_word **ptr, C_uword n)
 
 C_inline C_word C_int64_to_num(C_word **ptr, C_s64 n)
 {
+#ifdef C_SIXTY_FOUR
   if(C_fitsinfixnump(n)) {
     return C_fix(n);
   } else {
     C_u64 un = n < 0 ? -n : n;
-#ifdef C_SIXTY_FOUR
     return C_bignum1(ptr, n < 0, un);
-#else
-    C_word res = C_bignum2(ptr, n < 0, (C_uword)un, (C_uword)(un >> 32));
-    return C_bignum_simplify(res);
-#endif
   }
+#else
+  C_u64 un = n < 0 ? -n : n;
+  C_word res = C_bignum2(ptr, n < 0, (C_uword)un, (C_uword)(un >> 32));
+  return C_bignum_simplify(res);
+#endif
 }
 
 C_inline C_word C_uint64_to_num(C_word **ptr, C_u64 n)
@@ -2690,15 +2691,28 @@ C_inline void *C_scheme_or_c_pointer(C_word x)
 
 C_inline C_long C_num_to_long(C_word x)
 {
-  if(x & C_FIXNUM_BIT) return C_unfix(x);
-  else return (C_long)C_flonum_magnitude(x);
+  if(x & C_FIXNUM_BIT) {
+    return (C_long)C_unfix(x);
+  } else if (C_truep(C_bignump(x))) {
+    if (C_bignum_negativep(x)) return -(C_long)C_bignum_digits(x)[0];
+    else return (C_long)C_bignum_digits(x)[0];
+  } else {
+    /* XXX OBSOLETE remove on the next round, remove check above */
+    return (C_long)C_flonum_magnitude(x);
+  }
 }
 
 
 C_inline C_ulong C_num_to_unsigned_long(C_word x)
 {
-  if(x & C_FIXNUM_BIT) return C_unfix(x);
-  else return (C_ulong)C_flonum_magnitude(x);
+  if(x & C_FIXNUM_BIT) {
+    return (C_ulong)C_unfix(x);
+  } else if (C_truep(C_bignump(x))) {
+    return (C_ulong)C_bignum_digits(x)[0];
+  } else {
+    /* XXX OBSOLETE remove on the next round, remove check above */
+    return (C_ulong)C_flonum_magnitude(x);
+  }
 }
 
 

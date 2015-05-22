@@ -550,10 +550,10 @@ EOF
 (NNNvector->list u16vector)
 (NNNvector->list s16vector)
 ;; The alloc amounts here are for 32-bit words; this over-allocates on 64-bits
-(NNNvector->list u32vector 2)
-(NNNvector->list s32vector 2)
-(NNNvector->list u64vector 3)
-(NNNvector->list s64vector 3)
+(NNNvector->list u32vector 6)
+(NNNvector->list s32vector 6)
+(NNNvector->list u64vector 7)
+(NNNvector->list s64vector 7)
 (NNNvector->list f32vector 4)
 (NNNvector->list f64vector 4)
 

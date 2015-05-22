@@ -599,7 +599,7 @@ of a given type.
 
 ==== C_num_to_int
 
- [C function] int C_num_to_int (C_word fixnum_or_flonum)
+ [C function] int C_num_to_int (C_word fixnum_or_bignum)
 
 ==== C_pointer_address
 

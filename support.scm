@@ -1129,12 +1129,11 @@
 		  c-string-list c-string-list*)
 	(words->bytes 3) )
        ((unsigned-integer long integer size_t unsigned-long integer32 unsigned-integer32)
-	;; OBSOLETE: replace 4 with 3 after bootstrap completed
-	(words->bytes #;3 4) )  ; 1 bignum digit on 32-bit (overallocs on 64-bit)
+	(words->bytes 6) )    ; 1 bignum digit on 32-bit (overallocs on 64-bit)
        ((float double number) 
 	(words->bytes 4) )		; possibly 8-byte aligned 64-bit double
        ((integer64 unsigned-integer64)
-	(words->bytes 4))     ; 2 bignum digits on 32-bit (overallocs on 64-bit)
+	(words->bytes 7))     ; 2 bignum digits on 32-bit (overallocs on 64-bit)
        (else
 	(cond ((and (symbol? t) (lookup-foreign-type t))
 	       => (lambda (t2) (next (vector-ref t2 0)) ) )

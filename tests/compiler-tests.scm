@@ -263,6 +263,85 @@
 		 "C_return(x);")
 	       #xAB54A98CEB1F0AD2)))
 
+
+;; Test the maximum and minimum values of the FFI's integer types
+(define-syntax test-ffi-type-limits
+  (syntax-rules (signed unsigned)
+    ((_ ?type-name unsigned ?bits)
+     (let ((limit (arithmetic-shift 1 ?bits)))
+       (print "Testing unsigned FFI type \"" '?type-name "\" (" ?bits " bits):")
+       (print "Can hold maximum value " (sub1 limit) "...")
+       (assert
+	(eqv? (sub1 limit)
+	      ((foreign-lambda* ?type-name ((?type-name x))
+		 "C_return(x);") (sub1 limit))))
+       ;; TODO: Should we test for these?
+       #;(print "Cannot hold one more than maximum value, " limit "...")
+       #;(assert
+	(handle-exceptions exn #t
+	  (begin ((foreign-lambda* ?type-name ((?type-name x))
+		    "C_return(x);") limit)
+		 #f)))
+       #;(print "Cannot hold -1 (any fixnum negative value)")
+       #;(assert
+	(handle-exceptions exn #t
+	  (begin ((foreign-lambda* ?type-name ((?type-name x))
+		    "C_return(x);") -1)
+		 #f)))
+       (print "Cannot hold -2^64 (any bignum negative value < smallest int64)")
+       (assert
+	(handle-exceptions exn #t
+	  (begin ((foreign-lambda* ?type-name ((?type-name x))
+		    "C_return(x);") #x-10000000000000000)
+		 #f)))))
+    ((_ ?type-name signed ?bits)
+     (let ((limit (arithmetic-shift 1 (sub1 ?bits))))
+       (print "Testing signed FFI type \"" '?type-name "\" (" ?bits " bits):")
+       (print "Can hold maximum value " (sub1 limit) "...")
+       (assert
+	(eqv? (sub1 limit)
+	      ((foreign-lambda* ?type-name ((?type-name x))
+		 "C_return(x);") (sub1 limit))))
+       (print "Can hold minimum value " (- limit) "...")
+       (assert
+	(eqv? (- limit)
+	      ((foreign-lambda* ?type-name ((?type-name x))
+		 "C_return(x);") (- limit))))
+       ;; TODO: Should we check for these?
+       #;(print "Cannot hold one more than maximum value " limit "...")
+       #;(assert
+	(handle-exceptions exn #t
+	  (begin ((foreign-lambda* integer ((integer x))
+		    "C_return(x);") limit)
+		 #f)))
+       #;(print "Cannot hold one less than minimum value " (- limit) "...")
+       #;(assert
+	(handle-exceptions exn #t
+	  (begin ((foreign-lambda* integer ((integer x))
+		    "C_return(x);") (sub1 (- limit)))
+		 #f)))))))
+
+(test-ffi-type-limits unsigned-integer32 unsigned 32)
+(test-ffi-type-limits integer32 signed 32)
+
+(test-ffi-type-limits unsigned-integer64 unsigned 64)
+(test-ffi-type-limits integer64 signed 64)
+
+(test-ffi-type-limits
+ unsigned-integer unsigned
+ (foreign-value "sizeof(unsigned int) * CHAR_BIT" int))
+
+(test-ffi-type-limits
+ integer signed (foreign-value "sizeof(int) * CHAR_BIT" int))
+
+(test-ffi-type-limits
+ unsigned-long unsigned
+ (foreign-value "sizeof(unsigned long) * CHAR_BIT" int))
+
+(test-ffi-type-limits
+ long signed (foreign-value "sizeof(long) * CHAR_BIT" int))
+
+
 ;; #1059: foreign vector types use wrong lolevel accessors, causing
 ;; paranoid DEBUGBUILD assertions to fail.
 (define-syntax srfi-4-vector-length

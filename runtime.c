@@ -6938,6 +6938,12 @@ C_regparm C_word C_fcall C_i_foreign_integer_argumentp(C_word x)
 
   if((x & C_FIXNUM_BIT) != 0) return x;
 
+  if(C_truep(C_i_bignump(x))) {
+    if (C_bignum_size(x) == 1) return x;
+    else barf(C_BAD_ARGUMENT_TYPE_FOREIGN_LIMITATION, NULL, x);
+  }
+
+  /* XXX OBSOLETE: This should be removed on the next round */
   if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
     m = C_flonum_magnitude(x);
 
@@ -6955,6 +6961,16 @@ C_regparm C_word C_fcall C_i_foreign_integer64_argumentp(C_word x)
 
   if((x & C_FIXNUM_BIT) != 0) return x;
   
+  if(C_truep(C_i_bignump(x))) {
+#ifdef C_SIXTY_FOUR
+    if (C_bignum_size(x) == 1) return x;
+#else
+    if (C_bignum_size(x) <= 2) return x;
+#endif
+    else barf(C_BAD_ARGUMENT_TYPE_FOREIGN_LIMITATION, NULL, x);
+  }
+
+  /* XXX OBSOLETE: This should be removed on the next round */
   if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
     m = C_flonum_magnitude(x);
 
