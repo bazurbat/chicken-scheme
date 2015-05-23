@@ -2643,13 +2643,20 @@ C_inline C_word C_uint64_to_num(C_word **ptr, C_u64 n)
 
 C_inline C_word C_long_to_num(C_word **ptr, C_long n)
 {
-  return C_int64_to_num(ptr, (C_s64)n);
+  if(C_fitsinfixnump(n)) {
+    return C_fix(n);
+  } else {
+    return C_bignum1(ptr, n < 0, labs(n));
+  }
 }
-
 
 C_inline C_word C_unsigned_long_to_num(C_word **ptr, C_ulong n)
 {
-  return C_uint64_to_num(ptr, (C_u64)n);
+  if(C_ufitsinfixnump(n)) {
+    return C_fix(n);
+  } else {
+    return C_bignum1(ptr, 0, n);
+  }
 }
 
 
