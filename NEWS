@@ -1,5 +1,8 @@
 5.0.0 (preliminary)
 
+- Compiler
+  - Fixed an off by one allocation problem in generated C code for (list ...).
+
 - Core libraries
   - Removed support for memory-mapped files (posix), queues (data-structures),
     binary-search (data-structures) and object-eviction (lolevel). These

@@ -1170,8 +1170,9 @@
     ;; (<alloc-op> ...) -> (##core#inline_allocate (<aiop> <words>) ...)
     ((16) ; classargs = (<argc> <aiop> <safe> <words> [<counted>])
      ;; - <argc> may be #f, saying that any number of arguments is allowed,
-     ;; - <words> may be a list of one element (the number of words), meaning that
-     ;;   the words are to be multiplied with the number of arguments.
+     ;; - <words> may be a list of two elements (the base number of words and
+     ;;   the number of words per element), meaning that the words are to be
+     ;;   multiplied with the number of arguments.
      ;; - <words> may also be #t, meaning that the number of words is the same as the
      ;;   number of arguments plus 1.
      ;; - if <counted> is given and true and <argc> is between 1-8, append "<count>"
@@ -1194,7 +1195,8 @@
 			      (conc (second classargs) rargc)
 			      (second classargs) )
 			  (cond ((eq? #t w) (add1 rargc))
-				((pair? w) (* rargc (car w)))
+				((pair? w) (+ (car w)
+					      (* rargc (cadr w))))
 				(else w) ) )
 		    callargs) ) ) ) ) )
 
