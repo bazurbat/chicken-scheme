@@ -56,4 +56,8 @@ return n;}
 			  "         C_fix(2));")))))
   (assert (equal? '(1 2) result)))
 
+;; dropped conditional branch is ignored
+(compiler-typecase (if #t 'a "a")
+  (symbol 1))
+
 )
