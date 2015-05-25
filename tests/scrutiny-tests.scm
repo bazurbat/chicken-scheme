@@ -6,6 +6,10 @@
       (let ((x (+ 3 4)))
 	(if x 1 2)))))			; expected boolean but got number in conditional
 
+(define (b)
+  (let ((x #t))
+    (if x 1 2)))			; #t is always true
+
 (define (foo x)
   (if x 				; branches return differing number of results
       (values 1 2)

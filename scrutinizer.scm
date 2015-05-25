@@ -209,7 +209,7 @@
 	       ((or) (every always-true1 (cdr t)))
 	       ((forall) (always-true1 (third t)))
 	       (else #t)))
-	    ((memq t '(* boolean true false undefined noreturn)) #f)
+	    ((memq t '(* boolean false undefined noreturn)) #f)
 	    (else #t)))
 
     (define (always-true t loc x)
