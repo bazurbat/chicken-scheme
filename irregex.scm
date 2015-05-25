@@ -89,6 +89,10 @@
 ;; so find-tail is unused (it's only used in the "find" definition)
 (declare (unused find-tail))
 
+;; This is to silence an "always true" warning that we can't fix
+;; because we don't want to needlessly change irregex-core.
+(declare (type (*allow-utf8-mode?* boolean)))
+
 (define-syntax build-cache
   (er-macro-transformer 
    (lambda (x r c)
