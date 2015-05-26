@@ -2782,6 +2782,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
     if(gc_mode == GC_REALLOC) {
       C_rereclaim2(percentage(heap_size, C_heap_growth), 0);
       gc_mode = GC_MAJOR;
+      count = (C_uword)tospace_top - (C_uword)tospace_start;
       goto i_like_spaghetti;
     }
 
