@@ -275,15 +275,14 @@
 	(eqv? (sub1 limit)
 	      ((foreign-lambda* ?type-name ((?type-name x))
 		 "C_return(x);") (sub1 limit))))
-       ;; TODO: Should we test for these?
-       #;(print "Cannot hold one more than maximum value, " limit "...")
-       #;(assert
+       (print "Cannot hold one more than maximum value, " limit "...")
+       (assert
 	(handle-exceptions exn #t
 	  (begin ((foreign-lambda* ?type-name ((?type-name x))
 		    "C_return(x);") limit)
 		 #f)))
-       #;(print "Cannot hold -1 (any fixnum negative value)")
-       #;(assert
+       (print "Cannot hold -1 (any fixnum negative value)")
+       (assert
 	(handle-exceptions exn #t
 	  (begin ((foreign-lambda* ?type-name ((?type-name x))
 		    "C_return(x);") -1)
@@ -307,17 +306,16 @@
 	(eqv? (- limit)
 	      ((foreign-lambda* ?type-name ((?type-name x))
 		 "C_return(x);") (- limit))))
-       ;; TODO: Should we check for these?
-       #;(print "Cannot hold one more than maximum value " limit "...")
-       #;(assert
+       (print "Cannot hold one more than maximum value " limit "...")
+       (assert
 	(handle-exceptions exn #t
-	  (begin ((foreign-lambda* integer ((integer x))
+	  (begin ((foreign-lambda* ?type-name ((?type-name x))
 		    "C_return(x);") limit)
 		 #f)))
-       #;(print "Cannot hold one less than minimum value " (- limit) "...")
-       #;(assert
+       (print "Cannot hold one less than minimum value " (- limit) "...")
+       (assert
 	(handle-exceptions exn #t
-	  (begin ((foreign-lambda* integer ((integer x))
+	  (begin ((foreign-lambda* ?type-name ((?type-name x))
 		    "C_return(x);") (sub1 (- limit)))
 		 #f)))))))
 

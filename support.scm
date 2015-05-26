@@ -956,7 +956,13 @@
 		(nonnull-s8vector . s8vector) (nonnull-s16vector . s16vector)
 		(nonnull-u32vector . u32vector) (nonnull-s32vector . s32vector)
 		(nonnull-u64vector . u64vector) (nonnull-s64vector . s64vector)
-		(nonnull-f32vector . f32vector) (nonnull-f64vector . f64vector))))
+		(nonnull-f32vector . f32vector) (nonnull-f64vector . f64vector)))
+	(ftmap '((integer . "int") (unsigned-integer . "unsigned int")
+		 (integer32 . "C_s32") (unsigned-integer32 . "C_u32")
+		 (integer64 . "C_s64") (unsigned-integer64 . "C_u64")
+		 (short . "short") (unsigned-short . "unsigned short")
+		 (long . "long") (unsigned-long . "unsigned long")
+		 (size_t . "size_t"))))
     (lambda (param type)
       (follow-without-loop
        type
@@ -964,7 +970,8 @@
 	 (let repeat ((t t))
 	   (case t
 	     ((char unsigned-char) (if unsafe param `(##sys#foreign-char-argument ,param)))
-	     ((int unsigned-int short unsigned-short byte unsigned-byte int32 unsigned-int32)
+	     ;; TODO: Should "[unsigned-]byte" be range checked?
+	     ((int unsigned-int byte unsigned-byte int32 unsigned-int32)
 	      (if unsafe param `(##sys#foreign-fixnum-argument ,param)))
 	     ((float double number) (if unsafe param `(##sys#foreign-flonum-argument ,param)))
 	     ((blob scheme-pointer)
@@ -1010,18 +1017,21 @@
 		  `(##sys#foreign-struct-wrapper-argument 
 		    ',(##sys#slot (assq t tmap) 1)
 		    ,param) ) )
-	     ((integer long size_t integer32)
-	      (if unsafe param `(##sys#foreign-integer-argument ,param)))
-	     ((integer64)
-	      (if unsafe param `(##sys#foreign-integer64-argument ,param)))
-	     ((unsigned-integer unsigned-integer32 unsigned-long)
-	      (if unsafe
-		  param
-		  `(##sys#foreign-unsigned-integer-argument ,param) ) )
-	     ((unsigned-integer64)
-	      (if unsafe
-		  param
-		  `(##sys#foreign-unsigned-integer64-argument ,param) ) )
+	     ((integer32 integer64 integer short long size_t)
+	      (let* ((foreign-type (##sys#slot (assq t ftmap) 1))
+		     (size-expr (sprintf "sizeof(~A) * CHAR_BIT" foreign-type)))
+		(if unsafe
+		    param
+		    `(##sys#foreign-ranged-integer-argument
+		      ,param (foreign-value ,size-expr int)))))
+	     ((unsigned-short unsigned-long unsigned-integer
+			      unsigned-integer32 unsigned-integer64)
+	      (let* ((foreign-type (##sys#slot (assq t ftmap) 1))
+		     (size-expr (sprintf "sizeof(~A) * CHAR_BIT" foreign-type)))
+		(if unsafe
+		    param
+		    `(##sys#foreign-unsigned-ranged-integer-argument
+		      ,param (foreign-value ,size-expr int)))))
 	     ((c-pointer c-string-list c-string-list*)
 	      (let ((tmp (gensym)))
 		`(let ((,tmp ,param))

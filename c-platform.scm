@@ -196,7 +196,7 @@
     ##sys#foreign-char-argument ##sys#foreign-fixnum-argument ##sys#foreign-flonum-argument
     ##sys#foreign-block-argument ##sys#foreign-struct-wrapper-argument
     ##sys#foreign-string-argument ##sys#foreign-pointer-argument ##sys#void
-    ##sys#foreign-integer-argument ##sys#foreign-unsigned-integer-argument
+    ##sys#foreign-ranged-integer-argument ##sys#foreign-unsigned-ranged-integer-argument
     ##sys#peek-fixnum ##sys#setislot ##sys#poke-integer ##sys#permanent? ##sys#values ##sys#poke-double
     ##sys#intern-symbol ##sys#make-symbol ##sys#null-pointer? ##sys#peek-byte
     ##sys#file-exists? ##sys#substring-index ##sys#substring-index-ci ##sys#lcm ##sys#gcd))
@@ -818,8 +818,8 @@
 (rewrite '##sys#foreign-struct-wrapper-argument 17 2 "C_i_foreign_struct_wrapper_argumentp")
 (rewrite '##sys#foreign-string-argument 17 1 "C_i_foreign_string_argumentp")
 (rewrite '##sys#foreign-pointer-argument 17 1 "C_i_foreign_pointer_argumentp")
-(rewrite '##sys#foreign-integer-argument 17 1 "C_i_foreign_integer_argumentp")
-(rewrite '##sys#foreign-unsigned-integer-argument 17 1 "C_i_foreign_unsigned_integer_argumentp")
+(rewrite '##sys#foreign-ranged-integer-argument 17 2 "C_i_foreign_ranged_integer_argumentp")
+(rewrite '##sys#foreign-unsigned-ranged-integer-argument 17 2 "C_i_foreign_unsigned_ranged_integer_argumentp")
 (rewrite '##sys#direct-return 17 2 "C_direct_return")
 
 (rewrite 'blob-size 2 1 "C_block_size" #f)

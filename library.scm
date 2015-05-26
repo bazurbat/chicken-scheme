@@ -5130,14 +5130,19 @@ EOF
 (define (##sys#foreign-pointer-argument x) (##core#inline "C_i_foreign_pointer_argumentp" x))
 (define (##sys#foreign-tagged-pointer-argument x tx) (##core#inline "C_i_foreign_tagged_pointer_argumentp" x tx))
 (define (##sys#foreign-integer-argument x) (##core#inline "C_i_foreign_integer_argumentp" x))
+;; OBSOLETE
 (define (##sys#foreign-integer64-argument x) (##core#inline "C_i_foreign_integer64_argumentp" x))
-
+;; OBSOLETE
 (define (##sys#foreign-unsigned-integer-argument x)
   (##core#inline "C_i_foreign_unsigned_integer_argumentp" x))
-
+;; OBSOLETE
 (define (##sys#foreign-unsigned-integer64-argument x)
   (##core#inline "C_i_foreign_unsigned_integer64_argumentp" x))
 
+(define (##sys#foreign-ranged-integer-argument obj size)
+  (##core#inline "C_i_foreign_ranged_integer_argumentp" obj size))
+(define (##sys#foreign-unsigned-ranged-integer-argument obj size)
+  (##core#inline "C_i_foreign_unsigned_ranged_integer_argumentp" obj size))
 
 ;;; Low-level threading interface:
 

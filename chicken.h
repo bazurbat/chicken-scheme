@@ -2200,10 +2200,16 @@ C_fctexport C_word C_fcall C_i_foreign_symbol_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_tagged_pointer_argumentp(C_word x, C_word t) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_pointer_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_scheme_or_c_pointer_argumentp(C_word x) C_regparm;
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport C_word C_fcall C_i_foreign_integer_argumentp(C_word x) C_regparm;
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport C_word C_fcall C_i_foreign_unsigned_integer_argumentp(C_word x) C_regparm;
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport C_word C_fcall C_i_foreign_integer64_argumentp(C_word x) C_regparm;
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport C_word C_fcall C_i_foreign_unsigned_integer64_argumentp(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_i_foreign_ranged_integer_argumentp(C_word x, C_word bits) C_regparm;
+C_fctexport C_word C_fcall C_i_foreign_unsigned_ranged_integer_argumentp(C_word x, C_word bits) C_regparm;
 
 C_fctexport C_char *C_lookup_procedure_id(void *ptr);
 C_fctexport void *C_lookup_procedure_ptr(C_char *id);

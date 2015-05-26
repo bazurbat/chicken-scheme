@@ -5885,6 +5885,19 @@ C_regparm C_word C_fcall C_a_i_bitwise_xor(C_word **a, int c, C_word n1, C_word 
   else return C_flonum(a, nn1);
 }
 
+/* Faster version that ignores sign in bignums. TODO: Omit labs() too? */
+C_inline int integer_length_abs(C_word x)
+{
+  if (x & C_FIXNUM_BIT) {
+    return C_ilen(labs(C_unfix(x)));
+  } else {
+    C_uword result = (C_bignum_size(x) - 1) * C_BIGNUM_DIGIT_LENGTH,
+            *last_digit = C_bignum_digits(x) + C_bignum_size(x) - 1,
+            last_digit_length = C_ilen(*last_digit);
+    return result + last_digit_length;
+  }
+}
+
 C_regparm C_word C_fcall C_i_integer_length(C_word x)
 {
   if (x & C_FIXNUM_BIT) {
@@ -6931,7 +6944,36 @@ C_regparm C_word C_fcall C_i_foreign_tagged_pointer_argumentp(C_word x, C_word t
   return x;
 }
 
+C_regparm C_word C_fcall C_i_foreign_ranged_integer_argumentp(C_word x, C_word bits)
+{
+  if((x & C_FIXNUM_BIT) != 0) {
+    if (C_truep(C_fixnum_lessp(C_i_fixnum_length(x), bits))) return x;
+    else barf(C_BAD_ARGUMENT_TYPE_FOREIGN_LIMITATION, NULL, x);
+  } else if (C_truep(C_i_bignump(x))) {
+    if (C_truep(C_fixnum_lessp(C_i_integer_length(x), bits))) return x;
+    else barf(C_BAD_ARGUMENT_TYPE_FOREIGN_LIMITATION, NULL, x);
+  } else {
+    barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, NULL, x);
+  }
+}
 
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
+C_regparm C_word C_fcall C_i_foreign_unsigned_ranged_integer_argumentp(C_word x, C_word bits)
+{
+  if((x & C_FIXNUM_BIT) != 0) {
+    if(x & C_INT_SIGN_BIT) barf(C_BAD_ARGUMENT_TYPE_NO_UINTEGER_ERROR, NULL, x);
+    else if(C_ilen(C_unfix(x)) <= C_unfix(bits)) return x;
+    else barf(C_BAD_ARGUMENT_TYPE_FOREIGN_LIMITATION, NULL, x);
+  } else if(C_truep(C_i_bignump(x))) {
+    if(C_bignum_negativep(x)) barf(C_BAD_ARGUMENT_TYPE_NO_UINTEGER_ERROR, NULL, x);
+    else if(integer_length_abs(x) <= C_unfix(bits)) return x;
+    else barf(C_BAD_ARGUMENT_TYPE_FOREIGN_LIMITATION, NULL, x);
+  } else {
+    barf(C_BAD_ARGUMENT_TYPE_NO_UINTEGER_ERROR, NULL, x);
+  }
+}
+
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_regparm C_word C_fcall C_i_foreign_integer_argumentp(C_word x)
 {
   double m;
@@ -6955,6 +6997,7 @@ C_regparm C_word C_fcall C_i_foreign_integer_argumentp(C_word x)
 }
 
 
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_regparm C_word C_fcall C_i_foreign_integer64_argumentp(C_word x)
 {
   double m, r;
@@ -6982,6 +7025,7 @@ C_regparm C_word C_fcall C_i_foreign_integer64_argumentp(C_word x)
 }
 
 
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_regparm C_word C_fcall C_i_foreign_unsigned_integer_argumentp(C_word x)
 {
   double m ,r;
@@ -6993,7 +7037,6 @@ C_regparm C_word C_fcall C_i_foreign_unsigned_integer_argumentp(C_word x)
     else barf(C_BAD_ARGUMENT_TYPE_FOREIGN_LIMITATION, NULL, x);
   }
 
-  /* XXX OBSOLETE: This should be removed on the next round */
   if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
     m = C_flonum_magnitude(x);
 
@@ -7004,7 +7047,7 @@ C_regparm C_word C_fcall C_i_foreign_unsigned_integer_argumentp(C_word x)
   return C_SCHEME_UNDEFINED;
 }
 
-
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_regparm C_word C_fcall C_i_foreign_unsigned_integer64_argumentp(C_word x)
 {
   double m, r;
@@ -7020,7 +7063,6 @@ C_regparm C_word C_fcall C_i_foreign_unsigned_integer64_argumentp(C_word x)
     else barf(C_BAD_ARGUMENT_TYPE_FOREIGN_LIMITATION, NULL, x);
   }
 
-  /* XXX OBSOLETE: This should be removed on the next round */
   if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
     m = C_flonum_magnitude(x);
 
@@ -8625,18 +8667,6 @@ bignum_divrem(C_word **ptr, C_word x, C_word y, C_word *q, C_word *r)
       if (r != NULL) *r = C_bignum_simplify(*r);
     }
     break;
-  }
-}
-
-C_inline int integer_length_abs(C_word x)
-{
-  if (x & C_FIXNUM_BIT) {
-    return C_ilen(labs(C_unfix(x)));
-  } else {
-    C_uword result = (C_bignum_size(x) - 1) * C_BIGNUM_DIGIT_LENGTH,
-            *last_digit = C_bignum_digits(x) + C_bignum_size(x) - 1,
-            last_digit_length = C_ilen(*last_digit);
-    return result + last_digit_length;
   }
 }
 
