@@ -1651,8 +1651,8 @@
 			       (svar (first (node-parameters val))))
 			   ;;XXX should we also accept "##core#direct_lambda" ?
 			   (and (eq? '##core#lambda (node-class sval))
-				(= (length (or (get db svar 'references) '()))
-				   (length (or (get db svar 'call-sites) '())))
+				(= (length (or (db-get db svar 'references) '()))
+				   (length (or (db-get db svar 'call-sites) '())))
 				(memq svar e)
 				(user-lambda? sval))))
 		    ;; "(set! VAR (lambda ...))" - add to group
@@ -1777,7 +1777,7 @@
 	 ;; modify call-sites to invoke dispatch loop instead
 	 (for-each
 	  (lambda (b)
-	    (let ((sites (get db (car b) 'call-sites)))
+	    (let ((sites (db-get db (car b) 'call-sites)))
 	      (for-each
 	       (lambda (site)
 		 (let* ((callnode (cdr site))
