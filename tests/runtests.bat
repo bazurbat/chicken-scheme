@@ -36,6 +36,12 @@ if errorlevel 1 exit /b 1
 a.out
 if errorlevel 1 exit /b 1
 
+echo ======================================== optimizer tests  ...
+%compile% clustering-tests.scm -clustering
+if errorlevel 1 exit /b 1
+a.out
+if errorlevel 1 exit /b 1
+
 echo ======================================== scrutiny tests ...
 %compile% typematch-tests.scm -specialize -w
 if errorlevel 1 exit /b 1

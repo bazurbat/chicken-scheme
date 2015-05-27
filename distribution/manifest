@@ -94,6 +94,7 @@ build-version.scm
 build-version.c
 buildid
 buildtag.h
+tests/clustering-tests.scm
 tests/data-structures-tests.scm
 tests/environment-tests.scm
 tests/gobble.scm

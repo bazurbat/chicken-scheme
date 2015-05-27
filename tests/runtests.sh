@@ -81,6 +81,10 @@ echo "======================================== compiler inlining tests  ..."
 $compile inlining-tests.scm -optimize-level 3
 ./a.out
 
+echo "======================================== optimizer tests  ..."
+$compile clustering-tests.scm -clustering
+./a.out
+
 echo "======================================== scrutiny tests ..."
 $compile typematch-tests.scm -specialize -w
 ./a.out
