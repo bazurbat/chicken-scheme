@@ -1,5 +1,12 @@
 5.0.0 (preliminary)
 
+- Runtime system
+  - Added support for the full numeric tower, including various new
+    procedures taken from the "numbers" egg.  All calculations will
+    now return exact numbers where possible, so code relying on flonums
+    being returned may need to be changed if rational numbers do not
+    provide the desired performance.
+
 - Compiler
   - Fixed an off by one allocation problem in generated C code for (list ...).
 
