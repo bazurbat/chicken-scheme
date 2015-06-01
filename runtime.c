@@ -9625,15 +9625,18 @@ C_regparm C_word C_fcall C_i_bignum_cmp(C_word x, C_word y)
 
 void C_ccall C_nequalp(C_word c, C_word closure, C_word k, ...)
 {
-  C_word x, y, result;
+  C_word x, y, result = C_SCHEME_TRUE;
   va_list v;
 
-  if (c < 4) C_bad_argc_2(c, 4, closure);
-
-  c -= 2; 
+  c -= 2;
+  if (c == 0) C_kontinue(k, result);
   va_start(v, k);
 
   x = va_arg(v, C_word);
+
+  if (c == 1 && !C_truep(C_i_numberp(x)))
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "=", x);
+
   while(--c) {
     y = va_arg(v, C_word);
     result = C_i_nequalp(x, y);
@@ -9662,15 +9665,18 @@ C_regparm C_word C_fcall C_i_integer_equalp(C_word x, C_word y)
 
 void C_ccall C_greaterp(C_word c, C_word closure, C_word k, ...)
 {
-  C_word x, y, result;
+  C_word x, y, result = C_SCHEME_TRUE;
   va_list v;
 
-  if (c < 4) C_bad_argc_2(c, 4, closure);
-
   c -= 2; 
+  if (c == 0) C_kontinue(k, result);
   va_start(v, k);
 
   x = va_arg(v, C_word);
+
+  if (c == 1 && !C_truep(C_i_numberp(x)))
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, ">", x);
+
   while(--c) {
     y = va_arg(v, C_word);
     result = C_i_greaterp(x, y);
@@ -9705,15 +9711,17 @@ C_regparm C_word C_fcall C_i_integer_greaterp(C_word x, C_word y)
 
 void C_ccall C_lessp(C_word c, C_word closure, C_word k, ...)
 {
-  C_word x, y, result;
+  C_word x, y, result = C_SCHEME_TRUE;
   va_list v;
 
-  if (c < 4) C_bad_argc_2(c, 4, closure);
-
   c -= 2; 
+  if (c == 0) C_kontinue(k, result);
   va_start(v, k);
 
   x = va_arg(v, C_word);
+  if (c == 1 && !C_truep(C_i_numberp(x)))
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "<", x);
+
   while(--c) {
     y = va_arg(v, C_word);
     result = C_i_lessp(x, y);
@@ -9748,15 +9756,18 @@ C_regparm C_word C_fcall C_i_integer_lessp(C_word x, C_word y)
 
 void C_ccall C_greater_or_equal_p(C_word c, C_word closure, C_word k, ...)
 {
-  C_word x, y, result;
+  C_word x, y, result = C_SCHEME_TRUE;
   va_list v;
 
-  if (c < 4) C_bad_argc_2(c, 4, closure);
-
   c -= 2; 
+  if (c == 0) C_kontinue(k, result);
   va_start(v, k);
 
   x = va_arg(v, C_word);
+
+  if (c == 1 && !C_truep(C_i_numberp(x)))
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, ">=", x);
+
   while(--c) {
     y = va_arg(v, C_word);
     result = C_i_greater_or_equalp(x, y);
@@ -9793,15 +9804,18 @@ C_regparm C_word C_fcall C_i_integer_greater_or_equalp(C_word x, C_word y)
 
 void C_ccall C_less_or_equal_p(C_word c, C_word closure, C_word k, ...)
 {
-  C_word x, y, result;
+  C_word x, y, result = C_SCHEME_TRUE;
   va_list v;
 
-  if (c < 4) C_bad_argc_2(c, 4, closure);
-
   c -= 2; 
+  if (c == 0) C_kontinue(k, result);
   va_start(v, k);
 
   x = va_arg(v, C_word);
+
+  if (c == 1 && !C_truep(C_i_numberp(x)))
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "<=", x);
+
   while(--c) {
     y = va_arg(v, C_word);
     result = C_i_less_or_equalp(x, y);
