@@ -346,6 +346,9 @@ rm -fr tmpdir
 mkdir tmpdir
 touch tmpdir/.dotfile
 
+echo "======================================== find-files tests ..."
+$interpret -bnq test-find-files.scm
+
 if test -z "$MSYSTEM"; then
     ln -s /usr tmpdir/symlink
 fi

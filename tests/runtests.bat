@@ -428,6 +428,10 @@ echo 0 >tmpdir\.dotfile
 %interpret% -R posix -e "(delete-directory \"tmpdir\" #t)"
 if errorlevel 1 exit /b 1
 
+echo ======================================== find-files tests ...
+%interpret% -bnq test-find-files.scm
+if errorlevel 1 exit /b 1
+
 echo ======================================== regular expression tests ...
 %interpret% -bnq test-irregex.scm
 if errorlevel 1 exit /b 1
