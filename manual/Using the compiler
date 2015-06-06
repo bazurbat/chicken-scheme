@@ -60,7 +60,7 @@ the source text should be read from standard input.
 
 ; -emit-type-file FILENAME : Write type-information for declarations of user-defined and globally visible variables to a file of the given name. The generated file is suitable for use with the {{-types}} option.
 
-; -explicit-use : Disables automatic use of the units {{library, eval}} and {{extras}}. Use this option if compiling a library unit instead of an application unit.
+; -explicit-use : Disables automatic use of the units {{library, eval}} and {{expand}}. Use this option if compiling a library unit instead of an application unit.
 
 ; -extend FILENAME : Loads a Scheme source file or compiled Scheme program (on systems that support it) before compilation commences. This feature can be used to extend the compiler.  This option may be given multiple times. The file is also searched in the current include path and in the extension-repository.
 

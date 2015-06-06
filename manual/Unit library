@@ -806,7 +806,7 @@ Returns {{#t}} if {{X}} is a promise returned by {{delay}}, or
 
 <procedure>(equal=? X y)</procedure>
 
-Similar to the standard parocedure {{equal?}}, but compares numbers
+Similar to the standard procedure {{equal?}}, but compares numbers
 using the {{=}} operator, so {{equal=?}} allows structural comparison
 in combination with comparison of numerical data by value.
 

@@ -149,7 +149,7 @@ programs.
 === CHICKEN repositories, websites, and community
 
 The master CHICKEN website is
-[[http://www.call-with-current-continuation.org]]. Here you can find
+[[http://www.call-cc.org]]. Here you can find
 basic information about CHICKEN, downloads, and pointers to other key
 resources. 
 
@@ -183,8 +183,10 @@ can pretty much ignore the C compiler once you have installed it.)
   installed as part of the basic operating system, or should be
   available through the package management system (e.g., APT,
   Synaptic, RPM, or Yum, depending upon your Linux distribution).
-* On Macintosh OS X, you will need the XCode tools, which you can download
-  at the Apple website.
+* On Macintosh OS X, you will need the XCode tools, which were shipped
+  on the OS X DVD with older versions of the operating system, and are 
+  installable from the App Store with recent versions of the operating
+  system.
 * On Windows, you have three choices:
 ** Cygwin ([[http://sourceware.org/cygwin/]]) provides a relatively
   full-featured Unix environment for Windows.  CHICKEN works

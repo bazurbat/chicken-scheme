@@ -199,8 +199,15 @@ Examples:
 (irregex-replace "[aeiou]" "hello world" "*") => "h*llo world"
 
 (irregex-replace/all "[aeiou]" "hello world" "*") => "h*ll* w*rld"
-</enscript>
 
+(irregex-replace "(.)(.)" "ab" 2 1 "*")  => "ba*"
+
+(irregex-replace "...bar" "xxfoobar" (lambda (m) 
+              (string-reverse (irregex-match-substring m)))) => "xxraboof"
+
+(irregex-replace "(...)(bar)" "xxfoobar"  2 (lambda (m) 
+              (string-reverse (irregex-match-substring m 1)))) => "xxbaroof"
+</enscript>
 ===== irregex-split
 ===== irregex-extract
 
