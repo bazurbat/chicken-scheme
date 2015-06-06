@@ -149,14 +149,13 @@ programs.
 === CHICKEN repositories, websites, and community
 
 The master CHICKEN website is
-[[http://www.call-with-current-continuation.org]]. Here you can find
+[[http://www.call-cc.org]]. Here you can find
 basic information about CHICKEN, downloads, and pointers to other key
 resources. 
 
-The CHICKEN wiki ([[http://wiki.call-cc.org]]) contains the most
-current version of the User's manual, along with various tutorials and
-other useful documents. The list of eggs is at
-[[http://wiki.call-cc.org/egg-index]].
+The CHICKEN wiki ([[http://wiki.call-cc.org]]) contains the most current
+version of the User's manual, along with various tutorials and other
+useful documents. The list of eggs is at [[/egg-index]].
 
 A very useful search facility for questions about CHICKEN is found at
 [[http://api.call-cc.org]]. The CHICKEN issue tracker is at
@@ -172,8 +171,7 @@ communication.
 
 === Installing CHICKEN
 
-CHICKEN is available in binary form for Windows and Linux/x86
-systems, and in source form for all other platforms. Refer to the
+CHICKEN is available as C sources. Refer to the
 {{README}} file in the distribution for instructions on installing it
 on your system. 
 
@@ -185,21 +183,23 @@ can pretty much ignore the C compiler once you have installed it.)
   installed as part of the basic operating system, or should be
   available through the package management system (e.g., APT,
   Synaptic, RPM, or Yum, depending upon your Linux distribution).
-* On Macintosh OS X, you will need the XCode tools, which are shipped
-  on the OS X DVD with recent versions of the operating system.
-* On Windows, you have three choices.
+* On Macintosh OS X, you will need the XCode tools, which were shipped
+  on the OS X DVD with older versions of the operating system, and are 
+  installable from the App Store with recent versions of the operating
+  system.
+* On Windows, you have three choices:
 ** Cygwin ([[http://sourceware.org/cygwin/]]) provides a relatively
   full-featured Unix environment for Windows.  CHICKEN works
   substantially the same in Cygwin and Unix. 
 ** The GNU Compiler Collection has been ported to Windows, in the
   MinGW system ([[http://mingw.sourceforge.net]]). Unlike Cygwin,
   executables produced with MinGW do not need the Cygwin DLLs in order
-  to run.   MSys is a companion package to MinGW; it provides a minimum
+  to run.   MSYS is a companion package to MinGW; it provides a minimum
   Unix-style development/build environment, again ported from free
   software.
 *** You can build CHICKEN either with MinGW alone or with MinGW plus 
   MSYS. Both approaches produce a CHICKEN built against the mingw headers 
-  and import libraries.
+  and libraries.
   The only difference is the environment where you actually run make.
   {{Makefile.mingw}} is can be used in {{cmd.exe}} with the version of make
   that comes with mingw.  {{Makefile.mingw-msys}} 
@@ -209,9 +209,8 @@ can pretty much ignore the C compiler once you have installed it.)
 Refer to the {{README}} file for the version you're installing for
 more information on the installation process. 
 
-Alternatively, third party packages in binary format are available.
-See [[http://wiki.call-cc.org/platforms]] for information about how to
-obtain them.
+Alternatively, third party packages in binary format are available. See
+[[/platforms]] for information about how to obtain them.
 
 === Development environments
 
@@ -271,10 +270,9 @@ including proportional fonts.
 
 * Vim ([[http://www.vim.org]]) is a highly configurable text
 editor built to enable efficient and fast text editing. It is an
-improved version of the vi editor distributed with most UNIX
-systems. Vim comes with generic Lisp (and therefore Scheme) editing
-capabilities out of the box. See [[http://wiki.call-cc.org/Vim]]
-for a few tips on using Vim with CHICKEN.
+improved version of the vi editor distributed with most UNIX systems.
+Vim comes with generic Lisp (and therefore Scheme) editing capabilities
+out of the box. See [[/Vim]] for a few tips on using Vim with CHICKEN.
 
 In the rest of this chapter, we'll assume that you are using an editor
 of your choice and a regular terminal window for executing your
@@ -288,10 +286,11 @@ To invoke the CHICKEN interpreter, you use the {{csi}} command.
  $ csi
  
  CHICKEN
- (c)2008-2010 The Chicken Team
- (c)2000-2007 Felix L. Winkelmann
- Version 4.6.0
- macosx-unix-gnu-x86 [ manyargs dload ptables ]
+ (c) 2008-2015, The CHICKEN Team
+ (c) 2000-2007, Felix L. Winkelmann
+ Version 4.9.0.1 (stability/4.9.0) (rev 8b3189b)
+ linux-unix-gnu-x86-64 [ 64bit manyargs dload ptables ]
+ bootstrapped 2014-06-07
  
  #;1>
 

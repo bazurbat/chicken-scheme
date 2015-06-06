@@ -3,10 +3,10 @@
 == The CHICKEN User's Manual
 
 <nowiki>
-<img style="float:right; border-left:1px solid #ccc;border-bottom:1px solid #ccc;margin-left:1em;" src="http://www.call-with-current-continuation.org/chicken4.png" alt="Stylized picture of a chicken"/>
+<img style="float:right; margin-left:1em;" src="http://wiki.call-cc.org/chicken-small.png" alt="Stylized picture of a chicken" />
 </nowiki>
 
-This is the manual for Chicken Scheme, version 4.9.0
+This is the manual for CHICKEN Scheme, version 4.9.1
 
 ; [[Getting started]] : What is CHICKEN and how do I use it?
 

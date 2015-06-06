@@ -1,6 +1,6 @@
 ; scheduler.scm - Basic scheduler for multithreading
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2015, The CHICKEN Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -66,7 +66,33 @@ C_word C_msleep(C_word ms) {
 }
 #endif
 
-#ifdef HAVE_POSIX_POLL
+#ifdef NO_POSIX_POLL
+
+/* Shouldn't we include <sys/select.h> here? */
+static fd_set C_fdset_input, C_fdset_output;
+
+#define C_fd_input_ready(fd,pos)  C_mk_bool(FD_ISSET(C_unfix(fd), &C_fdset_input))
+#define C_fd_output_ready(fd,pos)  C_mk_bool(FD_ISSET(C_unfix(fd), &C_fdset_output))
+
+C_inline int C_ready_fds_timeout(int to, double tm) {
+  struct timeval timeout;
+  timeout.tv_sec = tm / 1000;
+  timeout.tv_usec = fmod(tm, 1000) * 1000;
+  /* we use FD_SETSIZE, but really should use max fd */
+  return select(FD_SETSIZE, &C_fdset_input, &C_fdset_output, NULL, to ? &timeout : NULL);
+}
+
+C_inline void C_prepare_fdset(int length) {
+  FD_ZERO(&C_fdset_input);
+  FD_ZERO(&C_fdset_output);
+}
+
+C_inline void C_fdset_add(int fd, int input, int output) {
+  if (input) FD_SET(fd, &C_fdset_input);
+  if (output) FD_SET(fd, &C_fdset_output);
+}
+
+#else
 #  include <poll.h>
 #  include <assert.h>
 
@@ -98,32 +124,6 @@ C_inline void C_fdset_add(int fd, int input, int output) {
   C_fdset_set[C_fdset_nfds].events = ((input ? POLLIN : 0) | (output ? POLLOUT : 0));
   C_fdset_set[C_fdset_nfds++].fd = fd;
 }
-
-#else
-
-/* Shouldn't we include <sys/select.h> here? */
-static fd_set C_fdset_input, C_fdset_output;
-
-#define C_fd_input_ready(fd,pos)  C_mk_bool(FD_ISSET(C_unfix(fd), &C_fdset_input))
-#define C_fd_output_ready(fd,pos)  C_mk_bool(FD_ISSET(C_unfix(fd), &C_fdset_output))
-
-C_inline int C_ready_fds_timeout(int to, double tm) {
-  struct timeval timeout;
-  timeout.tv_sec = tm / 1000;
-  timeout.tv_usec = fmod(tm, 1000) * 1000;
-  /* we use FD_SETSIZE, but really should use max fd */
-  return select(FD_SETSIZE, &C_fdset_input, &C_fdset_output, NULL, to ? &timeout : NULL);
-}
-
-C_inline void C_prepare_fdset(int length) {
-  FD_ZERO(&C_fdset_input);
-  FD_ZERO(&C_fdset_output);
-}
-
-C_inline void C_fdset_add(int fd, int input, int output) {
-  if (input) FD_SET(fd, &C_fdset_input);
-  if (output) FD_SET(fd, &C_fdset_output);
-}
 #endif
 EOF
 ) )
@@ -154,6 +154,7 @@ EOF
     (set! ##sys#current-thread thread)
     (##sys#setslot thread 3 'running)
     (##sys#restore-thread-state-buffer thread)
+    ;;XXX WRONG! this sets the t/i-period ("quantum") for the _next_ thread
     (##core#inline "C_set_initial_timer_interrupt_period" (##sys#slot thread 9))
     ((##sys#slot thread 1)) )
   (let* ([ct ##sys#current-thread]

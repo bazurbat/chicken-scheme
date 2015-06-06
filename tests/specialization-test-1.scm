@@ -46,5 +46,18 @@ return n;}
 
 (assert (null? (the (or undefined *) (list))))
 
+;; Ensure a foreign-primitive returning multiple values with C_values()
+;; isn't specialized to a single result.
+(let ((result (receive ((foreign-primitive ()
+			  "C_values(4,"
+			  "         C_SCHEME_UNDEFINED,"
+			  "         C_k,"
+			  "         C_fix(1),"
+			  "         C_fix(2));")))))
+  (assert (equal? '(1 2) result)))
+
+;; dropped conditional branch is ignored
+(compiler-typecase (if #t 'a "a")
+  (symbol 1))
 
 )

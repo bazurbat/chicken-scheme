@@ -391,7 +391,7 @@ and bindings of keyword symbols is not allowed.
 The parameter {{keyword-style}} and the compiler/interpreter option
 {{-keyword-style}} can be used to allow an additional keyword
 syntax, either compatible to Common LISP, or to DSSSL.  As long as this
-parameter is set to {{#:suffix}}, Chicken conforms to
+parameter is set to {{#:suffix}}, CHICKEN conforms to
 [[http://srfi.schemers.org/srfi-88/srfi-88.html|SRFI-88]].
 
 
@@ -444,8 +444,7 @@ Returns a keyword with the name {{STRING}}.
 
 Return a list of all supplied command-line arguments. The first item in
 the list is a string containing the name of the executing program. The
-other items are the arguments passed to the application. This list is
-freshly created on every invocation of {{(argv)}}. It depends on
+other items are the arguments passed to the application. It depends on
 the host-shell whether arguments are expanded ('globbed') or not.
 
 
@@ -498,10 +497,6 @@ Returns the error code of the last system call.
 
 Returns the value of the environment variable {{STRING}} or
 {{#f}} if that variable is not defined. See also [[http://srfi.schemers.org/srfi-98/|SRFI-98]].
-
-<procedure>(getenv STRING)</procedure>
-
-{{getenv}} was removed in Chicken 4.6.4.  Use {{get-environment-variable}} instead.
 
 ==== machine-byte-order
 
@@ -576,17 +571,6 @@ process is currently running, which is one of the following:
  aix
  hurd
  unknown
-
-
-
-==== c-runtime
-
-<procedure>(c-runtime)</procedure>
-
-Returns a symbol that designates what kind of C runtime library has been linked
-with this version of the Chicken libraries. Possible return values are
-{{static}}, {{dynamic}} or {{unknown}}. On systems not compiled with the
-Microsoft C compiler, {{c-runtime}} always returns {{unknown}}.
 
 
 ==== system
@@ -822,7 +806,7 @@ Returns {{#t}} if {{X}} is a promise returned by {{delay}}, or
 
 <procedure>(equal=? X y)</procedure>
 
-Similar to the standard parocedure {{equal?}}, but compares numbers
+Similar to the standard procedure {{equal?}}, but compares numbers
 using the {{=}} operator, so {{equal=?}} allows structural comparison
 in combination with comparison of numerical data by value.
 
@@ -1259,7 +1243,7 @@ You can undo special handling of read-syntax by passing {{#f}} as the second arg
 As a special case, your handler can return zero values, via {{(values)}}.  This causes
 the reader to completely ignore whatever input you've read, rather than returning some
 possibly unspecified value.  This can be useful in macro context, reading comments,
-conditional compilation, and so forth.  Available in Chicken 4.6.6 and later.
+conditional compilation, and so forth.  Available in CHICKEN 4.6.6 and later.
 
 Note that all of CHICKEN's special non-standard read-syntax is handled directly by the reader.
 To disable built-in read-syntax, define a handler that triggers an error (for example).

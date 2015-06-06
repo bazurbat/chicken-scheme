@@ -1,6 +1,6 @@
 ;;;; files.scm - File and pathname operations
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2015, The CHICKEN Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -370,9 +370,7 @@ EOF
 		   (when (fx> i prev)
 		     (set! parts (addpart (##sys#substring path prev i) parts)))
 		   (if (null? parts)
-		       (let ((r (if abspath
-				    (##sys#string-append (string sep) ".")
-				    (##sys#string-append "." (string sep)) )))
+		       (let ((r (if abspath (string sep) ".")))
 			 (if drive
 			     (##sys#string-append drive r)
 			     r))
@@ -385,14 +383,12 @@ EOF
 			    (display p out) )
 			  (cdr parts))
 			 (when (fx= i prev) (##sys#write-char-0 sep out))
-			 (let* ((r1 (get-output-string out))
-				(r (##sys#expand-home-path r1)))
-			   (when (string=? r1 r)
-			     (when abspath 
-			       (set! r (##sys#string-append (string sep) r)))
-			     (when drive
-			       (set! r (##sys#string-append drive r))))
-			   r))))
+			 (let ((r (get-output-string out)))
+                           (when abspath
+                             (set! r (##sys#string-append (string sep) r)))
+                           (when drive
+                             (set! r (##sys#string-append drive r)))
+                           r))))
 		  ((*char-pds? (string-ref path i))
 		   (when (and (null? parts) (fx= i prev))
 		     (set! abspath #t))

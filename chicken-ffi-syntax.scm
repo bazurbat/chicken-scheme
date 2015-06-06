@@ -1,6 +1,6 @@
 ;;;; chicken-ffi-syntax.scm
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2015, The CHICKEN Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -211,12 +211,14 @@
   (lambda (form r c)
     (##sys#check-syntax 'foreign-primitive form '(_ _ . _))
     (let* ((hasrtype (and (pair? (cddr form)) (not (string? (caddr form)))))
-	   (rtype (or (and hasrtype (##sys#strip-syntax (cadr form))) 'void))
+	   (rtype (and hasrtype (##sys#strip-syntax (cadr form))))
 	   (args (##sys#strip-syntax (if hasrtype (caddr form) (cadr form))))
 	   (argtypes (map car args)))
       `(##core#the (procedure
 		    ,(map (cut ##compiler#foreign-type->scrutiny-type <> 'arg) argtypes)
-		    ,(##compiler#foreign-type->scrutiny-type rtype 'result))
+		    ,@(if (not rtype)
+			  '* ; special case for C_values(...)
+			  (list (##compiler#foreign-type->scrutiny-type rtype 'result))))
 		   #f
 		   (##core#foreign-primitive ,@(cdr form)))))))
 

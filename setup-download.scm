@@ -1,6 +1,6 @@
 ;;;; setup-download.scm
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2015, The CHICKEN Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -233,20 +233,25 @@
 
   (define (locate-egg/http egg url #!optional version destination tests
 			   proxy-host proxy-port proxy-user-pass)
-    (let ([tmpdir (or destination (get-temporary-directory))])
-      (let-values ([(host port locn) (deconstruct-url url)])
-	(let ([locn (string-append
-		     locn
-		     "?name=" egg
-		     (if version (string-append "&version=" version) "")
-		     "&mode=" (->string *mode*)
-		     (if tests "&tests=yes" ""))]
-	      [eggdir (make-pathname tmpdir egg) ] )
-	  (unless (file-exists? eggdir) (create-directory eggdir))
-	  (let ((fversion
-		 (http-fetch host port locn eggdir proxy-host proxy-port proxy-user-pass)))
-	    ;; If we get here then version of egg exists
-	    (values eggdir (or fversion version "")) ) ) ) ))
+    (receive (host port locn)
+	(deconstruct-url url)
+      (let* ((locn (string-append
+		    locn
+		    "?name=" egg
+		    (if version (string-append "&version=" version) "")
+		    "&mode=" (->string *mode*)
+		    (if tests "&tests=yes" "")))
+	     (tmpdir (or destination (get-temporary-directory)))
+	     (eggdir (make-pathname tmpdir egg))
+	     (pre-existing-dir? (file-exists? eggdir)) )
+	(unless pre-existing-dir? (create-directory eggdir))
+	(handle-exceptions exn
+	    (begin (unless pre-existing-dir? (remove-directory eggdir))
+		   (signal exn))
+	 (let ((fversion
+		(http-fetch host port locn eggdir proxy-host proxy-port proxy-user-pass)))
+	   ;; If we get here then version of egg exists
+	   (values eggdir (or fversion version "")) )) ) ) )
 
   (define (network-failure msg . args)
     (signal

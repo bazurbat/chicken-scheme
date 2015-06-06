@@ -3,10 +3,10 @@
   =========================================
 
 
-  (c) 2008-2014, The Chicken Team
+  (c) 2008-2015, The CHICKEN Team
   (c) 2000-2007, Felix L. Winkelmann
 
-  version 4.9.0
+  version 4.9.1
 
 
  1. Introduction
@@ -35,8 +35,8 @@
         4. Loads of extra libraries.
 
         Note: Should you have any trouble in setting up and using
-        CHICKEN, please ask questions on the Chicken mailing list. You
-        can subscribe to the list from the Chicken homepage,
+        CHICKEN, please ask questions on the CHICKEN mailing list. You
+        can subscribe to the list from the CHICKEN homepage,
         http://www.call-with-current-continuation.org)
 
 
@@ -45,7 +45,7 @@
         Building CHICKEN requires GNU Make. Other "make" derivates are
         not supported. If you are using a Windows system and do not
         have GNU Make, download
-        http://www.call-with-current-continuation.org/tarballs/UnxUtils.zip.
+        http://code.call-cc.org/legacy-eggs/tarballs/UnxUtils.zip.
         It contains a precompiled set of UNIX utilities, which among
         other useful tools contains "make".
 
@@ -133,13 +133,13 @@
 
     2.4. Verifying your installation is correct
 
-        You can check whether Chicken is functioning correctly by
+        You can check whether CHICKEN is functioning correctly by
         running
 
             make <vars> check
 
         where <vars> are all the variables you used while building
-        Chicken.
+        CHICKEN.
 
         This will run the test scripts, which show a lot of output.
         The only thing that matters is the exit status at the end.
@@ -149,7 +149,7 @@
         check fails on unmodified sources, please file a bugreport.
 
         Currently "make check" only works if you have installed
-        Chicken.
+        CHICKEN.
 
     2.5. Optional features
 
@@ -242,15 +242,15 @@
 	  be the same as C_COMPILER.
 
 	PROFILE_OBJECTS=
-	  This variable allows you to profile (parts of) Chicken itself.
+	  This variable allows you to profile (parts of) CHICKEN itself.
 	  Just pass in a whitespace-separated list of objects, without
 	  the .scm-extension.  (An "object" here is an individual
 	  .scm-file which gets compiled to a .c-file)
 	  To build with profiling support, run "make spotless" first.
 	  Be warned that this is a highly experimental option and
-	  profiling doesn't work for every component of Chicken.
+	  profiling doesn't work for every component of CHICKEN.
 
-    2.6. Uninstalling Chicken
+    2.6. Uninstalling CHICKEN
 
         To remove CHICKEN from your file-system, enter (probably as
         root):
@@ -282,7 +282,7 @@
 	|       `-- chicken.h
 	|-- lib
 	|   |-- chicken
-	|   |   `-- 6
+	|   |   `-- 7
 	|   |       |-- chicken.import.so
 	|   |       |-- csi.import.so
 	|   |       |-- data-structures.import.so
@@ -354,7 +354,7 @@
         A selection of 3rd party libraries, together with source and
         binary packages for tools helpful for development with CHICKEN
         are also available at:
-        <http://www.call-with-current-continuation.org/tarballs/>.
+        <http://code.call-cc.org/legacy-eggs/tarballs/>.
 
         
  5. Platform issues
@@ -472,7 +472,7 @@
 
 	      make PLATFORM=macosx ARCH=x86-64
 
-	  - Chicken will normally select a 32-bit or 64-bit build
+	  - CHICKEN will normally select a 32-bit or 64-bit build
 	    automatically when you use the normal build step:
 
 	      make PLATFORM=macosx
@@ -490,7 +490,7 @@
 
 	      make PLATFORM=macosx ARCH=x86-64
 
-	  - Universal binaries: On 10.4 and 10.5 only, Chicken and its eggs
+	  - Universal binaries: On 10.4 and 10.5 only, CHICKEN and its eggs
 	    can be built as universal binaries which will work on either
 	    Intel or PowerPC.  Most users will not want to do this.
 
@@ -553,7 +553,7 @@
 	  - When installing under mingw, with a windows shell
 	    ("cmd.exe"), pass an absolute pathname (including the
 	    drive letter) as PREFIX and use forward slashes. If you
-	    are building the sources from git, but use backslashes to
+	    are building the sources from git, use backslashes to
 	    specify the path to `chicken' (the "CHICKEN" variable).
 
 	  - When installing under mingw without MSYS, make sure that the
@@ -627,6 +627,21 @@
 	    Instructing gcc to optimize the size of generated code (-Os)
 	    mitigates this to some degree, but very large C files may still be
 	    uncompilable.  This is known to affect the html-tags egg.
+
+	Haiku:
+
+	  - The default GCC compiler is too old to support the -fwrapv
+	    option.  You can either remove the flag from Makefile.haiku,
+	    use a newer GCC, or supply your own C_COMPILER_OPTIONS on
+	    the Make command line.
+
+	  - The default Haiku BFS file system only supports timestamps
+	    with a granularity of one second.  This may cause trouble
+	    with pregenerated release or development snapshot tarballs
+	    due to the way files are pre-translated to C.  You'll either
+	    need to have CHICKEN installed, or touch the
+	    build-version.c file before building.
+
 
  6. Bootstrapping
 

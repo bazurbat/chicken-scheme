@@ -1,6 +1,6 @@
 ;;; ports.scm - Optional non-standard ports
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2015, The CHICKEN Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -169,12 +169,12 @@
     (thunk) ) )
 
 (define (with-output-to-port port thunk)
-  (##sys#check-output-port port #t 'with-output-from-port)
+  (##sys#check-output-port port #t 'with-output-to-port)
   (fluid-let ([##sys#standard-output port])
     (thunk) ) )
 
 (define (with-error-output-to-port port thunk)
-  (##sys#check-output-port port #t 'with-error-output-from-port)
+  (##sys#check-output-port port #t 'with-error-output-to-port)
   (fluid-let ([##sys#standard-error port])
     (thunk) ) )
 

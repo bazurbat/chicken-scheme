@@ -54,7 +54,7 @@ on the command line.
 Sometimes an extension requires a C library to compile. Compilation
 can fail when your system has this library in a nonstandard
 location. Normally the C compiler searches in the default locations
-{{/usr}} and {{/usr/local}}, and in the prefix where Chicken itself
+{{/usr}} and {{/usr/local}}, and in the prefix where CHICKEN itself
 was installed. Sometimes this is not enough, so you'll need to supply
 {{chicken-install}} with some extra hints to the C compiler/linker. Here's
 an example:
@@ -631,7 +631,7 @@ or by modifying {{config.make}}. Eggs will then be installed in
 
 === Changing repository location
 
-When Chicken is installed a repository for eggs is created and initialized
+When CHICKEN is installed a repository for eggs is created and initialized
 in a default location (usually something like {{/usr/local/lib/chicken/6/}}).
 It is possible to keep an eggs repository in another location. This can be
 configured at build-time by passing {{VARDIR=<directory>}} to {{make(3)}}

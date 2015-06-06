@@ -175,7 +175,7 @@ from one of the following locations:
 Returns a string which represents the installation directory (usually {{/usr/local/share/chicken}} on UNIX-like systems).
 As a last option,
 if the environment variable {{CHICKEN_PREFIX}} is set, then {{chicken-home}} will return
-{{$CHICKEN_PREFIX/share}}.
+{{$CHICKEN_PREFIX/share/chicken}}.
 
 
 === Eval

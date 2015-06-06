@@ -1,6 +1,6 @@
 # Makefile.ios - configuration for Apple iOS -*- Makefile -*-
 #
-# Copyright (c) 2013, The Chicken Team
+# Copyright (c) 2013, The CHICKEN Team
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -23,12 +23,7 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-
-ifneq ($(CONFIG),)
-include $(CONFIG)
-endif
-
-SRCDIR = ./
+SRCDIR ?= ./
 
 # platform configuration
 
@@ -78,7 +73,6 @@ chicken-config.h: chicken-defaults.h
 	echo "#define HAVE_LONG_LONG 1" >>$@
 	echo "#define HAVE_MEMMOVE 1" >>$@
 	echo "#define HAVE_MEMORY_H 1" >>$@
-	echo "#define HAVE_POSIX_POLL 1" >>$@
 	echo "#define HAVE_SIGACTION 1" >>$@
 	echo "#define HAVE_SIGSETJMP 1" >>$@
 	echo "#define HAVE_SIGPROCMASK 1" >>$@

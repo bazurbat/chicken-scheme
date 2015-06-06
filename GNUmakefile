@@ -1,6 +1,7 @@
-# GNUmakefile - toplevel makefile
+# GNUmakefile - toplevel makefile.  This simply includes the
+# platform-specific makefile or quits when no platform is selected.
 #
-# Copyright (c) 2008-2014, The Chicken Team
+# Copyright (c) 2008-2015, The CHICKEN Team
 # Copyright (c) 2007, Felix L. Winkelmann
 # All rights reserved.
 #
@@ -24,37 +25,25 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-
+# If nothing selected, use default config (this should set PLATFORM)
 ifeq ($(CONFIG)$(PLATFORM),)
 CONFIG=config.make
 endif
 
 ifneq ($(CONFIG),)
+# Avoid loading config when building a boot-chicken
+ifneq ($(MAKECMDGOALS),boot-chicken)
 include $(CONFIG)
+endif
 endif
 
 ifndef PLATFORM
 $(info Please select your target platform by running one of the following commands:)
 $(info )
-$(foreach mf, $(wildcard Makefile.*), $(info "$(MAKE)" PLATFORM=$(mf:Makefile.%=%)))
+$(foreach mf, $(wildcard Makefile.*), $(info $(MAKE) PLATFORM=$(mf:Makefile.%=%)))
 $(info )
 $(info For more information, consult the README file.)
 $(error No PLATFORM given.)
+else
+include $(SRCDIR)Makefile.$(PLATFORM)
 endif
-
-SRCDIR = .
-
-STANDARD_TARGETS \
-	= all clean distclean spotless install uninstall confclean check \
-	  fullcheck libs install-target install-dev bench
-
-.PHONY: $(STANDARD_TARGETS) dist boot-chicken
-
-$(STANDARD_TARGETS):
-	"$(MAKE)" -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) $@
-
-dist:
-	"$(MAKE)" -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) dist
-
-boot-chicken:
-	"$(MAKE)" -f $(SRCDIR)/Makefile.$(PLATFORM) boot-chicken

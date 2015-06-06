@@ -1,6 +1,6 @@
 ;;;; posixunix.scm - Miscellaneous file- and process-handling routines
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2015, The CHICKEN Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -266,11 +266,6 @@ static C_TLS sigset_t C_sigset;
 #define C_write(fd, b, n)   C_fix(write(C_unfix(fd), C_data_pointer(b), C_unfix(n)))
 #define C_mkstemp(t)        C_fix(mkstemp(C_c_string(t)))
 
-/* It is assumed that 'int' is-a 'long' */
-#define C_ftell(p)          C_fix(ftell(C_port_file(p)))
-#define C_fseek(p, n, w)    C_mk_nbool(fseek(C_port_file(p), C_num_to_int(n), C_unfix(w)))
-#define C_lseek(fd, o, w)     C_fix(lseek(C_unfix(fd), C_unfix(o), C_unfix(w)))
-
 #define C_ctime(n)          (C_secs = (n), ctime(&C_secs))
 
 #if defined(__SVR4) || defined(C_MACOSX) || defined(__ANDROID__) || defined(_AIX)
@@ -511,7 +506,7 @@ EOF
         (##sys#check-string filename 'file-open)
         (##sys#check-exact flags 'file-open)
         (##sys#check-exact mode 'file-open)
-        (let ([fd (##core#inline "C_open" (##sys#make-c-string (##sys#expand-home-path filename) 'file-open) flags mode)])
+        (let ([fd (##core#inline "C_open" (##sys#make-c-string filename 'file-open) flags mode)])
           (when (eq? -1 fd)
             (posix-error #:file-error 'file-open "cannot open file" filename flags mode) )
           fd) ) ) ) )
@@ -614,50 +609,6 @@ EOF
 		(and fdsw (if (fixnum? fdsw) (and (memq fdsw wl) fdsw) wl)))))))))
 
 
-;;; File attribute access:
-
-(define-foreign-variable _seek_set int "SEEK_SET")
-(define-foreign-variable _seek_cur int "SEEK_CUR")
-(define-foreign-variable _seek_end int "SEEK_END")
-
-(define seek/set _seek_set)
-(define seek/end _seek_end)
-(define seek/cur _seek_cur)
-
-(define set-file-position!
-  (lambda (port pos . whence)
-    (let ((whence (if (pair? whence) (car whence) _seek_set)))
-      (##sys#check-exact pos 'set-file-position!)
-      (##sys#check-exact whence 'set-file-position!)
-      (when (negative? pos)
-	(##sys#signal-hook #:bounds-error 'set-file-position! "invalid negative port position" pos port))
-      (unless (cond ((port? port)
-		     (and (eq? (##sys#slot port 7) 'stream)
-			  (##core#inline "C_fseek" port pos whence) ) )
-		    ((fixnum? port)
-		     (##core#inline "C_lseek" port pos whence))
-		    (else
-		     (##sys#signal-hook #:type-error 'set-file-position! "invalid file" port)) )
-	(posix-error #:file-error 'set-file-position! "cannot set file position" port pos) ) ) ) )
-
-(define file-position
-  (getter-with-setter
-   (lambda (port)
-     (let ((pos (cond ((port? port)
-		       (if (eq? (##sys#slot port 7) 'stream)
-			   (##core#inline "C_ftell" port)
-			   -1) )
-		      ((fixnum? port)
-		       (##core#inline "C_lseek" port 0 _seek_cur) )
-		      (else
-		       (##sys#signal-hook #:type-error 'file-position "invalid file" port)) ) ) )
-       (when (< pos 0)
-	 (posix-error #:file-error 'file-position "cannot retrieve file position of port" port) )
-       pos) )
-   set-file-position!		; doesn't accept WHENCE
-   "(file-position port)"))
-
-
 ;;; Directory stuff:
 
 (define-inline (*create-directory loc name)
@@ -667,22 +618,21 @@ EOF
 (define create-directory
   (lambda (name #!optional parents?)
     (##sys#check-string name 'create-directory)
-    (let ((name (##sys#expand-home-path name)))
-      (unless (or (fx= 0 (##sys#size name))
-		  (file-exists? name))
-	(if parents?
-	    (let loop ((dir (let-values (((dir file ext) (decompose-pathname name)))
-			      (if file (make-pathname dir file ext) dir))))
-	      (when (and dir (not (directory? dir)))
-		(loop (pathname-directory dir))
-		(*create-directory 'create-directory dir)) )
-	    (*create-directory 'create-directory name) ) )
-      name)))
+    (unless (or (fx= 0 (##sys#size name))
+                (file-exists? name))
+      (if parents?
+        (let loop ((dir (let-values (((dir file ext) (decompose-pathname name)))
+                          (if file (make-pathname dir file ext) dir))))
+          (when (and dir (not (directory? dir)))
+            (loop (pathname-directory dir))
+            (*create-directory 'create-directory dir)) )
+        (*create-directory 'create-directory name) ) )
+    name))
 
 (define change-directory
   (lambda (name)
     (##sys#check-string name 'change-directory)
-    (let ((sname (##sys#make-c-string (##sys#expand-home-path name) 'change-directory)))
+    (let ((sname (##sys#make-c-string name 'change-directory)))
       (unless (fx= 0 (##core#inline "C_chdir" sname))
 	(posix-error #:file-error 'change-directory "cannot change current directory" name) )
       name)))
@@ -1108,7 +1058,7 @@ EOF
   (lambda (fname m)
     (##sys#check-string fname 'change-file-mode)
     (##sys#check-exact m 'change-file-mode)
-    (when (fx< (##core#inline "C_chmod" (##sys#make-c-string (##sys#expand-home-path fname) 'change-file-mode) m) 0)
+    (when (fx< (##core#inline "C_chmod" (##sys#make-c-string fname 'change-file-mode) m) 0)
       (posix-error #:file-error 'change-file-mode "cannot change file mode" fname m) ) ) )
 
 (define change-file-owner
@@ -1116,7 +1066,7 @@ EOF
     (##sys#check-string fn 'change-file-owner)
     (##sys#check-exact uid 'change-file-owner)
     (##sys#check-exact gid 'change-file-owner)
-    (when (fx< (##core#inline "C_chown" (##sys#make-c-string (##sys#expand-home-path fn) 'change-file-owner) uid gid) 0)
+    (when (fx< (##core#inline "C_chown" (##sys#make-c-string fn 'change-file-owner) uid gid) 0)
       (posix-error #:file-error 'change-file-owner "cannot change file owner" fn uid gid) ) ) )
 
 (define-foreign-variable _r_ok int "R_OK")
@@ -1126,7 +1076,7 @@ EOF
 (let ()
   (define (check filename acc loc)
     (##sys#check-string filename loc)
-    (let ([r (fx= 0 (##core#inline "C_test_access" (##sys#make-c-string (##sys#expand-home-path filename) loc) acc))])
+    (let ([r (fx= 0 (##core#inline "C_test_access" (##sys#make-c-string filename loc) acc))])
       (unless r (##sys#update-errno))
       r) )
   (set! file-read-access? (lambda (filename) (check filename _r_ok 'file-read-access?)))
@@ -1166,8 +1116,8 @@ EOF
     (##sys#check-string new 'create-symbolic-link)
     (when (fx< (##core#inline
               "C_symlink"
-              (##sys#make-c-string (##sys#expand-home-path old) 'create-symbolic-link)
-              (##sys#make-c-string (##sys#expand-home-path new) 'create-symbolic-link) )
+              (##sys#make-c-string old 'create-symbolic-link)
+              (##sys#make-c-string new 'create-symbolic-link) )
              0)
       (posix-error #:file-error 'create-symbol-link "cannot create symbolic link" old new) ) ) )
 
@@ -1185,24 +1135,23 @@ EOF
 
 (define (read-symbolic-link fname #!optional canonicalize)
   (##sys#check-string fname 'read-symbolic-link)
-  (let ((fname (##sys#expand-home-path fname)))
-    (if canonicalize
-        (receive (base-origin base-directory directory-components) (decompose-directory fname)
-          (let loop ((components directory-components)
-                     (result (string-append (or base-origin "") (or base-directory ""))))
-            (if (null? components)
-                result
-                (let ((pathname (make-pathname result (car components))))
-                  (if (file-exists? pathname)
-                      (loop (cdr components)
-                            (if (symbolic-link? pathname)
-                                (let ((target (##sys#read-symbolic-link pathname 'read-symbolic-link)))
-                                  (if (absolute-pathname? target)
-                                      target
-                                      (make-pathname result target)))
-                                pathname))
-                      (##sys#signal-hook #:file-error 'read-symbolic-link "could not canonicalize path with symbolic links, component does not exist" pathname))))))
-        (##sys#read-symbolic-link fname 'read-symbolic-link))))
+  (if canonicalize
+      (receive (base-origin base-directory directory-components) (decompose-directory fname)
+	(let loop ((components directory-components)
+		   (result (string-append (or base-origin "") (or base-directory ""))))
+	  (if (null? components)
+	      result
+	      (let ((pathname (make-pathname result (car components))))
+		(if (file-exists? pathname)
+		    (loop (cdr components)
+			  (if (symbolic-link? pathname)
+			      (let ((target (##sys#read-symbolic-link pathname 'read-symbolic-link)))
+				(if (absolute-pathname? target)
+				    target
+				    (make-pathname result target)))
+			      pathname))
+		    (##sys#signal-hook #:file-error 'read-symbolic-link "could not canonicalize path with symbolic links, component does not exist" pathname))))))
+      (##sys#read-symbolic-link fname 'read-symbolic-link)))
 
 (define file-link
   (let ([link (foreign-lambda int "link" c-string c-string)])
@@ -1225,7 +1174,7 @@ EOF
 	       (let ((res (##sys#file-select-one fd)))
 		 (if (fx= -1 res)
 		     (if (or (fx= _errno _ewouldblock)
-			     (rx= _errno _eagain))
+			     (fx= _errno _eagain))
 			 #f
 			 (posix-error #:file-error loc "cannot select" fd nam))
 		     (fx= 1 res))))]
@@ -1403,7 +1352,7 @@ EOF
 (define file-truncate
   (lambda (fname off)
     (##sys#check-number off 'file-truncate)
-    (when (fx< (cond [(string? fname) (##core#inline "C_truncate" (##sys#make-c-string (##sys#expand-home-path fname) 'file-truncate) off)]
+    (when (fx< (cond [(string? fname) (##core#inline "C_truncate" (##sys#make-c-string fname 'file-truncate) off)]
 		     [(fixnum? fname) (##core#inline "C_ftruncate" fname off)]
 		     [else (##sys#error 'file-truncate "invalid file" fname)] )
 	       0)
@@ -1462,7 +1411,7 @@ EOF
     (##sys#check-string fname 'create-fifo)
     (let ([mode (if (pair? mode) (car mode) (fxior _s_irwxu (fxior _s_irwxg _s_irwxo)))])
       (##sys#check-exact mode 'create-fifo)
-      (when (fx< (##core#inline "C_mkfifo" (##sys#make-c-string (##sys#expand-home-path fname) 'create-fifo) mode) 0)
+      (when (fx< (##core#inline "C_mkfifo" (##sys#make-c-string fname 'create-fifo) mode) 0)
       (posix-error #:file-error 'create-fifo "cannot create FIFO" fname mode) ) ) ) )
 
 (define fifo?
@@ -1470,7 +1419,7 @@ EOF
     (##sys#check-string filename 'fifo?)
     (case (##core#inline 
 	   "C_i_fifo_p"
-	   (##sys#make-c-string (##sys#expand-home-path filename) 'fifo?))
+	   (##sys#make-c-string filename 'fifo?))
       ((#t) #t)
       ((#f) #f)
       ((0) (##sys#signal-hook #:file-error 'fifo? "file does not exist" filename) )
@@ -1680,7 +1629,7 @@ EOF
                (let ([s (car el)])
                  (##sys#check-string s 'process-execute)
                  (setenv i s (##sys#size s)) ) ) )
-           (let* ([prg (##sys#make-c-string (##sys#expand-home-path filename) 'process-execute)]
+           (let* ([prg (##sys#make-c-string filename 'process-execute)]
                   [r (if envlist
                          (##core#inline "C_execve" prg)
                          (##core#inline "C_execvp" prg) )] )

@@ -1,6 +1,6 @@
 ;;;; compiler-namespace.scm - private namespace declarations for compiler units
 ;
-; Copyright (c) 2009-2014, The Chicken Team
+; Copyright (c) 2009-2015, The CHICKEN Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -306,5 +306,4 @@
  with-debugging-output
  words
  words->bytes
- words-per-flonum
- zap-strings-flag) 
+ words-per-flonum) 

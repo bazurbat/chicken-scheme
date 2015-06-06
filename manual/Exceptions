@@ -3,12 +3,12 @@
 
 == Exceptions
 
-Chicken's exception handling is based on the
+CHICKEN's exception handling is based on the
 [[http://srfi.schemers.org/srfi-12/srfi-12.html|SRFI-12]] exception
 system.  This document contains the core of the SRFI-12 spec
-as well as Chicken implementation specifics.
+as well as CHICKEN implementation specifics.
 
-== Chicken implementation
+== CHICKEN implementation
 
 === System conditions
 
@@ -302,7 +302,7 @@ created with {{make-composite-condition}}, the procedure returns the value that
 is associated with ''prop-key'' in one of the components that satisfies
 {{(condition-predicate ''kind-key'')}}.
 
-On Chicken, this procedure accepts an optional third argument
+On CHICKEN, this procedure accepts an optional third argument
 DEFAULT. If the condition does not have a value for the desired
 property and if the optional argument is given, no error is signaled
 and the accessor returns the third argument.

@@ -1,7 +1,7 @@
 
 /* chicken.h - General headerfile for compiler generated executables
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2015, The CHICKEN Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -38,7 +38,7 @@
 #define ___CHICKEN
 
 #define C_MAJOR_VERSION   4
-#define C_MINOR_VERSION   8
+#define C_MINOR_VERSION   9
 
 #ifndef _ISOC99_SOURCE
 # define _ISOC99_SOURCE
@@ -54,6 +54,13 @@
 
 #ifndef _SVID_SOURCE
 # define _SVID_SOURCE
+#endif
+
+/*
+ * glibc >= 2.20 synonym for _BSD_SOURCE & _SVID_SOURCE.
+ */
+#ifndef _DEFAULT_SOURCE
+# define _DEFAULT_SOURCE
 #endif
 
 /*
@@ -149,7 +156,7 @@ void *alloca ();
 #endif
 
 
-/* Chicken Core C API */
+/* CHICKEN Core C API */
 
 #if defined(__BYTE_ORDER) && __BYTE_ORDER == __BIG_ENDIAN
 # define C_BIG_ENDIAN
@@ -1136,9 +1143,6 @@ extern double trunc(double);
 
 #define C_stack_overflow_check    C_stack_check1(C_stack_overflow())
 
-/*XXX OBSOLETE */
-#define C_stack_check             C_stack_overflow_check
-
 #if C_STACK_GROWS_DOWNWARD
 # define C_demand(n)              (C_stress && ((C_word)(C_stack_pointer - C_stack_limit) > (n)))
 # define C_stack_probe(p)         (C_stress && ((C_word *)(p) >= C_stack_limit))
@@ -1263,9 +1267,9 @@ extern double trunc(double);
 #define C_i_char_greater_or_equal_p(x, y)  C_mk_bool(C_character_code(x) >= C_character_code(y))
 #define C_i_char_less_or_equal_p(x, y)  C_mk_bool(C_character_code(x) <= C_character_code(y))
 #define C_substring_copy(s1, s2, start1, end1, start2) \
-                                        (C_memcpy((C_char *)C_data_pointer(s2) + C_unfix(start2), \
-                                                  (C_char *)C_data_pointer(s1) + C_unfix(start1), \
-                                                  C_unfix(end1) - C_unfix(start1) ), C_SCHEME_UNDEFINED)
+                                        (C_memmove((C_char *)C_data_pointer(s2) + C_unfix(start2), \
+                                                   (C_char *)C_data_pointer(s1) + C_unfix(start1), \
+                                                   C_unfix(end1) - C_unfix(start1) ), C_SCHEME_UNDEFINED)
 #define C_substring_compare(s1, s2, start1, start2, len) \
                                         C_mk_bool(C_memcmp((C_char *)C_data_pointer(s1) + C_unfix(start1), \
                                                            (C_char *)C_data_pointer(s2) + C_unfix(start2), \
@@ -1306,8 +1310,8 @@ extern double trunc(double);
 
 #define C_copy_memory(to, from, n)      (C_memcpy(C_data_pointer(to), C_data_pointer(from), C_unfix(n)), C_SCHEME_UNDEFINED)
 #define C_copy_ptr_memory(to, from, n, toff, foff) \
-  (C_memcpy(C_pointer_address(to) + C_unfix(toff), C_pointer_address(from) + C_unfix(foff), \
-	    C_unfix(n)), C_SCHEME_UNDEFINED)
+  (C_memmove(C_pointer_address(to) + C_unfix(toff), C_pointer_address(from) + C_unfix(foff), \
+	     C_unfix(n)), C_SCHEME_UNDEFINED)
 #define C_set_memory(to, c, n)          (C_memset(C_data_pointer(to), C_character_code(c), C_unfix(n)), C_SCHEME_UNDEFINED)
 #define C_string_compare(to, from, n)   C_fix(C_memcmp(C_c_string(to), C_c_string(from), C_unfix(n)))
 #define C_string_compare_case_insensitive(from, to, n) \
@@ -1717,7 +1721,6 @@ C_fctexport void C_fcall C_toplevel_entry(C_char *name) C_regparm;
 C_fctexport C_word C_fcall C_enable_interrupts(void) C_regparm;
 C_fctexport C_word C_fcall C_disable_interrupts(void) C_regparm;
 C_fctexport void C_fcall C_paranoid_check_for_interrupt(void) C_regparm;
-C_fctexport void C_zap_strings(C_word str); /* OBSOLETE */
 C_fctexport void C_set_or_change_heap_size(C_word heap, int reintern);
 C_fctexport void C_do_resize_stack(C_word stack);
 C_fctexport C_word C_resize_pending_finalizers(C_word size);
@@ -1770,15 +1773,11 @@ C_fctexport C_word C_fcall C_swigmpointer(C_word **ptr, void *mp, void *sdata) C
 C_fctexport C_word C_vector(C_word **ptr, int n, ...);
 C_fctexport C_word C_structure(C_word **ptr, int n, ...);
 C_fctexport C_word C_fcall C_mutate_slot(C_word *slot, C_word val) C_regparm;
-C_fctexport C_word C_fcall C_mutate(C_word *slot, C_word val) C_regparm;
 C_fctexport void C_fcall C_reclaim(void *trampoline, void *proc) C_regparm C_noret;
 C_fctexport void C_save_and_reclaim(void *trampoline, void *proc, int n, ...) C_noret;
 C_fctexport void C_fcall C_rereclaim2(C_uword size, int double_plus) C_regparm;
 C_fctexport void C_unbound_variable(C_word sym);
-C_fctexport C_word C_fcall C_retrieve(C_word sym) C_regparm;
 C_fctexport C_word C_fcall C_retrieve2(C_word val, char *name) C_regparm;
-C_fctexport void *C_fcall C_retrieve_proc(C_word closure) C_regparm;
-C_fctexport void *C_fcall C_retrieve_symbol_proc(C_word sym) C_regparm;
 C_fctexport void *C_fcall C_retrieve2_symbol_proc(C_word val, char *name) C_regparm;
 C_fctexport int C_in_stackp(C_word x) C_regparm;
 C_fctexport int C_fcall C_in_heapp(C_word x) C_regparm;
@@ -1793,7 +1792,6 @@ C_fctexport C_word C_fcall C_equalp(C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_set_gc_report(C_word flag) C_regparm;
 C_fctexport C_word C_fcall C_start_timer(void) C_regparm;
 C_fctexport C_word C_exit_runtime(C_word code);
-C_fctexport C_word C_fcall C_display_flonum(C_word port, C_word n) C_regparm; /* OBSOLETE */
 C_fctexport C_word C_fcall C_set_print_precision(C_word n) C_regparm;
 C_fctexport C_word C_fcall C_get_print_precision(void) C_regparm;
 C_fctexport C_word C_fcall C_read_char(C_word port) C_regparm;
@@ -1814,7 +1812,6 @@ C_fctexport void C_set_symbol_table(C_SYMBOL_TABLE *st) C_regparm;
 C_fctexport C_SYMBOL_TABLE *C_find_symbol_table(char *name) C_regparm;
 C_fctexport C_word C_find_symbol(C_word str, C_SYMBOL_TABLE *stable) C_regparm;
 C_fctexport C_word C_fcall C_lookup_symbol(C_word sym) C_regparm;
-C_fctexport C_word C_enumerate_symbols(C_SYMBOL_TABLE *stable, C_word pos) C_regparm;
 C_fctexport void C_do_register_finalizer(C_word x, C_word proc);
 C_fctexport int C_do_unregister_finalizer(C_word x);
 C_fctexport C_word C_dbg_hook(C_word x);
@@ -1852,15 +1849,12 @@ C_fctexport void C_ccall C_flonum_rat(C_word c, C_word closure, C_word k, C_word
 C_fctexport void C_ccall C_quotient(C_word c, C_word closure, C_word k, C_word n1, C_word n2) C_noret;
 C_fctexport void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, ...) C_noret;
 C_fctexport void C_ccall C_fixnum_to_string(C_word c, C_word closure, C_word k, C_word num) C_noret;
-C_fctexport void C_ccall C_get_argv(C_word c, C_word closure, C_word k) C_noret; /* OBSOLETE */
-C_fctexport void C_ccall C_get_argument(C_word c, C_word closure, C_word k, C_word index) C_noret; /* OBSOLETE */
 C_fctexport void C_ccall C_make_structure(C_word c, C_word closure, C_word k, C_word type, ...) C_noret;
 C_fctexport void C_ccall C_make_symbol(C_word c, C_word closure, C_word k, C_word name) C_noret;
 C_fctexport void C_ccall C_make_pointer(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_make_tagged_pointer(C_word c, C_word closure, C_word k, C_word tag) C_noret;
 C_fctexport void C_ccall C_ensure_heap_reserve(C_word c, C_word closure, C_word k, C_word n) C_noret;
 C_fctexport void C_ccall C_return_to_host(C_word c, C_word closure, C_word k) C_noret;
-C_fctexport void C_ccall C_get_environment_variable(C_word c, C_word closure, C_word k, C_word name) C_noret; /* OBSOLETE */
 C_fctexport void C_ccall C_get_symbol_table_info(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_get_memory_info(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_context_switch(C_word c, C_word closure, C_word k, C_word state) C_noret;
@@ -2003,7 +1997,6 @@ C_fctexport C_word C_fcall C_i_foreign_char_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_fixnum_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_flonum_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_block_argumentp(C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_foreign_number_vector_argumentp(C_word t, C_word x) C_regparm; /* OBSOLETE */
 C_fctexport C_word C_fcall C_i_foreign_struct_wrapper_argumentp(C_word t, C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_string_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_symbol_argumentp(C_word x) C_regparm;
@@ -2060,12 +2053,18 @@ C_inline C_word *C_a_i(C_word **a, int n)
 #endif
 
 C_inline C_word 
-C_mutate2(C_word *slot, C_word val)
+C_mutate(C_word *slot, C_word val)
 {
   if(!C_immediatep(val)) return C_mutate_slot(slot, val);
   else return *slot = val;
 }
 
+C_inline C_word 
+C_mutate2(C_word *slot, C_word val) /* OBSOLETE */
+{
+  if(!C_immediatep(val)) return C_mutate_slot(slot, val);
+  else return *slot = val;
+}
 
 C_inline C_word C_permanentp(C_word x)
 {

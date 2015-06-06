@@ -1,6 +1,6 @@
 ;;;; lolevel.scm - Low-level routines for CHICKEN
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2015, The CHICKEN Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -40,7 +40,6 @@
 # include <sys/mman.h>
 #endif
 
-#define C_w2b(x)                   C_fix(C_wordstobytes(C_unfix(x)))
 #define C_memmove_o(to, from, n, toff, foff) C_memmove((char *)(to) + (toff), (char *)(from) + (foff), (n))
 EOF
 ) )
@@ -404,6 +403,8 @@ EOF
 
 ;;; Accessors for arbitrary vector-like block objects:
 
+(define (vector-like? x) (%generic-vector? x))
+
 (define block-set! ##sys#block-set!)
 
 (define block-ref 
@@ -422,7 +423,7 @@ EOF
 	[(##core#inline "C_byteblockp" x)
 	 (##sys#size x)]
 	[else
-	 (##core#inline "C_w2b" (##sys#size x))] ) )
+	 (##core#inline "C_bytes" (##sys#size x))] ) )
 
 
 ;;; Record objects:
