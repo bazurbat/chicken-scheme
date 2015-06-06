@@ -25,9 +25,9 @@ Numerous non-standard macros are provided. See
 Extended DSSSL style lambda lists are supported. DSSSL parameter lists are defined by the following grammar:
 
  <parameter-list> ==> <required-parameter>*
-                      [(#!optional <optional-parameter>*)]
-                      [(#!rest <rest-parameter>)]
-                      [(#!key <keyword-parameter>*)]
+                      [#!optional <optional-parameter>*]
+                      [#!rest <rest-parameter>]
+                      [#!key <keyword-parameter>*]
  <required-parameter> ==> <ident>
  <optional-parameter> ==> <ident>
                           | (<ident> <initializer>)
