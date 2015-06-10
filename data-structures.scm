@@ -312,11 +312,14 @@
 	   (end (fx- wherelen whichlen)))
       (##sys#check-fixnum start loc)
       (if (and (fx>= start 0)
-	       (fx> wherelen start))
-	  (let loop ((istart start))
-	    (cond ((fx> istart end) #f)
-		  ((test istart whichlen) istart)
-		  (else (loop (fx+ istart 1)))))
+	       (fx>= wherelen start))
+	  (if (fx= whichlen 0)
+	      start
+	      (and (fx>= end 0)
+		   (let loop ((istart start))
+		     (cond ((fx> istart end) #f)
+			   ((test istart whichlen) istart)
+			   (else (loop (fx+ istart 1)))))))
 	  (##sys#error-hook (foreign-value "C_OUT_OF_RANGE_ERROR" int)
 			    loc
 			    start
