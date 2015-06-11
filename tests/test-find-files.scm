@@ -1,9 +1,12 @@
-(use posix)
+(use data-structures posix)
 (include "test.scm")
 
 (handle-exceptions exn
   'ignore
   (delete-directory "find-files-test-dir" #t))
+
+(define (file-list=? a b)
+  (equal? (sort a string<?) (sort b string<?)))
 
 (for-each (lambda (d)
             (create-directory d #t))
@@ -34,7 +37,8 @@
               "./dir-link-target"
               "./file1"
               "./dir-link-name"
-              "./file2"))
+              "./file2")
+            file-list=?)
 
 (test-equal "dotfiles: #t"
             (find-files "." dotfiles: #t)
@@ -48,7 +52,8 @@
               "./dir-link-target"
               "./file1"
               "./dir-link-name"
-              "./file2"))
+              "./file2")
+            file-list=?)
 
 (test-equal "follow-symlinks: #t"
             (find-files "." follow-symlinks: #t)
@@ -62,7 +67,8 @@
               "./dir-link-name/foo"
               "./dir-link-name/bar"
               "./dir-link-name"
-              "./file2"))
+              "./file2")
+            file-list=?)
 
 (test-equal "limit: 1"
             (find-files "." limit: 1)
@@ -73,7 +79,8 @@
               "./dir-link-target"
               "./file1"
               "./dir-link-name"
-              "./file2"))
+              "./file2")
+            file-list=?)
 
 (test-equal "limit: 1 follow-symlinks: #t"
             (find-files "." limit: 1 follow-symlinks: #t)
@@ -86,7 +93,8 @@
               "./dir-link-name/foo"
               "./dir-link-name/bar"
               "./dir-link-name"
-              "./file2"))
+              "./file2")
+            file-list=?)
 
 (test-equal "limit: 2"
             (find-files "." limit: 2)
@@ -98,7 +106,8 @@
               "./dir-link-target"
               "./file1"
               "./dir-link-name"
-              "./file2"))
+              "./file2")
+            file-list=?)
 
 (test-equal "limit: 2 follow-symlinks: #t"
             (find-files "." limit: 2 follow-symlinks: #t)
@@ -112,7 +121,8 @@
               "./dir-link-name/foo"
               "./dir-link-name/bar"
               "./dir-link-name"
-              "./file2"))
+              "./file2")
+            file-list=?)
 
 (test-equal "test: (lambda (f) (directory? f))"
             (find-files "." test: (lambda (f) (directory? f)))
@@ -120,7 +130,8 @@
               "./foo/bar"
               "./foo"
               "./dir-link-target"
-              "./dir-link-name"))
+              "./dir-link-name")
+            file-list=?)
 
 (test-equal "test: (lambda (f) (directory? f)) action: (lambda (f p) (cons (string-append \"--\" f) p))"
             (find-files "."
@@ -130,7 +141,8 @@
               "--./foo/bar"
               "--./foo"
               "--./dir-link-target"
-              "--./dir-link-name"))
+              "--./dir-link-name")
+            file-list=?)
 
 (test-equal "dotfiles: #t test: (lambda (f) (directory? f)) follow-symlinks: #t"
             (find-files "." dotfiles: #t test: (lambda (f) (directory? f)) follow-symlinks: #t)
@@ -140,7 +152,8 @@
               "./foo/.x"
               "./foo"
               "./dir-link-target"
-              "./dir-link-name"))
+              "./dir-link-name")
+            file-list=?)
 
 (test-equal "dotfiles: #t test: (lambda (f) (directory? f)) follow-symlinks: #t limit: 1"
             (find-files "."
@@ -152,7 +165,8 @@
               "./foo/.x"
               "./foo"
               "./dir-link-target"
-              "./dir-link-name"))
+              "./dir-link-name")
+            file-list=?)
 
 (test-end "find-files")
 
