@@ -3625,16 +3625,6 @@ C_inline char *C_realpath(const char *path, char *resolved)
 }
 #endif
 
-/* For image_info retrieval */
-#if defined(__HAIKU__)
-# include <kernel/image.h>
-#endif
-
-/* For _NSGetExecutablePath */
-#if defined(C_MACOSX)
-# include <mach-o/dyld.h>
-#endif
-
 C_END_C_DECLS
 
 #endif /* ___CHICKEN */

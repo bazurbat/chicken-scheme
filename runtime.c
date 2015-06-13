@@ -106,6 +106,16 @@ static C_TLS int timezone;
 # include <windows.h>
 #endif
 
+/* For image_info retrieval */
+#if defined(__HAIKU__)
+# include <kernel/image.h>
+#endif
+
+/* For _NSGetExecutablePath */
+#if defined(C_MACOSX)
+# include <mach-o/dyld.h>
+#endif
+
 #ifdef HAVE_CONFIG_H
 # ifdef PACKAGE
 #  undef PACKAGE
