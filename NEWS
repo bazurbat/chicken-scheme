@@ -45,6 +45,8 @@
   - Removed several deprecated and undocumented internal procedures:
     ##sys#zap-strings, ##sys#round, ##sys#foreign-number-vector-argument,
     ##sys#check-port-mode, ##sys#check-port*
+  - SIGBUS, SIGILL and SIGFPE will now cause proper exceptions instead
+    of panicking (thanks to Joerg Wittenberger).
 
 - Module system
   - Allow functor arguments to be optional, with default implementations.
