@@ -1753,6 +1753,21 @@ void barf(int code, char *loc, ...)
     c = 0;
     break;
 
+  case C_FLOATING_POINT_EXCEPTION_ERROR:
+    msg = C_text("floating point exception");
+    c = 0;
+    break;
+
+  case C_ILLEGAL_INSTRUCTION_ERROR:
+    msg = C_text("illegal instruction");
+    c = 0;
+    break;
+
+  case C_BUS_ERROR:
+    msg = C_text("bus error");
+    c = 0;
+    break;
+
   default: panic(C_text("illegal internal error code"));
   }
   
