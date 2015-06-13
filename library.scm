@@ -203,6 +203,7 @@ EOF
 (define (current-gc-milliseconds) (##sys#fudge 31))
 (define ##sys#decode-seconds (##core#primitive "C_decode_seconds"))
 (define get-environment-variable (foreign-lambda c-string "C_getenv" c-string))
+(define executable-pathname (foreign-lambda c-string* "C_executable_pathname"))
 
 (define (##sys#start-timer)
   (##sys#gc #t)

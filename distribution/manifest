@@ -120,6 +120,7 @@ tests/embedded1.c
 tests/embedded2.scm
 tests/embedded3.c
 tests/embedded4.scm
+tests/executable-tests.scm
 tests/condition-tests.scm
 tests/fixnum-tests.scm
 tests/numbers-string-conversion-tests.scm

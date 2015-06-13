@@ -387,6 +387,10 @@ $compile locative-stress-test.scm
 echo "======================================== syntax-rules stress test ..."
 time $interpret -bnq syntax-rule-stress-test.scm
 
+echo "======================================== executable tests ..."
+$compile executable-tests.scm
+./a.out "$TEST_DIR/a.out"
+
 echo "======================================== embedding (1) ..."
 $compile embedded1.c
 ./a.out

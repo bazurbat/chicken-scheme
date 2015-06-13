@@ -542,6 +542,13 @@ the list is a string containing the name of the executing program. The
 other items are the arguments passed to the application. It depends on
 the host-shell whether arguments are expanded ('globbed') or not.
 
+==== executable-pathname
+
+<procedure>(executable-pathname)</procedure>
+
+Returns a full pathname of the currently-running executable, or {{#f}}
+if it couldn't be determined. When evaluating code in the interpreter,
+this will be a path to {{csi}}.
 
 ==== exit
 

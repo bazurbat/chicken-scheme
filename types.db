@@ -986,6 +986,7 @@
 (error (procedure error (* #!rest) noreturn))
 (##sys#error (procedure ##sys#error (* #!rest) noreturn))
 (##sys#signal-hook (procedure ##sys#signal-hook (* #!rest) noreturn))
+(executable-pathname (#(procedure #:pure) executable-pathname () (or string false)))
 (exit (procedure exit (#!optional fixnum) noreturn))
 (exit-handler (#(procedure #:clean #:enforce) exit-handler (#!optional (procedure (fixnum) . *)) procedure))
 (expand (procedure expand (* #!optional list) *))

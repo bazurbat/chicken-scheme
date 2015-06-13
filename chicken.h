@@ -1,4 +1,3 @@
-
 /* chicken.h - General headerfile for compiler generated executables
 ;
 ; Copyright (c) 2008-2015, The CHICKEN Team
@@ -319,7 +318,7 @@ void *alloca ();
 
 /* Have a GUI? */
 
-#if defined(C_WINDOWS_GUI) || defined(C_GUI) || defined(C_PRIVATE_REPOSITORY)
+#if defined(C_GUI) || defined(C_PRIVATE_REPOSITORY)
 # ifdef _WIN32
 #  include <windows.h>
 #  ifndef WINAPI
@@ -328,6 +327,22 @@ void *alloca ();
 # endif
 #else
 # define C_GENERIC_CONSOLE
+#endif
+
+/**
+ * HAVE_EXE_PATH is defined on platforms on which there's a simple way
+ * to retrieve a path to the current executable (such as reading
+ * "/proc/<pid>/exe" or some similar trick).
+ *
+ * SEARCH_EXE_PATH is defined on platforms on which we must search for
+ * the current executable. Because this search is sensitive to things
+ * like CWD, PATH, and so on, it's done once at startup and saved in
+ * `C_main_exe`.
+ */
+#if defined(__linux__) || defined(__sun) || defined(C_MACOSX) || defined(__HAIKU__) || (defined(_WIN32) && !defined(__CYGWIN__))
+# define HAVE_EXE_PATH
+#elif defined(__unix__) || defined(C_XXXBSD) || defined(_AIX)
+# define SEARCH_EXE_PATH
 #endif
 
 /* Needed for pre-emptive threading */
@@ -788,14 +803,16 @@ static inline int isinf_ld (long double x)
 # define C_SOFTWARE_VERSION "aix"
 #elif defined(__GNU__)
 # define C_SOFTWARE_VERSION "hurd"
-/* This is as silly as the other limits, there is no PATH_MAX in The Hurd */
-# define PATH_MAX 1024
 #else
 # define C_SOFTWARE_VERSION "unknown"
 #endif
 
-#define C_MAX_PATH         PATH_MAX
-
+/* There is no PATH_MAX in The Hurd. */
+#ifdef PATH_MAX
+# define C_MAX_PATH PATH_MAX
+#else
+# define C_MAX_PATH 1024
+#endif
 
 /* Types: */
 
@@ -1017,6 +1034,7 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_fopen                    fopen
 # define C_fclose                   fclose
 # define C_strpbrk                  strpbrk
+# define C_strcspn                  strcspn
 # define C_snprintf                 snprintf
 # define C_printf                   printf
 # define C_fprintf                  fprintf
@@ -1674,9 +1692,9 @@ extern double trunc(double);
 #define C_ub_i_pointer_f64_set(p, n)    (*((double *)(p)) = (n))
 
 #ifdef C_PRIVATE_REPOSITORY
-# define C_private_repository(fname)     C_use_private_repository(C_path_to_executable(fname))
+# define C_private_repository()         C_use_private_repository(C_executable_dirname())
 #else
-# define C_private_repository(fname)
+# define C_private_repository()
 #endif
 
 /* left for backwards-compatibility */
@@ -1688,13 +1706,20 @@ extern double trunc(double);
 # define C_set_gui_mode
 #endif
 
+#ifdef SEARCH_EXE_PATH
+# define C_set_main_exe(fname)          C_main_exe = C_resolve_executable_pathname(fname)
+#else
+# define C_set_main_exe(fname)
+#endif
+
 #if !defined(C_EMBEDDED) && !defined(C_SHARED)
-# if (defined(C_WINDOWS_GUI) || defined(C_GUI)) && defined(_WIN32)
+# if defined(C_GUI) && defined(_WIN32)
 #  define C_main_entry_point            \
   int WINAPI WinMain(HINSTANCE me, HINSTANCE you, LPSTR cmdline, int show) \
   { \
     C_gui_mode = 1; \
-    C_private_repository(NULL);		      \
+    C_set_main_exe(argv[0]);				\
+    C_private_repository();				\
     return CHICKEN_main(0, NULL, (void *)C_toplevel); \
   }
 # else
@@ -1702,7 +1727,8 @@ extern double trunc(double);
   int main(int argc, char *argv[]) \
   { \
     C_set_gui_mode; \
-    C_private_repository(argv[ 0 ]);			\
+    C_set_main_exe(argv[0]);				\
+    C_private_repository();				\
     return CHICKEN_main(argc, argv, (void*)C_toplevel); \
   }
 # endif
@@ -1803,6 +1829,9 @@ C_varextern C_TLS C_uword
   C_heap_shrinkage;
 C_varextern C_TLS char
   **C_main_argv,
+#ifdef SEARCH_EXE_PATH
+  *C_main_exe,
+#endif
   *C_dlerror;
 C_varextern C_TLS C_uword C_maximal_heap_size;
 C_varextern C_TLS int (*C_gc_mutation_hook)(C_word *slot, C_word val);
@@ -1940,6 +1969,9 @@ C_fctexport int C_do_unregister_finalizer(C_word x);
 C_fctexport C_word C_dbg_hook(C_word x);
 C_fctexport void C_use_private_repository(C_char *path);
 C_fctexport C_char *C_private_repository_path();
+C_fctexport C_char *C_executable_dirname();
+C_fctexport C_char *C_executable_pathname();
+C_fctexport C_char *C_resolve_executable_pathname(C_char *fname);
 
 C_fctimport void C_ccall C_toplevel(C_word c, C_word self, C_word k) C_noret;
 C_fctimport void C_ccall C_invalid_procedure(int c, C_word self, ...) C_noret;
@@ -2213,7 +2245,6 @@ C_fctexport C_word C_fcall C_i_foreign_unsigned_ranged_integer_argumentp(C_word 
 
 C_fctexport C_char *C_lookup_procedure_id(void *ptr);
 C_fctexport void *C_lookup_procedure_ptr(C_char *id);
-C_fctexport C_char *C_executable_path();
 
 #ifdef C_SIXTY_FOUR
 C_fctexport void C_ccall C_peek_signed_integer_32(C_word c, C_word closure, C_word k, C_word v, C_word index) C_noret;
@@ -3574,167 +3605,34 @@ C_inline size_t C_strlcat(char *dst, const char *src, size_t sz)
 }
 #endif
 
-
-#ifdef C_PRIVATE_REPOSITORY
-# if defined(C_MACOSX) && defined(C_GUI)
-#  include <CoreFoundation/CoreFoundation.h>
-# elif defined(__HAIKU__)
-#  include <kernel/image.h>
-# endif
-
-C_inline C_char *
-C_path_to_executable(C_char *fname)
+/* Safe realpath usage depends on a reliable PATH_MAX. */
+#ifdef PATH_MAX
+# define C_realpath realpath
+#else
+C_inline char *C_realpath(const char *path, char *resolved)
 {
-  C_char *buffer = (C_char *)C_malloc(C_MAX_PATH);
-
-  if(buffer == NULL) return NULL;
-
-# if defined(__linux__) || defined(__sun)
-  C_char linkname[64]; /* /proc/<pid>/exe */
-  pid_t pid;
-  int ret;
-	
-  pid = C_getpid();
-#  ifdef __linux__
-  C_snprintf(linkname, sizeof(linkname), "/proc/%i/exe", pid);
-#  else
-  C_snprintf(linkname, sizeof(linkname), "/proc/%i/path/a.out", pid); /* SunOS / Solaris */
-#  endif
-  ret = C_readlink(linkname, buffer, C_MAX_PATH - 1);
-
-  if(ret == -1 || ret >= C_MAX_PATH - 1)
+# if _POSIX_C_SOURCE >= 200809L
+  char *p;
+  size_t n;
+  if((p = realpath(path, NULL)) == NULL)
     return NULL;
-
-  for(--ret; ret > 0 && buffer[ ret ] != '/'; --ret);
-
-  buffer[ ret ] = '\0';
-  return buffer;
-# elif defined(_WIN32) && !defined(__CYGWIN__)
-  int i;
-  int n = GetModuleFileName(NULL, buffer, C_MAX_PATH - 1);
-
-  if(n == 0 || n >= C_MAX_PATH - 1)
-    return NULL;
-
-  for(i = n - 1; i >= 0 && buffer[ i ] != '\\'; --i);
-
-  buffer[ i ] = '\0';
-  return buffer;
-# elif defined(C_MACOSX) && defined(C_GUI)
-  CFBundleRef bundle = CFBundleGetMainBundle();
-  CFURLRef url = CFBundleCopyExecutableURL(bundle);
-  int i;
-  
-  if(CFURLGetFileSystemRepresentation(url, true, buffer, C_MAX_PATH)) {
-    for(i = C_strlen(buffer); i >= 0 && buffer[ i ] != '/'; --i);
-
-    buffer[ i ] = '\0';
-    return buffer;
-  }
-  else return NULL;  
-# elif defined(__unix__) || defined(__unix) || defined(C_XXXBSD) || defined(_AIX)
-  int i, j, k, l;
-  C_char *path, *dname;
-
-  /* found on stackoverflow.com: */
-
-  /* no name given (execve) */
-  if(fname == NULL) return NULL;
-
-  i = C_strlen(fname) - 1;
-
-  while(i >= 0 && fname[ i ] != '/') --i;
-
-  /* absolute path */
-  if(*fname == '/') {
-    fname[ i ] = '\0';
-    C_strlcpy(buffer, fname, C_MAX_PATH);
-    return buffer;
-  }
-  else {
-    /* try current dir */
-    if(C_getcwd(buffer, C_MAX_PATH - 1) == NULL)
-      return NULL;
-
-    C_strlcat(buffer, "/", C_MAX_PATH);
-    C_strlcat(buffer, fname, C_MAX_PATH);
-  
-    if(C_access(buffer, F_OK) == 0) {
-      for(i = C_strlen(buffer); i >= 0 && buffer[ i ] != '/'; --i);
-
-      buffer[ i ] = '\0';
-      return buffer; 
-    }
-  
-    /* walk PATH */
-    path = C_getenv("PATH");
-  
-    if(path == NULL) return NULL;
-
-    for(l = j = k = 0; !l; ++k) {
-      switch(path[ k ]) {
-
-      case '\0':
-	if(k == 0) return NULL;	/* empty PATH */
-	else l = 1;
-	/* fall through */
-	
-      case ':':
-	C_strncpy(buffer, path + j, k - j);
-	buffer[ k - j ] = '\0';
-	C_strlcat(buffer, "/", C_MAX_PATH);
-	C_strlcat(buffer, fname, C_MAX_PATH);
-
-	if(C_access(buffer, F_OK) == 0) {
-	  dname = C_strdup(buffer);
-	  l = C_readlink(dname, buffer, C_MAX_PATH - 1);
-
-	  if(l == -1) {
-	    /* not a symlink (we ignore other errors here */
-	    buffer[ k - j ] = '\0';
-	  }
-	  else {
-	    while(l > 0 && buffer[ l ] != '/') --l;
-	  
-	    C_free(dname);
-	    buffer[ l ] = '\0';
-	  }
-
-	  return buffer;
-	}
-	else j = k + 1;
-
-	break;
-
-      default: ;
-      }      
-    }
-
-    return NULL;
-  }
-# elif defined(__HAIKU__)
-{
-  image_info info;
-  int32 cookie = 0;
-  int32 i;
-
-  while (get_next_image_info(0, &cookie, &info) == B_OK) {
-    if (info.type == B_APP_IMAGE) {
-      C_strlcpy(buffer, info.name, C_MAX_PATH);
-
-      for(i = C_strlen(buffer); i >= 0 && buffer[ i ] != '/'; --i);
-
-      buffer[ i ] = '\0';
-
-      return buffer;
-    }
-  }
-}
-  return NULL;
-# else
-  return NULL;
+  n = C_strlcpy(resolved, p, C_MAX_PATH);
+  C_free(p);
+  if(n < C_MAX_PATH)
+    return resolved;
 # endif
+  return NULL;
 }
+#endif
+
+/* For image_info retrieval */
+#if defined(__HAIKU__)
+# include <kernel/image.h>
+#endif
+
+/* For _NSGetExecutablePath */
+#if defined(C_MACOSX)
+# include <mach-o/dyld.h>
 #endif
 
 C_END_C_DECLS
