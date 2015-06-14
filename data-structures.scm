@@ -514,7 +514,7 @@
 (define (string-translate* str smap)
   (##sys#check-string str 'string-translate*)
   (##sys#check-list smap 'string-translate*)
-  (let ([len (##sys#size str)])
+  (let ((len (##sys#size str)))
     (define (collect i from total fs)
       (if (fx>= i len)
 	  (##sys#fragments->string
@@ -523,15 +523,16 @@
 	    (if (fx> i from) 
 		(cons (##sys#substring str from i) fs)
 		fs) ) )
-	  (let loop ([smap smap])
+	  (let loop ((smap smap))
 	    (if (null? smap) 
 		(collect (fx+ i 1) from (fx+ total 1) fs)
-		(let* ([p (car smap)]
-		       [sm (car p)]
-		       [smlen (string-length sm)]
-		       [st (cdr p)] )
-		  (if (##core#inline "C_substring_compare" str sm i 0 smlen)
-		      (let ([i2 (fx+ i smlen)])
+		(let* ((p (car smap))
+		       (sm (car p))
+		       (smlen (string-length sm))
+		       (st (cdr p)) )
+		  (if (and (fx<= (fx+ i smlen) len)
+			   (##core#inline "C_substring_compare" str sm i 0 smlen))
+		      (let ((i2 (fx+ i smlen)))
 			(when (fx> i from)
 			  (set! fs (cons (##sys#substring str from i) fs)) )
 			(collect 

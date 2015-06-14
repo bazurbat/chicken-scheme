@@ -57,6 +57,17 @@
 (assert (< 0 (string-compare3-ci "foo\x00b" "foo\x00a")))
 (assert (< 0 (string-compare3-ci "foo\x00b" "foo\x00A")))
 
+(assert (string=? "bde" (string-translate* "abcd"
+					   '(("a" . "b")
+					     ("b" . "")
+					     ("c" . "d")
+					     ("d" . "e")))))
+(assert (string=? "bc" (string-translate* "abc"
+					  '(("ab" . "b")
+					    ("bc" . "WRONG")))))
+(assert (string=? "x" (string-translate* "ab" '(("ab" . "x")))))
+(assert (string=? "xy" (string-translate* "xyz" '(("z" . "")))))
+
 ;; topological-sort
 
 (assert (equal? '() (topological-sort '() eq?)))
