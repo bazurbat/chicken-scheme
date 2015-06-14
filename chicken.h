@@ -27,12 +27,6 @@
 
 /* Configuration: */
 
-/*
- * The Watcom (__WATCOMC__), Metroworks (__MWERKS__), and Delorie (__DJGPP__)
- * compilers are not currently supported but existing references remain,
- * just in case.
- */
-
 #ifndef ___CHICKEN
 #define ___CHICKEN
 
@@ -88,7 +82,7 @@
 # define C_GNU_ENV
 #endif
 
-#if defined(__MINGW32__) || defined(__WATCOMC__) || defined(__MWERKS__)
+#if defined(__MINGW32__)
 /*
  * XXX This should probably be renamed or changed because it's misleading.
  * For example, Haiku is not a Unix either, but this doesn't get defined there.
@@ -142,7 +136,7 @@
 # include <sys/byteorder.h>
 #endif
 
-#if defined(__MINGW32__) || defined(__WATCOMC__)
+#if defined(__MINGW32__)
 # include <malloc.h>
 #endif
 
@@ -208,23 +202,6 @@ void *alloca ();
 #   undef  C_varextern
 #   define C_varextern             C_extern __declspec(dllimport)
 #  endif
-# elif defined(__WATCOMC__)
-#  undef  C_fctimport
-#  define C_fctimport              __declspec(dllexport)
-#  undef  C_externimport
-#  undef  C_externexport
-#  define C_externexport           C_extern __declspec(dllexport)
-#  undef  C_varextern
-#  undef  C_fctexport
-#  ifdef C_BUILDING_LIBCHICKEN
-#   define C_varextern             C_extern __declspec(dllexport)
-#   define C_fctexport             __declspec(dllexport)
-#   define C_externimport          C_extern __declspec(dllexport)
-#  else
-#   define C_varextern             C_extern __declspec(dllimport)
-#   define C_fctexport             __declspec(dllimport)
-#   define C_externimport          C_extern __declspec(dllimport)
-#  endif
 # endif
 #endif
 
@@ -253,8 +230,6 @@ void *alloca ();
 # if defined(__i386__) && !defined(__clang__)
 #  define C_regparm               __attribute__ ((regparm(3)))
 # endif
-#elif defined(__WATCOMC__)
-# define C_ccall                  __cdecl
 #endif
 
 #ifndef C_cblock
@@ -767,12 +742,8 @@ static inline int isinf_ld (long double x)
 # define C_BUILD_PLATFORM "aix"
 #elif defined(__GNUC__)
 # define C_BUILD_PLATFORM "gnu"
-#elif defined(__MWERKS__)
-# define C_BUILD_PLATFORM "metrowerks"
 #elif defined(__INTEL_COMPILER)
 # define C_BUILD_PLATFORM "intel"
-#elif defined(__WATCOMC__)
-# define C_BUILD_PLATFORM "watcom"
 #else
 # define C_BUILD_PLATFORM "unknown"
 #endif

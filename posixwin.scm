@@ -118,7 +118,6 @@ static C_TLS TCHAR C_username[255 + 1] = "";
 #define C_chdir(str)	    C_fix(chdir(C_c_string(str)))
 #define C_rmdir(str)	    C_fix(rmdir(C_c_string(str)))
 
-#ifndef __WATCOMC__
 /* DIRENT stuff */
 struct dirent
 {
@@ -195,12 +194,6 @@ readdir(DIR * dir)
     }
     return NULL;
 }
-#endif /* ifndef __WATCOMC__ */
-
-#ifdef __WATCOMC__
-/* there is no P_DETACH in Watcom CRTL */
-# define P_DETACH P_NOWAIT
-#endif
 
 #define open_binary_input_pipe(a, n, name)   C_mpointer(a, _popen(C_c_string(name), "r"))
 #define open_text_input_pipe(a, n, name)     open_binary_input_pipe(a, n, name)
