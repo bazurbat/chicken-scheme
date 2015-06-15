@@ -5,7 +5,8 @@
     potential select() buffer overrun.
   - CVE-2014-9651: substring-index[-ci] no longer scans beyond string
     boundaries.
-  - string-translate* no longer scans beyond string boundaries.
+  - CVE-2015-4556: string-translate* no longer scans beyond string
+    boundaries.
 
 - Core libraries
   - alist-ref from unit data-structures now gives an error when passed
