@@ -898,7 +898,7 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C__STR(x)                 #x
 # define C__CHECK_panic(a,s,f,l)                                       \
   ((a) ? (void)0 :                                                     \
-   C_panic_hook("Low-level type assertion " s " failed at " f ":" C__STR(l)))
+   C_panic_hook(C_text("Low-level type assertion " s " failed at " f ":" C__STR(l))))
 # define C__CHECK_core(v,a,s,x)                                         \
   ({ struct {                                                           \
       typeof(v) n1;                                                     \
@@ -1038,10 +1038,6 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_access                   access
 # define C_getpid                   getpid
 # define C_getenv                   getenv
-# ifdef __linux__
-extern double round(double);
-extern double trunc(double);
-# endif
 #else
 /* provide this file and define C_PROVIDE_LIBC_STUBS if you want to use
    your own libc-replacements or -wrappers */
@@ -1329,8 +1325,8 @@ extern double trunc(double);
 
 #define C_tty_portp(p)                  C_mk_bool(isatty(fileno(C_port_file(p))))
 
-#define C_emit_eval_trace_info(x, y, z) C_emit_trace_info2("<eval>", x, y, z)
-#define C_emit_syntax_trace_info(x, y, z) C_emit_trace_info2("<syntax>", x, y, z)
+#define C_emit_eval_trace_info(x, y, z) C_emit_trace_info2(C_text("<eval>"), x, y, z)
+#define C_emit_syntax_trace_info(x, y, z) C_emit_trace_info2(C_text("<syntax>"), x, y, z)
 
 /* These expect C_VECTOR_TYPE to be 0: */
 #define C_vector_to_structure(v)        (C_block_header(v) |= C_STRUCTURE_TYPE, C_SCHEME_UNDEFINED)
@@ -2432,14 +2428,14 @@ C_inline C_word C_i_fixnum_max(C_word x, C_word y)
 
 C_inline C_word C_fixnum_divide(C_word x, C_word y)
 {
-  if(y == C_fix(0)) C_div_by_zero_error("fx/");
+  if(y == C_fix(0)) C_div_by_zero_error(C_text("fx/"));
   return C_u_fixnum_divide(x, y);
 }
 
 
 C_inline C_word C_fixnum_modulo(C_word x, C_word y)
 {
-  if(y == C_fix(0)) C_div_by_zero_error("fxmod");
+  if(y == C_fix(0)) C_div_by_zero_error(C_text("fxmod"));
   return C_u_fixnum_modulo(x, y);
 }
 
@@ -2476,7 +2472,7 @@ C_a_i_flonum_quotient_checked(C_word **ptr, int c, C_word n1, C_word n2)
 {
   double n3 = C_flonum_magnitude(n2);
 
-  if(n3 == 0.0) C_div_by_zero_error("fp/?");
+  if(n3 == 0.0) C_div_by_zero_error(C_text("fp/?"));
   return C_flonum(ptr, C_flonum_magnitude(n1) / n3);
 }
 
@@ -2484,7 +2480,7 @@ C_a_i_flonum_quotient_checked(C_word **ptr, int c, C_word n1, C_word n2)
 C_inline double
 C_ub_i_flonum_quotient_checked(double n1, double n2)
 {
-  if(n2 == 0.0) C_div_by_zero_error("fp/?");
+  if(n2 == 0.0) C_div_by_zero_error(C_text("fp/?"));
   return n1 / n2;
 }
 
