@@ -67,6 +67,8 @@
   - Removed deprecated C_get_argument[_2] and
     C_get_environment_variable[_2] functions.
   - C_mutate2 has been deprecated in favor of C_mutate
+  - chicken.h can be included in C++ programs in strict C++11 mode
+     without compiler errors on Linux (thanks to "Izaak").
 
 - Foreign function interface
   - The foreign type specifier "scheme-pointer" now accepts an optional
