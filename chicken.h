@@ -944,7 +944,7 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C__STR(x)                 #x
 # define C__CHECK_panic(a,s,f,l)                                       \
   ((a) ? (void)0 :                                                     \
-   C_panic_hook("Low-level type assertion " s " failed at " f ":" C__STR(l)))
+   C_panic_hook(C_text("Low-level type assertion " s " failed at " f ":" C__STR(l))))
 # define C__CHECK_core(v,a,s,x)                                         \
   ({ struct {                                                           \
       typeof(v) n1;                                                     \
@@ -1085,10 +1085,6 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_access                   access
 # define C_getpid                   getpid
 # define C_getenv                   getenv
-# ifdef __linux__
-extern double round(double);
-extern double trunc(double);
-# endif
 #else
 /* provide this file and define C_PROVIDE_LIBC_STUBS if you want to use
    your own libc-replacements or -wrappers */
@@ -1401,8 +1397,8 @@ extern double trunc(double);
 
 #define C_tty_portp(p)                  C_mk_bool(isatty(fileno(C_port_file(p))))
 
-#define C_emit_eval_trace_info(x, y, z) C_emit_trace_info2("<eval>", x, y, z)
-#define C_emit_syntax_trace_info(x, y, z) C_emit_trace_info2("<syntax>", x, y, z)
+#define C_emit_eval_trace_info(x, y, z) C_emit_trace_info2(C_text("<eval>"), x, y, z)
+#define C_emit_syntax_trace_info(x, y, z) C_emit_trace_info2(C_text("<syntax>"), x, y, z)
 
 /* These expect C_VECTOR_TYPE to be 0: */
 #define C_vector_to_structure(v)        (C_block_header(v) |= C_STRUCTURE_TYPE, C_SCHEME_UNDEFINED)
@@ -2996,7 +2992,7 @@ C_inline C_word C_i_fixnum_gcd(C_word x, C_word y)
 
 C_inline C_word C_fixnum_divide(C_word x, C_word y)
 {
-  if(y == C_fix(0)) C_div_by_zero_error("fx/");
+  if(y == C_fix(0)) C_div_by_zero_error(C_text("fx/"));
   return C_u_fixnum_divide(x, y);
 }
 
@@ -3004,7 +3000,7 @@ C_inline C_word C_fixnum_divide(C_word x, C_word y)
 C_inline C_word C_fixnum_modulo(C_word x, C_word y)
 {
   if(y == C_fix(0)) {
-    C_div_by_zero_error("fxmod");
+    C_div_by_zero_error(C_text("fxmod"));
   } else {
     y = C_unfix(y);
     x = C_unfix(x) % y;
@@ -3020,7 +3016,7 @@ C_inline C_word
 C_a_i_fixnum_quotient_checked(C_word **ptr, int c, C_word x, C_word y)
 {
   if (y == C_fix(0)) {
-    C_div_by_zero_error("fx/");
+    C_div_by_zero_error(C_text("fx/"));
   } else if (x == C_fix(C_MOST_NEGATIVE_FIXNUM) && y == C_fix(-1)) {
     return C_bignum1(ptr, 0, -C_MOST_NEGATIVE_FIXNUM); /* Special case */
   } else {
@@ -3031,7 +3027,7 @@ C_a_i_fixnum_quotient_checked(C_word **ptr, int c, C_word x, C_word y)
 C_inline C_word C_i_fixnum_remainder_checked(C_word x, C_word y)
 {
   if (y == C_fix(0)) {
-    C_div_by_zero_error("fxrem");
+    C_div_by_zero_error(C_text("fxrem"));
   } else {
     x = C_unfix(x);
     y = C_unfix(y);
@@ -3068,7 +3064,7 @@ C_inline C_word C_s_a_u_i_integer_abs(C_word **ptr, C_word n, C_word x)
 C_inline C_word C_i_fixnum_bit_setp(C_word n, C_word i)
 {
     if (i & C_INT_SIGN_BIT) {
-      C_not_an_uinteger_error("bit-set?", i);
+      C_not_an_uinteger_error(C_text("bit-set?"), i);
     } else {
       i = C_unfix(i);
       if (i >= C_WORD_SIZE) return C_mk_bool(n & C_INT_SIGN_BIT);
@@ -3162,7 +3158,7 @@ C_a_i_flonum_quotient_checked(C_word **ptr, int c, C_word n1, C_word n2)
 {
   double n3 = C_flonum_magnitude(n2);
 
-  if(n3 == 0.0) C_div_by_zero_error("fp/?");
+  if(n3 == 0.0) C_div_by_zero_error(C_text("fp/?"));
   return C_flonum(ptr, C_flonum_magnitude(n1) / n3);
 }
 
@@ -3170,7 +3166,7 @@ C_a_i_flonum_quotient_checked(C_word **ptr, int c, C_word n1, C_word n2)
 C_inline double
 C_ub_i_flonum_quotient_checked(double n1, double n2)
 {
-  if(n2 == 0.0) C_div_by_zero_error("fp/?");
+  if(n2 == 0.0) C_div_by_zero_error(C_text("fp/?"));
   return n1 / n2;
 }
 
@@ -3183,11 +3179,11 @@ C_a_i_flonum_actual_quotient_checked(C_word **ptr, int c, C_word x, C_word y)
   double dy = C_flonum_magnitude(y), r;
 
   if(dy == 0.0) {
-    C_div_by_zero_error("quotient");
+    C_div_by_zero_error(C_text("quotient"));
   } else if (!C_truep(C_u_i_fpintegerp(x))) {
-    C_not_an_integer_error("quotient", x);
+    C_not_an_integer_error(C_text("quotient"), x);
   } else if (!C_truep(C_u_i_fpintegerp(y))) {
-    C_not_an_integer_error("quotient", y);
+    C_not_an_integer_error(C_text("quotient"), y);
   } else {
     modf(C_flonum_magnitude(x) / dy, &r);
     return C_flonum(ptr, r);
@@ -3201,11 +3197,11 @@ C_a_i_flonum_remainder_checked(C_word **ptr, int c, C_word x, C_word y)
          dy = C_flonum_magnitude(y), r;
 
   if(dy == 0.0) {
-    C_div_by_zero_error("remainder");
+    C_div_by_zero_error(C_text("remainder"));
   } else if (!C_truep(C_u_i_fpintegerp(x))) {
-    C_not_an_integer_error("remainder", x);
+    C_not_an_integer_error(C_text("remainder"), x);
   } else if (!C_truep(C_u_i_fpintegerp(y))) {
-    C_not_an_integer_error("remainder", y);
+    C_not_an_integer_error(C_text("remainder"), y);
   } else {
     modf(dx / dy, &r);
     return C_flonum(ptr, dx - r * dy);
@@ -3219,11 +3215,11 @@ C_a_i_flonum_modulo_checked(C_word **ptr, int c, C_word x, C_word y)
          dy = C_flonum_magnitude(y), r;
 
   if(dy == 0.0) {
-    C_div_by_zero_error("modulo");
+    C_div_by_zero_error(C_text("modulo"));
   } else if (!C_truep(C_u_i_fpintegerp(x))) {
-    C_not_an_integer_error("modulo", x);
+    C_not_an_integer_error(C_text("modulo"), x);
   } else if (!C_truep(C_u_i_fpintegerp(y))) {
-    C_not_an_integer_error("modulo", y);
+    C_not_an_integer_error(C_text("modulo"), y);
   } else {
     modf(dx / dy, &r);
     r = dx - r * dy;
