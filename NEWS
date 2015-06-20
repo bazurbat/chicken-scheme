@@ -38,6 +38,8 @@
     to Seth Alves).
   - file-mkstemp now works correctly on Windows, it now returns valid
     file descriptors (#819, thanks to Michele La Monaca).
+  - create-directory on Windows now creates all intermediate
+    directories when passed #t as second parameter.
 
 - Runtime system:
   - Removed several deprecated, undocumented parts of the C interface:
