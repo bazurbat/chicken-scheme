@@ -864,7 +864,7 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 /* This is word-size dependent: */
 #ifdef C_SIXTY_FOUR
 # define C_align(n)                C_align8(n)
-# define C_wordstobytes(n)         ((n) << 3)
+# define C_wordstobytes(n)         ((C_uword)(n) << 3)
 # define C_bytestowords(n)         (((n) + 7) >> 3)
 # define C_wordsperdouble(n)       (n)
 # define C_WORD_MIN                LONG_MIN
@@ -872,9 +872,9 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_UWORD_MAX               ULONG_MAX
 #else
 # define C_align(n)                C_align4(n)
-# define C_wordstobytes(n)         ((n) << 2)
+# define C_wordstobytes(n)         ((C_uword)(n) << 2)
 # define C_bytestowords(n)         (((n) + 3) >> 2)
-# define C_wordsperdouble(n)       ((n) << 1)
+# define C_wordsperdouble(n)       ((C_uword)(n) << 1)
 # define C_WORD_MIN                INT_MIN
 # define C_WORD_MAX                INT_MAX
 # define C_UWORD_MAX               UINT_MAX
@@ -1086,7 +1086,7 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 #endif
 #define C_stack_pointer_test       ((C_word *)C_alloca(1))
 #define C_demand_2(n)              (((C_word *)C_fromspace_top + (n)) < (C_word *)C_fromspace_limit)
-#define C_fix(n)                   (((C_word)(n) << C_FIXNUM_SHIFT) | C_FIXNUM_BIT)
+#define C_fix(n)                   ((C_word)((C_uword)(n) << C_FIXNUM_SHIFT) | C_FIXNUM_BIT)
 #define C_unfix(x)                 C_CHECKp(x,C_fixnump(C_VAL1(x)),((C_VAL1(x)) >> C_FIXNUM_SHIFT))
 #define C_make_character(c)        (((((C_uword)(c)) & C_CHAR_BIT_MASK) << C_CHAR_SHIFT) | C_CHARACTER_BITS)
 #define C_character_code(x)        C_CHECKp(x,C_charp(C_VAL1(x)),((C_word)(C_VAL1(x)) >> C_CHAR_SHIFT) & C_CHAR_BIT_MASK)
@@ -1102,7 +1102,7 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 #define C_mk_nbool(x)              ((x) ? C_SCHEME_FALSE : C_SCHEME_TRUE)
 #define C_port_file(p)             C_CHECKp(p,C_portp(C_VAL1(p)),(C_FILEPTR)C_block_item(C_VAL1(p), 0))
 #define C_data_pointer(b)          C_CHECKp(b,C_blockp((C_word)C_VAL1(b)),(void *)(((C_SCHEME_BLOCK *)(C_VAL1(b)))->data))
-#define C_fitsinfixnump(n)         (((n) & C_INT_SIGN_BIT) == (((n) & C_INT_TOP_BIT) << 1))
+#define C_fitsinfixnump(n)         (((n) & C_INT_SIGN_BIT) == ((C_uword)((n) & C_INT_TOP_BIT) << 1))
 #define C_ufitsinfixnump(n)        (((n) & (C_INT_SIGN_BIT | (C_INT_SIGN_BIT >> 1))) == 0)
 #define C_quickflonumtruncate(n)   (C_fix((C_word)C_flonum_magnitude(n)))
 #define C_and(x, y)                (C_truep(x) ? (y) : C_SCHEME_FALSE)
@@ -1220,7 +1220,7 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 #define C_fixnum_or(n1, n2)             (C_u_fixnum_or(n1, n2) | C_FIXNUM_BIT)
 #define C_fixnum_xor(n1, n2)            (((n1) ^ (n2)) | C_FIXNUM_BIT)
 #define C_fixnum_not(n)                 ((~(n)) | C_FIXNUM_BIT)
-#define C_fixnum_shift_left(n1, n2)     (C_fix(C_unfix(n1) << C_unfix(n2)))
+#define C_fixnum_shift_left(n1, n2)     (C_fix(((C_uword)C_unfix(n1) << (C_uword)C_unfix(n2))))
 #define C_fixnum_shift_right(n1, n2)    (((n1) >> C_unfix(n2)) | C_FIXNUM_BIT)
 #define C_u_fixnum_negate(n)            (-(n) + 2 * C_FIXNUM_BIT)
 #define C_fixnum_negate(n)              (C_u_fixnum_negate(n) | C_FIXNUM_BIT)

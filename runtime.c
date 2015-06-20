@@ -218,7 +218,7 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 
 #define is_fptr(x)                   (((x) & C_GC_FORWARDING_BIT) != 0)
 #define ptr_to_fptr(x)               ((((x) >> FORWARDING_BIT_SHIFT) & 1) | C_GC_FORWARDING_BIT | ((x) & ~1))
-#define fptr_to_ptr(x)               (((x) << FORWARDING_BIT_SHIFT) | ((x) & ~(C_GC_FORWARDING_BIT | 1)))
+#define fptr_to_ptr(x)               (((C_uword)(x) << FORWARDING_BIT_SHIFT) | ((x) & ~(C_GC_FORWARDING_BIT | 1)))
 
 #define C_check_flonum(x, w)        if(C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG) \
                                        barf(C_BAD_ARGUMENT_TYPE_NO_FLONUM_ERROR, w, x);
@@ -5316,7 +5316,7 @@ C_regparm C_word C_fcall C_a_i_arithmetic_shift(C_word **a, int c, C_word n1, C_
 
   if(sgn < 0) {
     if(s < 0) nn >>= -s;
-    else nn <<= s;
+    else nn = (C_word)((C_uword)nn << s);
 
     if(C_fitsinfixnump(nn)) return C_fix(nn);
     else return C_flonum(a, nn);
@@ -7633,7 +7633,7 @@ C_regparm C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word
 
     return 0;
   }
-  else if((n & C_INT_SIGN_BIT) != ((n << 1) & C_INT_SIGN_BIT)) { /* doesn't fit into fixnum? */
+  else if((n & C_INT_SIGN_BIT) != (((C_uword)n << 1) & C_INT_SIGN_BIT)) { /* doesn't fit into fixnum? */
     if(*eptr == '\0' || !C_strncmp(eptr, ".0", C_strlen(eptr))) {
       *flo = (double)n;
       return 2;
@@ -7943,7 +7943,7 @@ void C_ccall C_peek_signed_integer(C_word c, C_word closure, C_word k, C_word v,
   C_word x = C_block_item(v, C_unfix(index));
   C_alloc_flonum;
 
-  if((x & C_INT_SIGN_BIT) != ((x << 1) & C_INT_SIGN_BIT)) {
+  if((x & C_INT_SIGN_BIT) != (((C_uword)x << 1) & C_INT_SIGN_BIT)) {
     C_kontinue_flonum(k, (double)x);
   }
 
@@ -7956,7 +7956,7 @@ void C_ccall C_peek_unsigned_integer(C_word c, C_word closure, C_word k, C_word 
   C_word x = C_block_item(v, C_unfix(index));
   C_alloc_flonum;
 
-  if((x & C_INT_SIGN_BIT) || ((x << 1) & C_INT_SIGN_BIT)) {
+  if((x & C_INT_SIGN_BIT) || (((C_uword)x << 1) & C_INT_SIGN_BIT)) {
     C_kontinue_flonum(k, (double)(C_uword)x);
   }
 
@@ -8845,10 +8845,10 @@ static C_regparm C_word C_fcall decode_literal2(C_word **ptr, C_char **str,
       return (C_word)(*(*str - 1));
 
     case C_FIXNUM_BIT:
-      val = *((*str)++) << 24; /* always big endian */
-      val |= (*((*str)++) & 0xff) << 16;
-      val |= (*((*str)++) & 0xff) << 8;
-      val |= (*((*str)++) & 0xff);
+      val = (C_uword)*((*str)++) << 24; /* always big endian */
+      val |= ((C_uword)*((*str)++) & 0xff) << 16;
+      val |= ((C_uword)*((*str)++) & 0xff) << 8;
+      val |= ((C_uword)*((*str)++) & 0xff);
       return C_fix(val); 
 
 #ifdef C_SIXTY_FOUR
