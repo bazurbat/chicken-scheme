@@ -244,7 +244,7 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 #define free_tmp_bignum(b)           C_free((void *)(b))
 #define is_fptr(x)                   (((x) & C_GC_FORWARDING_BIT) != 0)
 #define ptr_to_fptr(x)               ((((x) >> FORWARDING_BIT_SHIFT) & 1) | C_GC_FORWARDING_BIT | ((x) & ~1))
-#define fptr_to_ptr(x)               (((x) << FORWARDING_BIT_SHIFT) | ((x) & ~(C_GC_FORWARDING_BIT | 1)))
+#define fptr_to_ptr(x)               (((C_uword)(x) << FORWARDING_BIT_SHIFT) | ((x) & ~(C_GC_FORWARDING_BIT | 1)))
 
 #define C_check_real(x, w, v)       if(((x) & C_FIXNUM_BIT) != 0) v = C_unfix(x); \
                                      else if(C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG) \
@@ -2583,7 +2583,7 @@ C_regparm C_word C_fcall C_static_bignum(C_word **ptr, int len, C_char *str)
     negp = ((*str++) == '-') ? 1 : 0;
     --len;
   }
-  size = C_BIGNUM_BITS_TO_DIGITS(len << 2);
+  size = C_BIGNUM_BITS_TO_DIGITS((unsigned int)len << 2);
 
   dptr = (C_word *)C_malloc(C_wordstobytes(C_SIZEOF_INTERNAL_BIGNUM_VECTOR(size)));
   if(dptr == NULL)
@@ -6337,7 +6337,7 @@ C_regparm C_word C_fcall C_a_i_arithmetic_shift(C_word **a, int c, C_word n1, C_
 
   if(sgn < 0) {
     if(s < 0) nn >>= -s;
-    else nn <<= s;
+    else nn = (C_word)((C_uword)nn << s);
 
     if(C_fitsinfixnump(nn)) return C_fix(nn);
     else return C_flonum(a, nn);
@@ -6374,7 +6374,7 @@ C_s_a_i_arithmetic_shift(C_word **ptr, C_word n, C_word x, C_word y)
     } else if (y > 0 && y < C_WORD_SIZE-2 &&
                /* After shifting, the length still fits a fixnum */
                (C_ilen(C_unfix(x)) + y) < C_WORD_SIZE-2) {
-      return C_fix(C_unfix(x) << y);
+      return C_fix((C_uword)C_unfix(x) << y);
     } else {
       x = C_a_u_i_fix_to_big(&a, x);
     }
@@ -7829,7 +7829,7 @@ bignum_times_bignum_karatsuba(C_word **ptr, C_word x, C_word y, C_word negp)
 
    /* top(x) = a << (bits - 1)  and  bottom(y) = ((b + (a - c)) << bits) + b */
    bits = C_unfix(n) * C_BIGNUM_DIGIT_LENGTH;
-   x = o[i++] = C_s_a_i_arithmetic_shift(&ka, 2, a, C_fix(bits << 1));
+   x = o[i++] = C_s_a_i_arithmetic_shift(&ka, 2, a, C_fix((C_uword)bits << 1));
    c = o[i++] = C_s_a_u_i_integer_minus(&ka, 2, a, c);
    c = o[i++] = C_s_a_u_i_integer_plus(&ka, 2, b, c);
    c = o[i++] = C_s_a_i_arithmetic_shift(&ka, 2, c, C_fix(bits));
@@ -9306,8 +9306,8 @@ C_regparm double C_fcall C_bignum_to_double(C_word bignum)
   C_uword *start = C_bignum_digits(bignum),
           *scan = start + C_bignum_size(bignum);
   while (start < scan) {
-    accumulator *= (C_word)1 << C_BIGNUM_HALF_DIGIT_LENGTH;
-    accumulator *= (C_word)1 << C_BIGNUM_HALF_DIGIT_LENGTH;
+    accumulator *= (C_uword)1 << C_BIGNUM_HALF_DIGIT_LENGTH;
+    accumulator *= (C_uword)1 << C_BIGNUM_HALF_DIGIT_LENGTH;
     accumulator += (*--scan);
   }
   return(C_bignum_negativep(bignum) ? -accumulator : accumulator);
@@ -10358,9 +10358,9 @@ bignum_destructive_divide_normalized(C_word big_u, C_word big_v, C_word big_q)
     rhat = hat % vn_1;
 
     /* Two whiles is faster than one big check with an OR.  Thanks, Gauche! */
-    while(qhat >= (1L << C_BIGNUM_HALF_DIGIT_LENGTH)) { qhat--; rhat += vn_1; }
+    while(qhat >= (1UL << C_BIGNUM_HALF_DIGIT_LENGTH)) { qhat--; rhat += vn_1; }
     while(qhat * vn_2 > C_BIGNUM_DIGIT_COMBINE(rhat, C_uhword_ref(u, j+n-2))
-	  && rhat < (1L << C_BIGNUM_HALF_DIGIT_LENGTH)) {
+	  && rhat < (1UL << C_BIGNUM_HALF_DIGIT_LENGTH)) {
       qhat--;
       rhat += vn_1;
     }
@@ -11043,7 +11043,7 @@ C_regparm C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word
 
     return 0;
   }
-  else if((n & C_INT_SIGN_BIT) != ((n << 1) & C_INT_SIGN_BIT)) { /* doesn't fit into fixnum? */
+  else if((n & C_INT_SIGN_BIT) != (((C_uword)n << 1) & C_INT_SIGN_BIT)) { /* doesn't fit into fixnum? */
     if(*eptr == '\0' || !C_strncmp(eptr, ".0", C_strlen(eptr))) {
       *flo = (double)n;
       return 2;
@@ -11265,7 +11265,7 @@ bignum_to_str_2(C_word c, C_word self, C_word string)
         assert(index >= buf);
 	radix_digit = big_digit;
         big_digit = *scan++;
-	radix_digit |= (big_digit << big_digit_len) & radix_mask;
+	radix_digit |= ((unsigned int)big_digit << big_digit_len) & radix_mask;
 	big_digit >>= (radix_shift - big_digit_len);
         big_digit_len = C_BIGNUM_DIGIT_LENGTH - big_digit_len;
       }
@@ -12413,10 +12413,10 @@ static C_regparm C_word C_fcall decode_literal2(C_word **ptr, C_char **str,
       return (C_word)(*(*str - 1));
 
     case C_FIXNUM_BIT:
-      val = *((*str)++) << 24; /* always big endian */
-      val |= (*((*str)++) & 0xff) << 16;
-      val |= (*((*str)++) & 0xff) << 8;
-      val |= (*((*str)++) & 0xff);
+      val = (C_uword)*((*str)++) << 24; /* always big endian */
+      val |= ((C_uword)*((*str)++) & 0xff) << 16;
+      val |= ((C_uword)*((*str)++) & 0xff) << 8;
+      val |= ((C_uword)*((*str)++) & 0xff);
       return C_fix(val); 
 
 #ifdef C_SIXTY_FOUR
