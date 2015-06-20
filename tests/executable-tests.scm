@@ -2,10 +2,13 @@
 
 (include "test.scm")
 
-(use files posix)
+(use files posix data-structures)
 
 (define program-path
-  (car (command-line-arguments)))
+  (cond-expand
+    ((and windows (not cygwin))
+     (string-translate (car (command-line-arguments)) "/" "\\"))
+    (else (car (command-line-arguments)))))
 
 (define (read-symbolic-link* p)
   (cond-expand
