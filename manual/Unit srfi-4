@@ -84,7 +84,7 @@ not including {{TO}}.
 
 === Vector I/O
 
-<procedure>(read-u8vector LENGTH [PORT])</procedure>
+<procedure>(read-u8vector [LENGTH [PORT]])</procedure>
 
 Reads {{LENGTH}} bytes from the {{PORT}} and returns a fresh
 {{u8vector}} or less if end-of-file is encountered. {{PORT}} defaults to the
