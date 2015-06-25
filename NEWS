@@ -29,6 +29,8 @@
 
 - Unit srfi-4:
    - write-u8vector has been made more efficient (thanks to Thomas Hintz).
+   - read-u8vector has been made more efficient (thanks to Andy Bennett
+      for pointing this out and testing an improvement).
 
 - Unit lolevel:
   - Restore long-lost but still documented "vector-like?" procedure (#983)
