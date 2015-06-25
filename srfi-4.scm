@@ -26,10 +26,11 @@
 
 
 (declare
- (unit srfi-4)
- (disable-interrupts)
- (not inline ##sys#user-print-hook ##sys#number-hash-hook)
- (foreign-declare #<<EOF
+  (unit srfi-4)
+  (uses extras)
+  (disable-interrupts)
+  (not inline ##sys#user-print-hook ##sys#number-hash-hook)
+  (foreign-declare #<<EOF
 #define C_copy_subvector(to, from, start_to, start_from, bytes)   \
   (C_memcpy((C_char *)C_data_pointer(to) + C_unfix(start_to), (C_char *)C_data_pointer(from) + C_unfix(start_from), C_unfix(bytes)), \
     C_SCHEME_UNDEFINED)
@@ -758,34 +759,9 @@ EOF
       (set! n (fx- size start)))
     (##sys#read-string! n dest port start)))
 
-(define read-u8vector
-  (let ()
-    (define (wrap str n)
-      (##sys#make-structure
-       'u8vector
-       (let ((str2 (##sys#allocate-vector n #t #f #t)))
-	 (##core#inline "C_string_to_bytevector" str2)
-	 (##core#inline "C_substring_copy" str str2 0 n 0)
-	 str2) ) )
-    (lambda (#!optional n (p ##sys#standard-input))
-      (##sys#check-input-port p #t 'read-u8vector)
-      (cond (n (##sys#check-fixnum n 'read-u8vector)
-	       (let* ((str (##sys#allocate-vector n #t #f #t))
-		      (n2 (##sys#read-string! n str p 0)) )
-		 (##core#inline "C_string_to_bytevector" str)
-		 (if (eq? n n2)
-		     (##sys#make-structure 'u8vector str)
-		     (wrap str n2) ) ) )
-	    (else
-	     (let ([str (open-output-string)])
-	       (let loop ()
-		 (let ([c (##sys#read-char-0 p)])
-		   (if (eof-object? c)
-		       (let* ((s (get-output-string str))
-			      (n (##sys#size s)) )
-			 (wrap s n) )
-		       (begin
-			 (##sys#write-char/port c str)
-			 (loop)))))))))))
+(define (read-u8vector #!optional n (p ##sys#standard-input))
+  (let ((str (##sys#read-string/port n p)))
+    (##core#inline "C_string_to_bytevector" str)
+    (##sys#make-structure 'u8vector str)))
 
 (register-feature! 'srfi-4)
