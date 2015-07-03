@@ -9277,12 +9277,12 @@ static C_word rat_cmp(C_word x, C_word y)
    * extreme cases.  This is a tradeoff we make so that comparisons
    * are inlineable, which makes a big difference for the common case.
    */
-  ssize = C_fix(C_bignum_size(x1) + C_bignum_size(y2));
+  ssize = C_bignum_size(x1) + C_bignum_size(y2);
   negp = C_mk_bool(C_bignum_negativep(x1));
   s = allocate_tmp_bignum(C_fix(ssize), negp, C_SCHEME_TRUE);
   bignum_digits_multiply(x1, y2, s); /* Swap args if x1 < y2? */
 
-  tsize = C_fix(C_bignum_size(y1) + C_bignum_size(x2));
+  tsize = C_bignum_size(y1) + C_bignum_size(x2);
   negp = C_mk_bool(C_bignum_negativep(y1));
   t = allocate_tmp_bignum(C_fix(tsize), negp, C_SCHEME_TRUE);
   bignum_digits_multiply(y1, x2, t); /* Swap args if y1 < x2? */
