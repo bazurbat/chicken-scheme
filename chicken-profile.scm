@@ -211,29 +211,27 @@ EOF
     (if (< 0 top (length data))
 	(set! data (take data top)))
     (set! data (map (lambda (entry)
-		      (let ([c (second entry)] ; count
-			    [t (third entry)]  ; total time
-			    [a (fourth entry)] ; average time
-			    [p (fifth entry)] ) ; % of max time
+		      (let ((c (second entry)) ; count
+			    (t (third entry))  ; total time
+			    (a (fourth entry)) ; average time
+			    (p (fifth entry)) ) ; % of max time
 			(list (##sys#symbol->qualified-string (first entry))
 			      (if (not c) "overflow" (number->string c))
 			      (format-real (/ t 1000) seconds-digits)
 			      (format-real (/ a 1000) average-digits)
 			      (format-real p percent-digits))))
-		    (remove (lambda (entry) 
-			      (if (second entry) 
-				  (and (zero? (second entry)) no-unused)
-				  #f) )
-			    data)))
-    (let* ([headers (list "procedure" "calls" "seconds" "average" "percent")]
-	   [alignments (list #f #t #t #t #t)]
-	   [spacing 2]
-	   [spacer (make-string spacing #\space)]
-	   [column-widths (foldl
+		    (if no-unused
+			(filter (lambda (entry) (> (second entry) 0)) data)
+			data)))
+    (let* ((headers (list "procedure" "calls" "seconds" "average" "percent"))
+	   (alignments (list #f #t #t #t #t))
+	   (spacing 2)
+	   (spacer (make-string spacing #\space))
+	   (column-widths (foldl
 			   (lambda (max-widths row)
 			     (map max (map string-length row) max-widths))
 			   (list 0 0 0 0 0)
-			   (cons headers data))])
+			   (cons headers data))))
       (define (print-row row)
 	(print (string-intersperse (map format-string row column-widths alignments) spacer)))
       (print-row headers)
