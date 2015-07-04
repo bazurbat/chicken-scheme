@@ -1403,7 +1403,6 @@ not be obtained. On Windows, this procedure always returns {{0}},
 ; {{set-groups!}} : {{setgroups}}
 ; {{set-signal-mask!}} : {{sigprocmask}}
 ; {{set-group-id!}} : {{setgid}}
-; {{set-process-group-id!}} : {{setpgid}}
 ; {{set-user-id!}} : {{setuid}}
 ; {{set-root-directory!}} : {{chroot}}
 ; {{setenv}} : {{setenv/putenv}}
@@ -1463,7 +1462,7 @@ Microsoft tools or with MinGW):
  current-user-id  current-group-id  current-effective-user-id  current-effective-group-id
  set-user-id!  set-group-id!
  create-session
- process-group-id  set-process-group-id!
+ process-group-id
  create-symbolic-link  read-symbolic-link
  file-truncate
  file-lock  file-lock/blocking  file-unlock  file-test-lock
