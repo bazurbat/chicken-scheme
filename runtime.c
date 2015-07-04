@@ -11228,11 +11228,11 @@ C_integer_to_string(C_word c, C_word self, C_word k, C_word num, C_word radix)
       try_extended_number("\003sysinteger->string/recursive",
                           4, k, num, radix, C_fix(len));
     } else {
-      C_word k2, negp = C_mk_bool(C_bignum_negativep(num)), *ka;
+      C_word k2, *ka;
       ka = C_alloc(C_SIZEOF_CLOSURE(4));
       k2 = C_closure(&ka, 4, (C_word)bignum_to_str_2, k, num, radix);
       C_allocate_vector(6, (C_word)NULL, k2, C_fix(len),
-                        /* Byte vec, no initialization, align at 8 bytes */
+                        /* Byte vec, no initialization, no align at 8 bytes */
                         C_SCHEME_TRUE, C_SCHEME_FALSE, C_SCHEME_FALSE);
     }
   }
