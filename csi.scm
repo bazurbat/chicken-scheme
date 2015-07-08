@@ -26,7 +26,7 @@
 
 
 (declare
-  (uses data-structures eval extras ports)
+  (uses data-structures eval expand extras ports)
   (usual-integrations)
   (disable-interrupts)
   (compile-syntax)
@@ -1091,6 +1091,7 @@ EOF
       ;; Load the the default modules into the evaluation environment.
       ;; This is done before setting load-verbose => #t to avoid
       ;; spurious import messages.
+      (eval '(import-for-syntax scheme chicken))
       (eval '(import scheme chicken))
       (unless quiet
 	(load-verbose #t)

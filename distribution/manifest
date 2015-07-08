@@ -242,6 +242,8 @@ chicken.data-structures.import.scm
 chicken.data-structures.import.c
 chicken.eval.import.scm
 chicken.eval.import.c
+chicken.expand.import.scm
+chicken.expand.import.c
 chicken.extras.import.scm
 chicken.extras.import.c
 chicken.files.import.scm

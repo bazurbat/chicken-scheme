@@ -27,6 +27,7 @@
 
 (declare
   (unit chicken-syntax)
+  (uses expand)
   (disable-interrupts)
   (fixnum) )
 
@@ -78,7 +79,7 @@
 			       (null? (cddr slot)))
 			  (cadr slot))
 			 (else
-			  (syntax-error 
+			  (chicken.expand#syntax-error
 			   'define-record "invalid slot specification" slot))))
 		 slots)))
       `(##core#begin
@@ -180,7 +181,7 @@
 	     (msg (optional msg-and-args "assertion failed"))
 	     (tmp (r 'tmp)))
 	(when (string? msg)
-	  (and-let* ((ln (get-line-number form)))
+	  (and-let* ((ln (chicken.expand#get-line-number form)))
 	    (set! msg (string-append "(" ln ") " msg))))
 	`(##core#let ((,tmp ,exp))
 	   (##core#if (##core#check ,tmp)
@@ -460,7 +461,7 @@
 		  (when (or (not (pair? val)) 
 			    (and (not (eq? '##core#lambda (car val)))
 				 (not (c (r 'lambda) (car val)))))
-		    (syntax-error 
+		    (chicken.expand#syntax-error
 		     'define-inline "invalid substitution form - must be lambda"
 		     name val) )
 		  (list name val) ) ) ] )
@@ -502,7 +503,7 @@
 	   (cond ((null? clauses)
 		  '(##core#undefined) )
 		 ((not (pair? clauses))
-		  (syntax-error 'select "invalid syntax" clauses))
+		  (chicken.expand#syntax-error 'select "invalid syntax" clauses))
 		 (else
 		  (let ((clause (##sys#slot clauses 0))
 			(rclauses (##sys#slot clauses 1)) )
@@ -979,7 +980,7 @@
 	  (%<...> (r '<...>))
 	  (%apply (r 'apply)))
       (when (null? (cdr form))
-        (syntax-error 'cut "you need to supply at least a procedure" form))
+        (chicken.expand#syntax-error 'cut "you need to supply at least a procedure" form))
       (let loop ([xs (cdr form)] [vars '()] [vals '()] [rest #f])
 	(if (null? xs)
 	    (let ([rvars (reverse vars)]
@@ -995,11 +996,12 @@
 		   (let ([v (r (gensym))])
 		     (loop (cdr xs) (cons v vars) (cons v vals) #f) ) )
 		  ((c %<...> (car xs))
-                   (if (null? (cdr xs))
-                       (loop '() vars vals #t)
-                       (syntax-error 'cut
-                                     "tail patterns after <...> are not supported"
-                                     form)))
+		   (if (null? (cdr xs))
+		       (loop '() vars vals #t)
+		       (chicken.expand#syntax-error
+			'cut
+			"tail patterns after <...> are not supported"
+			form)))
 		  (else (loop (cdr xs) vars (cons (car xs) vals) #f)) ) ) ) ) )))
 
 (##sys#extend-macro-environment
@@ -1011,7 +1013,7 @@
 	  (%<> (r '<>))
 	  (%<...> (r '<...>)))
       (when (null? (cdr form))
-        (syntax-error 'cute "you need to supply at least a procedure" form))
+        (chicken.expand#syntax-error 'cute "you need to supply at least a procedure" form))
       (let loop ([xs (cdr form)] [vars '()] [bs '()] [vals '()] [rest #f])
 	(if (null? xs)
 	    (let ([rvars (reverse vars)]
@@ -1028,11 +1030,12 @@
 		   (let ([v (r (gensym))])
 		     (loop (cdr xs) (cons v vars) bs (cons v vals) #f) ) )
 		  ((c %<...> (car xs))
-                   (if (null? (cdr xs))
-                       (loop '() vars bs vals #t)
-                       (syntax-error 'cute
-                                     "tail patterns after <...> are not supported"
-                                     form)))
+		   (if (null? (cdr xs))
+		       (loop '() vars bs vals #t)
+		       (chicken.expand#syntax-error
+			'cute
+			"tail patterns after <...> are not supported"
+			form)))
 		  (else 
 		   (let ([v (r (gensym))])
 		     (loop (cdr xs) 
@@ -1183,7 +1186,7 @@
 			 type1
 			 (##sys#strip-syntax name1))))
 	    (cond ((not type)
-		   (syntax-error ': "invalid type syntax" name1 type1))
+		   (chicken.expand#syntax-error ': "invalid type syntax" name1 type1))
 		  (else
 		   `(##core#declare 
 		     (type (,name1 ,type1 ,@(cdddr x)))
@@ -1270,7 +1273,7 @@
 				  (cadr arg) 
 				  'define-specialization)
 				 atypes)))
-			      (else (syntax-error
+			      (else (chicken.expand#syntax-error
 				     'define-specialization
 				     "invalid argument syntax" arg head)))))))))))))
 
@@ -1281,7 +1284,7 @@
     (##sys#check-syntax 'compiler-typecase x '(_ _ . #((_ . #(_ 1)) 1)))
     (let ((val (memq #:compiling ##sys#features))
 	  (var (gensym))
-	  (ln (get-line-number x)))
+	  (ln (chicken.expand#get-line-number x)))
       `(##core#let ((,var ,(cadr x)))
 		   (##core#typecase 
 		    ,ln

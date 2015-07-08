@@ -26,7 +26,7 @@
 
 (declare
   (unit modules)
-  (uses eval)
+  (uses eval expand)
   (disable-interrupts)
   (fixnum)
   (hide lookup merge-se module-indirect-exports)

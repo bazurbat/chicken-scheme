@@ -31,13 +31,18 @@
   (unit expand)
   (disable-interrupts)
   (fixnum)
-  (hide match-expression
-	macro-alias
-	check-for-multiple-bindings
-	d dd dm dx map-se
-	lookup check-for-redef) 
   (not inline ##sys#syntax-error-hook ##sys#compiler-syntax-hook
        ##sys#toplevel-definition-hook))
+
+(module chicken.expand
+  (expand
+   get-line-number
+   strip-syntax
+   syntax-error
+   er-macro-transformer
+   ir-macro-transformer)
+
+(import scheme chicken)
 
 (include "common-declarations.scm")
 
@@ -918,6 +923,7 @@
 (define ##sys#er-transformer er-macro-transformer)
 (define ##sys#ir-transformer ir-macro-transformer)
 
+) ; chicken.expand module
 
 ;;; Macro definitions:
 
@@ -1173,7 +1179,7 @@
                          (##sys#srfi-4-vector? (car clause))
                          (and (pair? (car clause))
                               (c (r 'quote) (caar clause))))
-		     (expand rclauses (strip-syntax (car clause)))
+		     (expand rclauses (chicken.expand#strip-syntax (car clause)))
 		     (cond ((and (fx= (length clause) 3)
 				 (c %=> (cadr clause)))
 			    `(,(caddr clause) ,(car clause)))
@@ -1324,16 +1330,16 @@
 		       (else
 			`(##sys#cons ,(walk head n) ,(walk tail n)) ) ) ) ) ) )
       (define (simplify x)
-	(cond ((match-expression x '(##sys#cons a (##core#quote ())) '(a))
+	(cond ((chicken.expand#match-expression x '(##sys#cons a (##core#quote ())) '(a))
 	       => (lambda (env) (simplify `(##sys#list ,(cdr (assq 'a env))))) )
-	      ((match-expression x '(##sys#cons a (##sys#list . b)) '(a b))
+	      ((chicken.expand#match-expression x '(##sys#cons a (##sys#list . b)) '(a b))
 	       => (lambda (env)
 		    (let ((bxs (assq 'b env)))
 		      (if (fx< (length bxs) 32)
 			  (simplify `(##sys#list ,(cdr (assq 'a env))
 						 ,@(cdr bxs) ) ) 
 			  x) ) ) )
-	      ((match-expression x '(##sys#append a (##core#quote ())) '(a))
+	      ((chicken.expand#match-expression x '(##sys#append a (##core#quote ())) '(a))
 	       => (lambda (env) (cdr (assq 'a env))) )
 	      (else x) ) )
       (##sys#check-syntax 'quasiquote form '(_ _))

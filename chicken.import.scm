@@ -71,7 +71,7 @@
    (dynamic-load-libraries . chicken.eval#dynamic-load-libraries)
    enable-warnings
    equal=?
-   er-macro-transformer
+   (er-macro-transformer . chicken.expand#er-macro-transformer)
    errno
    error
    (eval-handler . chicken.eval#eval-handler)
@@ -80,7 +80,7 @@
    exact-integer-nth-root
    exit
    exit-handler
-   expand
+   (expand . chicken.expand#expand)
    (extension-information . chicken.eval#extension-information)
    feature?
    features
@@ -165,13 +165,14 @@
    get-condition-property
    get-environment-variable
    get-keyword
+   (get-line-number . chicken.expand#get-line-number)
    get-output-string
    get-properties
    getter-with-setter
    implicit-exit-handler
    infinite?
    integer-length
-   ir-macro-transformer
+   (ir-macro-transformer . chicken.expand#ir-macro-transformer)
    keyword->string
    keyword-style
    keyword?
@@ -239,20 +240,18 @@
    string->blob
    string->keyword
    string->uninterned-symbol
-   strip-syntax
+   (strip-syntax . chicken.expand#strip-syntax)
    sub1
    subvector
    symbol-append
    symbol-escape
    symbol-plist
-   syntax-error
+   (syntax-error . chicken.expand#syntax-error)
    system
    unregister-feature!
    vector-resize
    vector-copy!
    void
    warning
-   er-macro-transformer
-   ir-macro-transformer
    with-exception-handler)
  ##sys#chicken-macro-environment)       ;XXX incorrect - won't work in compiled executable that does expansion

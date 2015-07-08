@@ -178,7 +178,8 @@
 	      arg) ) ) )
   (initialize-compiler)
   (set! explicit-use-flag (memq 'explicit-use options))
-  (let ((initforms `((import scheme chicken)
+  (let ((initforms `((import-for-syntax scheme chicken)
+		     (import scheme chicken)
 		     (##core#declare
 		      ,@(append 
 			 default-declarations

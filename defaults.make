@@ -271,7 +271,7 @@ PRIMITIVE_IMPORT_LIBRARIES = chicken srfi-4
 PRIMITIVE_IMPORT_LIBRARIES += csi setup-api setup-download
 POSIX_IMPORT_LIBRARY = posix
 FOREIGN_IMPORT_LIBRARY = foreign
-DYNAMIC_IMPORT_LIBRARIES = data-structures eval extras files irregex lolevel ports tcp utils
+DYNAMIC_IMPORT_LIBRARIES = data-structures eval expand extras files irregex lolevel ports tcp utils
 
 # targets
 
