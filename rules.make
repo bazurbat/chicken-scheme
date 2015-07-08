@@ -545,6 +545,7 @@ core.c: core.scm mini-srfi-1.scm \
 		chicken.compiler.support.import.scm \
 		chicken.data-structures.import.scm \
 		chicken.eval.import.scm \
+		chicken.expand.import.scm \
 		chicken.extras.import.scm
 optimizer.c: optimizer.scm mini-srfi-1.scm \
 		chicken.compiler.support.import.scm \
@@ -554,6 +555,7 @@ optimizer.c: optimizer.scm mini-srfi-1.scm \
 scrutinizer.c: scrutinizer.scm mini-srfi-1.scm \
 		chicken.compiler.support.import.scm \
 		chicken.data-structures.import.scm \
+		chicken.expand.import.scm \
 		chicken.extras.import.scm \
 		chicken.files.import.scm \
 		chicken.ports.import.scm
@@ -567,6 +569,7 @@ chicken-ffi-syntax.c: chicken-ffi-syntax.scm \
 		chicken.data-structures.import.scm
 support.c: support.scm mini-srfi-1.scm \
 		chicken.data-structures.import.scm \
+		chicken.expand.import.scm \
 		chicken.extras.import.scm \
 		chicken.files.import.scm \
 		chicken.foreign.import.scm \
@@ -651,6 +654,7 @@ data-structures.c: data-structures.scm \
 extras.c: extras.scm \
 		chicken.data-structures.import.scm
 eval.c: eval.scm \
+		chicken.expand.import.scm \
 		chicken.foreign.import.scm
 files.c: files.scm \
 		chicken.data-structures.import.scm \

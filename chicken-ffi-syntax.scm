@@ -180,7 +180,7 @@
 		  "bad argument type - not a string or symbol" 
 		  code))))
 	(##core#the ,(chicken.compiler.support#foreign-type->scrutiny-type
-		      (##sys#strip-syntax (caddr form))
+		      (chicken.expand#strip-syntax (caddr form))
 		      'result) 
 		    #f ,tmp) ) ) ) ) )
 
@@ -219,8 +219,8 @@
   (lambda (form r c)
     (##sys#check-syntax 'foreign-primitive form '(_ _ . _))
     (let* ((hasrtype (and (pair? (cddr form)) (not (string? (caddr form)))))
-	   (rtype (and hasrtype (##sys#strip-syntax (cadr form))))
-	   (args (##sys#strip-syntax (if hasrtype (caddr form) (cadr form))))
+	   (rtype (and hasrtype (chicken.expand#strip-syntax (cadr form))))
+	   (args (chicken.expand#strip-syntax (if hasrtype (caddr form) (cadr form))))
 	   (argtypes (map car args)))
       `(##core#the (procedure
 		    ,(map (cut chicken.compiler.support#foreign-type->scrutiny-type <> 'arg)
@@ -239,9 +239,9 @@
     (##sys#check-syntax 'foreign-lambda form '(_ _ _ . _))
     `(##core#the
       (procedure ,(map (cut chicken.compiler.support#foreign-type->scrutiny-type <> 'arg)
-		       (##sys#strip-syntax (cdddr form)))
+		       (chicken.expand#strip-syntax (cdddr form)))
 		 ,(chicken.compiler.support#foreign-type->scrutiny-type
-		   (##sys#strip-syntax (cadr form)) 'result))
+		   (chicken.expand#strip-syntax (cadr form)) 'result))
       #f
       (##core#foreign-lambda ,@(cdr form))))))
 
@@ -256,9 +256,9 @@
 			 (chicken.compiler.support#foreign-type->scrutiny-type
 			  (car a)
 			  'arg))
-			(##sys#strip-syntax (caddr form)))
+			(chicken.expand#strip-syntax (caddr form)))
 		  ,(chicken.compiler.support#foreign-type->scrutiny-type
-		    (##sys#strip-syntax (cadr form)) 'result))
+		    (chicken.expand#strip-syntax (cadr form)) 'result))
       #f
       (##core#foreign-lambda* ,@(cdr form))))))
 
@@ -270,9 +270,9 @@
     (##sys#check-syntax 'foreign-safe-lambda form '(_ _ _ . _))
     `(##core#the
       (procedure ,(map (cut chicken.compiler.support#foreign-type->scrutiny-type <> 'arg)
-			(##sys#strip-syntax (cdddr form)))
+			(chicken.expand#strip-syntax (cdddr form)))
 		  ,(chicken.compiler.support#foreign-type->scrutiny-type
-		    (##sys#strip-syntax (cadr form)) 'result))
+		    (chicken.expand#strip-syntax (cadr form)) 'result))
       #f
       (##core#foreign-safe-lambda ,@(cdr form))))))
 
@@ -285,9 +285,9 @@
     `(##core#the
       (procedure ,(map (lambda (a)
 			 (chicken.compiler.support#foreign-type->scrutiny-type (car a) 'arg))
-			(##sys#strip-syntax (caddr form)))
+			(chicken.expand#strip-syntax (caddr form)))
 		  ,(chicken.compiler.support#foreign-type->scrutiny-type
-		    (##sys#strip-syntax (cadr form)) 'result))
+		    (chicken.expand#strip-syntax (cadr form)) 'result))
       #f
       (##core#foreign-safe-lambda* ,@(cdr form))))))
 
@@ -297,7 +297,7 @@
  (##sys#er-transformer
   (lambda (form r c)
     (##sys#check-syntax 'foreign-type-size form '(_ _))
-    (let* ((t (##sys#strip-syntax (cadr form)))
+    (let* ((t (chicken.expand#strip-syntax (cadr form)))
 	   (tmp (gensym "code_"))
 	   (decl
 	    (if (string? t)

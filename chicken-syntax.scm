@@ -190,7 +190,7 @@
 		       ,msg
 		       ,@(if (pair? msg-and-args)
 			     (cdr msg-and-args)
-			     `((##core#quote ,(##sys#strip-syntax exp))))))))))))
+			     `((##core#quote ,(chicken.expand#strip-syntax exp))))))))))))
 
 (##sys#extend-macro-environment
  'ensure
@@ -514,7 +514,7 @@
 			  (else?
 			   (##sys#notice
 			    "non-`else' clause following `else' clause in `select'"
-			    (##sys#strip-syntax clause))
+			    (chicken.expand#strip-syntax clause))
 			   (expand rclauses #t)
 			   '(##core#begin))
 			  (else
@@ -1112,7 +1112,7 @@
  (##sys#er-transformer
   (lambda (x r c)
     (##sys#check-syntax 'define-interface x '(_ variable _))
-    (let ((name (##sys#strip-syntax (cadr x)))
+    (let ((name (chicken.expand#strip-syntax (cadr x)))
 	  (%quote (r 'quote)))
       (when (eq? '* name)
 	(syntax-error-hook
@@ -1122,7 +1122,7 @@
 	 (,%quote ,name)
 	 (,%quote ##core#interface)
 	 (,%quote
-	  ,(let ((exps (##sys#strip-syntax (caddr x))))
+	  ,(let ((exps (chicken.expand#strip-syntax (caddr x))))
 	     (cond ((eq? '* exps) '*)
 		   ((symbol? exps) `(#:interface ,exps))
 		   ((list? exps) 
@@ -1139,7 +1139,7 @@
  (##sys#er-transformer
   (lambda (x r c)
     (##sys#check-syntax 'functor x '(_ (symbol . #((_ _) 0)) _ . _))
-    (let* ((x (##sys#strip-syntax x))
+    (let* ((x (chicken.expand#strip-syntax x))
 	   (head (cadr x))
 	   (name (car head))
 	   (args (cdr head))
@@ -1177,14 +1177,14 @@
     (##sys#check-syntax ': x '(_ symbol _ . _))
     (if (not (memq #:compiling ##sys#features)) 
 	'(##core#undefined)
-	(let* ((type1 (##sys#strip-syntax (caddr x)))
+	(let* ((type1 (chicken.expand#strip-syntax (caddr x)))
 	       (name1 (cadr x)))
 	  ;; we need pred/pure info, so not using
 	  ;; "chicken.compiler.scrutinizer#check-and-validate-type"
 	  (let-values (((type pred pure)
 			(chicken.compiler.scrutinizer#validate-type
 			 type1
-			 (##sys#strip-syntax name1))))
+			 (chicken.expand#strip-syntax name1))))
 	    (cond ((not type)
 		   (chicken.expand#syntax-error ': "invalid type syntax" name1 type1))
 		  (else
@@ -1223,7 +1223,7 @@
 		  (args (cdr head))
 		  (alias (gensym name))
 		  (galias (##sys#globalize alias '())) ;XXX and this?
-		  (rtypes (and (pair? (cdddr x)) (##sys#strip-syntax (caddr x))))
+		  (rtypes (and (pair? (cdddr x)) (chicken.expand#strip-syntax (caddr x))))
 		  (%define (r 'define))
 		  (body (if rtypes (cadddr x) (caddr x))))
 	     (let loop ((args args) (anames '()) (atypes '()))
@@ -1290,7 +1290,7 @@
 		    ,ln
 		    ,var		; must be variable (see: CPS transform)
 		    ,@(map (lambda (clause)
-			     (let ((hd (##sys#strip-syntax (car clause))))
+			     (let ((hd (chicken.expand#strip-syntax (car clause))))
 			       (list
 				(if (eq? hd 'else)
 				    'else
@@ -1309,9 +1309,9 @@
     (##sys#check-syntax 'define-type x '(_ variable _))
     (cond ((not (memq #:compiling ##sys#features)) '(##core#undefined))
 	  (else
-	   (let ((name (##sys#strip-syntax (cadr x)))
+	   (let ((name (chicken.expand#strip-syntax (cadr x)))
 		 (%quote (r 'quote))
-		 (t0 (##sys#strip-syntax (caddr x))))
+		 (t0 (chicken.expand#strip-syntax (caddr x))))
 	     `(##core#elaborationtimeonly
 	       (##sys#put/restore!
 		(,%quote ,name)

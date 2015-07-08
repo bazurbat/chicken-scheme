@@ -35,6 +35,7 @@
 (import chicken scheme
 	chicken.compiler.support
 	chicken.data-structures
+	chicken.expand
 	chicken.extras
 	chicken.files
 	chicken.ports)
@@ -281,7 +282,7 @@
     (define (fragment x)
       (let ((x (build-expression-tree x)))
 	(let walk ((x x) (d 0))
-	  (cond ((atom? x) (##sys#strip-syntax x))
+	  (cond ((atom? x) (strip-syntax x))
 		((>= d +fragment-max-depth+) '...)
 		((list? x)
 		 (let* ((len (length x))
@@ -289,7 +290,7 @@
 				(append (take x +fragment-max-length+) '(...))
 				x)))
 		   (map (cute walk <> (add1 d)) xs)))
-		(else (##sys#strip-syntax x))))))
+		(else (strip-syntax x))))))
 
     (define (pp-fragment x)
       (string-chomp
@@ -2104,7 +2105,7 @@
 	  (else (values #f #f #f)))))
 
 (define (check-and-validate-type type loc #!optional name)
-  (let-values (((t pred pure) (validate-type (##sys#strip-syntax type) name)))
+  (let-values (((t pred pure) (validate-type (strip-syntax type) name)))
     (or t 
 	(error loc "invalid type specifier" type))))
 

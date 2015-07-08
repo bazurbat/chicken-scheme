@@ -305,9 +305,9 @@
 	(ifs (module-import-forms mod))
 	(sexports (module-sexports mod))
 	(mifs (module-meta-import-forms mod)))
-    `(,@(if (pair? ifs) `((chicken.eval#eval '(import ,@(##sys#strip-syntax ifs)))) '())
-      ,@(if (pair? mifs) `((import ,@(##sys#strip-syntax mifs))) '())
-      ,@(##sys#fast-reverse (map ##sys#strip-syntax (module-meta-expressions mod)))
+    `(,@(if (pair? ifs) `((chicken.eval#eval '(import ,@(chicken.expand#strip-syntax ifs)))) '())
+      ,@(if (pair? mifs) `((import ,@(chicken.expand#strip-syntax mifs))) '())
+      ,@(##sys#fast-reverse (map chicken.expand#strip-syntax (module-meta-expressions mod)))
       (##sys#register-compiled-module
        ',(module-name mod)
        (list
@@ -322,7 +322,7 @@
 		 (let* ((name (car sexport))
 			(a (assq name dlist)))
 		   (cond ((pair? a) 
-			  `(cons ',(car sexport) ,(##sys#strip-syntax (cdr a))))
+			  `(cons ',(car sexport) ,(chicken.expand#strip-syntax (cdr a))))
 			 (else
 			  (dm "re-exported syntax" name mname)
 			  `',name))))
@@ -335,7 +335,7 @@
 		      ((assq (caar sd) sexports) (loop (cdr sd)))
 		      (else
 		       (let ((name (caar sd)))
-			 (cons `(cons ',(caar sd) ,(##sys#strip-syntax (cdar sd)))
+			 (cons `(cons ',(caar sd) ,(chicken.expand#strip-syntax (cdar sd)))
 			       (loop (cdr sd)))))))))))))
 
 (define (##sys#register-compiled-module name iexports vexports sexports #!optional
@@ -588,7 +588,7 @@
 	    ((number? x) (number->string x))
 	    (else (##sys#syntax-error-hook loc "invalid prefix" ))))
     (define (import-name spec)
-      (let* ((mod (##sys#find-module/import-library (##sys#strip-syntax spec) 'import))
+      (let* ((mod (##sys#find-module/import-library (chicken.expand#strip-syntax spec) 'import))
 	     (vexp (module-vexports mod))
 	     (sexp (module-sexports mod))
 	     (iexp (module-iexports mod)))

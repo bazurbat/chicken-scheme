@@ -316,7 +316,7 @@ EOF
 		      (case cmd
 			((x)
 			 (let ([x (read)])
-			   (pretty-print (##sys#strip-syntax (expand x)))
+			   (pretty-print (strip-syntax (expand x)))
 			   (##sys#void) ) )
 			((p)
 			 (let* ([x (read)]

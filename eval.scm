@@ -58,7 +58,10 @@
 
 ;; Exclude values defined within this module.
 (import (except scheme eval load interaction-environment null-environment scheme-report-environment))
-(import chicken chicken.foreign)
+(import chicken)
+
+(import chicken.expand
+	chicken.foreign)
 
 (include "common-declarations.scm")
 (include "mini-srfi-1.scm")
@@ -320,7 +323,7 @@
 	       (##sys#syntax-error/context "illegal non-atomic object" x)]
 	      [(symbol? (##sys#slot x 0))
 	       (emit-syntax-trace-info tf x cntr)
-	       (let ((x2 (##sys#expand x se #f)))
+	       (let ((x2 (expand x se)))
 		 (d `(EVAL/EXPANDED: ,x2))
 		 (if (not (eq? x2 x))
 		     (compile x2 e h tf cntr se)
@@ -330,7 +333,7 @@
 		       (case head
 
 			 [(##core#quote)
-			  (let* ((c (##sys#strip-syntax (cadr x))))
+			  (let* ((c (strip-syntax (cadr x))))
 			    (case c
 			      [(-1) (lambda v -1)]
 			      [(0) (lambda v 0)]
@@ -582,7 +585,7 @@
 					      se
 					      (##sys#ensure-transformer
 					       (##sys#eval/meta (cadr b))
-					       (##sys#strip-syntax (car b)))))
+					       (strip-syntax (car b)))))
 					   (cadr x) ) 
 				      se) ) )
 			    (compile
@@ -596,7 +599,7 @@
 					     #f
 					     (##sys#ensure-transformer
 					      (##sys#eval/meta (cadr b))
-					      (##sys#strip-syntax (car b)))))
+					      (strip-syntax (car b)))))
 					  (cadr x) ) )
 				 (se2 (append ms se)) )
 			    (for-each 
@@ -640,13 +643,13 @@
 			  (##sys#with-module-aliases
 			   (map (lambda (b)
 				  (##sys#check-syntax 'functor b '(symbol symbol))
-				  (##sys#strip-syntax b))
+				  (strip-syntax b))
 				(cadr x))
 			   (lambda ()
 			     (compile `(##core#begin ,@(cddr x)) e #f tf cntr se))))
 
 			 ((##core#module)
-			  (let* ((x (##sys#strip-syntax x))
+			  (let* ((x (strip-syntax x))
 				 (name (cadr x))
 				 (exports 
 				  (or (eq? #t (caddr x))
@@ -713,7 +716,7 @@
 			 [(##core#require-extension)
 			  (let ((imp? (caddr x)))
 			    (compile
-			     (let loop ([ids (##sys#strip-syntax (cadr x))])
+			     (let loop ((ids (strip-syntax (cadr x))))
 			       (if (null? ids)
 				   '(##core#undefined)
 				   (let-values (((exp f real-id) 
@@ -753,7 +756,7 @@
 			 
 			 ((##core#typecase)
 			  ;; drops exp and requires "else" clause
-			  (cond ((assq 'else (##sys#strip-syntax (cdddr x))) =>
+			  (cond ((assq 'else (strip-syntax (cdddr x))) =>
 				 (lambda (cl)
 				   (compile (cadr cl) e h tf cntr se)))
 				(else

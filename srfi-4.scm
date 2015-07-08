@@ -463,7 +463,7 @@ EOF
 (define-syntax list->NNNvector 
   (er-macro-transformer 
    (lambda (x r c)
-     (let* ((tag (##sys#strip-syntax (cadr x)))
+     (let* ((tag (strip-syntax (cadr x)))
 	    (tagstr (symbol->string tag))
 	    (name (string->symbol (string-append "list->" tagstr)))
 	    (make (string->symbol (string-append "make-" tagstr)))
@@ -531,7 +531,7 @@ EOF
 (define-syntax NNNvector->list
   (er-macro-transformer
    (lambda (x r c)
-     (let* ((tag (symbol->string (##sys#strip-syntax (cadr x))))
+     (let* ((tag (symbol->string (strip-syntax (cadr x))))
 	    (alloc (and (pair? (cddr x)) (caddr x)))
 	    (name (string->symbol (string-append tag "->list"))))
        `(define (,name v)
