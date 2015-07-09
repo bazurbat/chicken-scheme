@@ -565,7 +565,7 @@
 				 (##sys#macro-environment
 				  (##sys#meta-macro-environment)))
 		    (fluid-let ((##sys#notices-enabled #f)) ; to avoid re-import warnings
-		      (##sys#load il #f #f)))
+		      (chicken.eval#load il)))
 		  (set! mod (##sys#find-module mname 'import)))
 	      (else
 	       (##sys#syntax-error-hook

@@ -959,111 +959,109 @@
 	(loop (##sys#slot mode 1)) ) )
     (##sys#set-dlopen-flags! now global) ) )
 
-(define load)
-(define load-noisily)
-(define load-relative)
+(define load/internal
+  (let ((read read)
+	(write write)
+	(display display)
+	(newline newline)
+	(eval eval)
+	(open-input-file open-input-file)
+	(close-input-port close-input-port)
+	(string-append string-append))
+    (lambda (input evaluator #!optional pf timer printer)
+      (define evalproc
+	(or evaluator eval))
+      (define topentry
+	(##sys#make-c-string "C_toplevel"))
+      (define (has-sep? str)
+	(let loop ([i (fx- (##sys#size str) 1)])
+	  (and (not (zero? i))
+	       (if (memq (##core#inline "C_subchar" str i) '(#\\ #\/))
+		   i
+		   (loop (fx- i 1))))))
+      (define fname
+	(cond ((port? input) #f)
+	      ((not (string? input))
+	       (##sys#signal-hook #:type-error 'load "bad argument type - not a port or string" input))
+	      ((##sys#file-exists? input #t #f 'load) input)
+	      (else
+	       (let ([fname2 (##sys#string-append input ##sys#load-dynamic-extension)])
+		 (if (and (not ##sys#dload-disabled)
+			  (##sys#fudge 24) ; dload?
+			  (##sys#file-exists? fname2 #t #f 'load))
+		     fname2
+		     (let ([fname3 (##sys#string-append input source-file-extension)])
+		       (if (##sys#file-exists? fname3 #t #f 'load)
+			   fname3
+			   input)))))))
+      (when (and (string? input) (not fname))
+	(##sys#signal-hook #:file-error 'load "cannot open file" input))
+      (when (and (load-verbose) fname)
+	(display "; loading ")
+	(display fname)
+	(display " ...\n")
+	(flush-output))
+      (or (and fname
+	       (or (##sys#dload (##sys#make-c-string fname 'load) topentry)
+		   (and (not (has-sep? fname))
+			(##sys#dload
+			 (##sys#make-c-string
+			  (##sys#string-append "./" fname)
+			  'load)
+			 topentry))))
+	  (call-with-current-continuation
+	   (lambda (abrt)
+	     (fluid-let ((##sys#read-error-with-line-number #t)
+			 (##sys#current-source-filename fname)
+			 (##sys#current-load-path
+			  (and fname
+			       (let ((i (has-sep? fname)))
+				 (if i (##sys#substring fname 0 (fx+ i 1)) ""))))
+			 (##sys#abort-load (lambda () (abrt #f))))
+	       (let ((in (if fname (open-input-file fname) input)))
+		 (##sys#dynamic-wind
+		  (lambda () #f)
+		  (lambda ()
+		    (let ((c1 (peek-char in)))
+		      (when (eq? c1 (integer->char 127))
+			(##sys#error
+			 'load
+			 (##sys#string-append
+			  "unable to load compiled module - "
+			  (or _dlerror "unknown reason"))
+			 fname)))
+		    (let ((x1 (read in)))
+		      (do ((x x1 (read in)))
+			  ((eof-object? x))
+			(when printer (printer x))
+			(##sys#call-with-values
+			 (lambda ()
+			   (if timer
+			       (time (evalproc x))
+			       (evalproc x)))
+			 (lambda results
+			   (when pf
+			     (for-each
+			      (lambda (r)
+				(write r)
+				(newline))
+			      results)))))))
+		  (lambda ()
+		    (close-input-port in))))))))
+      (##core#undefined))))
 
-(let ([read read]
-      [write write]
-      [display display]
-      [newline newline]
-      [eval eval]
-      [open-input-file open-input-file]
-      [close-input-port close-input-port]
-      [string-append string-append] 
-      [topentry (##sys#make-c-string "C_toplevel")] )
-  (define (has-sep? str)
-    (let loop ([i (fx- (##sys#size str) 1)])
-      (and (not (zero? i))
-	   (if (memq (##core#inline "C_subchar" str i) '(#\\ #\/))
-	       i
-	       (loop (fx- i 1)) ) ) ) )
-  (define (badfile x)
-    (##sys#signal-hook #:type-error 'load "bad argument type - not a port or string" x) )
-  (set! ##sys#load 
-    (lambda (input evaluator pf #!optional timer printer)
-      (let* ((fname 
-	      (cond [(port? input) #f]
-		    [(not (string? input)) (badfile input)]
-		    ((##sys#file-exists? input #t #f 'load) input)
-		    (else
-		     (let ([fname2 (##sys#string-append input ##sys#load-dynamic-extension)])
-		       (if (and (not ##sys#dload-disabled)
-				(##sys#fudge 24) ; dload?
-				(##sys#file-exists? fname2 #t #f 'load))
-			   fname2
-			   (let ([fname3 (##sys#string-append input source-file-extension)])
-			     (if (##sys#file-exists? fname3 #t #f 'load)
-				 fname3
-				 input) ) ) ) )))
-	     [evproc (or evaluator eval)] )
-	(cond [(and (string? input) (not fname))
-	       (##sys#signal-hook #:file-error 'load "cannot open file" input) ]
-	      [(and (load-verbose) fname)
-	       (display "; loading ")
-	       (display fname)
-	       (display " ...\n") 
-	       (flush-output)] )
-	(or (and fname
-		 (or (##sys#dload (##sys#make-c-string fname 'load) topentry) 
-		     (and (not (has-sep? fname))
-			  (##sys#dload 
-			   (##sys#make-c-string
-			    (##sys#string-append "./" fname) 
-			    'load) 
-			   topentry) ) ) )
-	    (call-with-current-continuation
-	     (lambda (abrt)
-	       (fluid-let ((##sys#read-error-with-line-number #t)
-			   (##sys#current-source-filename fname)
-			   (##sys#current-load-path
-			    (and fname
-				 (let ((i (has-sep? fname)))
-				   (if i (##sys#substring fname 0 (fx+ i 1)) "") ) ) )
-			   (##sys#abort-load (lambda () (abrt #f))) )
-		 (let ((in (if fname (open-input-file fname) input)))
-		   (##sys#dynamic-wind
-		    (lambda () #f)
-		    (lambda ()
-		      (let ((c1 (peek-char in)))
-			(when (eq? c1 (integer->char 127))
-			  (##sys#error 
-			   'load 
-			   (##sys#string-append 
-			    "unable to load compiled module - " 
-			    (or _dlerror "unknown reason"))
-			   fname)))
-		      (let ((x1 (read in)))
-			(do ((x x1 (read in)))
-			    ((eof-object? x))
-			  (when printer (printer x))
-			  (##sys#call-with-values
-			   (lambda () 
-			     (if timer
-				 (time (evproc x)) 
-				 (evproc x) ) )
-			   (lambda results
-			     (when pf
-			       (for-each
-				(lambda (r) 
-				  (write r)
-				  (newline) )
-				results) ) ) ) ) ) )
-		    (lambda () (close-input-port in)) ) ) ) ) ) )
-	(##core#undefined) ) ) )
-  (set! load
-    (lambda (filename . evaluator)
-      (##sys#load filename (optional evaluator #f) #f) ) )
-  (set! load-relative
-    (lambda (filename . evaluator)
-      (##sys#load
-       (if (memq (string-ref filename 0) '(#\\ #\/))
-	   filename
-	   (##sys#string-append ##sys#current-load-path filename) )
-       (optional evaluator #f) #f) ) )
-  (set! load-noisily
-    (lambda (filename #!key (evaluator #f) (time #f) (printer #f))
-      (##sys#load filename evaluator #t time printer) ) ) )
+(define (load filename . evaluator)
+  (load/internal filename (optional evaluator #f)))
+
+(define (load-relative filename . evaluator)
+  (load/internal
+   (if (memq (string-ref filename 0) '(#\\ #\/))
+       filename
+       (##sys#string-append ##sys#current-load-path filename))
+   (optional evaluator #f)))
+
+(define (load-noisily filename #!key (evaluator #f) (time #f) (printer #f))
+  (load/internal filename evaluator #t time printer))
 
 (define ##sys#load-library-extension 	; this is crude...
   (cond [(eq? (software-type) 'windows) windows-load-library-extension]
@@ -1237,7 +1235,7 @@
 	      (else
 	       (let ([id2 (##sys#find-extension p #f)])
 		 (cond (id2
-			(##sys#load id2 #f #f)
+			(load/internal id2 #f)
 			(set! ##sys#loaded-extensions (cons p ##sys#loaded-extensions)) 
 			#t)
 		       (err? (##sys#error loc "cannot load extension" id))

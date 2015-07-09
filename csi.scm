@@ -1126,8 +1126,8 @@ EOF
 		 (set! args (cdr args)) )
 		(else
 		 (let ((scr (and script (car script))))
-		   (##sys#load 
-		    arg 
+		   (load
+		    arg
 		    (and (equal? "-sx" scr)
 			 (lambda (x)
 			   (let* ((str (with-output-to-string (cut pretty-print x)))
@@ -1141,8 +1141,7 @@ EOF
 				 (when (char=? #\newline c)
 				   (display "; " ##sys#standard-error))))
 			     (newline ##sys#standard-error)
-			     (eval x))))
-		    #f)
+			     (eval x)))))
 		   (when (equal? "-ss" scr)
 		     (call-with-values (cut main (command-line-arguments))
 		       (lambda results
