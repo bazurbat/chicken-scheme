@@ -1060,8 +1060,14 @@
 
 ;; #578: "use" with import-specifier has no effect for internal modules on csi's top-level
 
-(use (prefix srfi-4 u8v-))
+(use srfi-4)
+(use (prefix srfi-4 other-))
 u8vector
+other-u8vector
+
+(import (prefix scheme other-))
+eval
+other-eval
 
 
 ;; #805: case-lambda is unhygienic (as well as ensure, see 4706afb4 and bc5cc698)

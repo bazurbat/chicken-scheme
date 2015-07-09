@@ -713,7 +713,7 @@ lolevel.c: $(SRCDIR)lolevel.scm $(SRCDIR)common-declarations.scm
 tcp.c: $(SRCDIR)tcp.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) -emit-import-library chicken.tcp
 srfi-4.c: $(SRCDIR)srfi-4.scm $(SRCDIR)common-declarations.scm
-	$(bootstrap-lib) 
+	$(bootstrap-lib) -emit-import-library srfi-4
 utils.c: $(SRCDIR)utils.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) -emit-import-library chicken.utils
 scheduler.c: $(SRCDIR)scheduler.scm $(SRCDIR)common-declarations.scm

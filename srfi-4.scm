@@ -37,6 +37,49 @@
 EOF
 ) )
 
+(module srfi-4
+  (blob->f32vector blob->f32vector/shared
+   blob->f64vector blob->f64vector/shared
+   blob->s16vector blob->s16vector/shared
+   blob->s32vector blob->s32vector/shared
+   blob->s64vector blob->s64vector/shared
+   blob->s8vector blob->s8vector/shared
+   blob->u16vector blob->u16vector/shared
+   blob->u32vector blob->u32vector/shared
+   blob->u64vector blob->u64vector/shared
+   blob->u8vector blob->u8vector/shared
+   f32vector f32vector->blob f32vector->blob/shared f32vector->list
+   f32vector-length f32vector-ref f32vector-set! f32vector?
+   f64vector f64vector->blob f64vector->blob/shared f64vector->list
+   f64vector-length f64vector-ref f64vector-set! f64vector?
+   s8vector s8vector->blob s8vector->blob/shared s8vector->list
+   s8vector-length s8vector-ref s8vector-set! s8vector?
+   s16vector s16vector->blob s16vector->blob/shared s16vector->list
+   s16vector-length s16vector-ref s16vector-set! s16vector?
+   s32vector s32vector->blob s32vector->blob/shared s32vector->list
+   s32vector-length s32vector-ref s32vector-set! s32vector?
+   s64vector s64vector->blob s64vector->blob/shared s64vector->list
+   s64vector-length s64vector-ref s64vector-set! s64vector?
+   u8vector u8vector->blob u8vector->blob/shared u8vector->list
+   u8vector-length u8vector-ref u8vector-set! u8vector?
+   u16vector u16vector->blob u16vector->blob/shared u16vector->list
+   u16vector-length u16vector-ref u16vector-set! u16vector?
+   u32vector u32vector->blob u32vector->blob/shared u32vector->list
+   u32vector-length u32vector-ref u32vector-set! u32vector?
+   u64vector u64vector->blob u64vector->blob/shared u64vector->list
+   u64vector-length u64vector-ref u64vector-set! u64vector?
+   list->f32vector list->f64vector list->s16vector list->s32vector
+   list->s8vector list->u16vector list->u32vector list->u8vector
+   make-f32vector make-f64vector make-s16vector make-s32vector
+   make-s8vector make-u16vector make-u32vector make-u8vector
+   number-vector? read-u8vector read-u8vector! release-number-vector
+   subf32vector subf64vector subs16vector subs32vector subs64vector
+   subs8vector subu16vector subu8vector subu32vector subu64vector
+   write-u8vector)
+
+(import scheme chicken)
+(import chicken.foreign)
+
 (include "common-declarations.scm")
 
 
@@ -295,6 +338,18 @@ EOF
 
 
 ;;; Basic constructors:
+
+(define make-f32vector)
+(define make-f64vector)
+(define make-s16vector)
+(define make-s32vector)
+(define make-s64vector)
+(define make-s8vector)
+(define make-u8vector)
+(define make-u16vector)
+(define make-u32vector)
+(define make-u64vector)
+(define release-number-vector)
 
 (let* ([ext-alloc
 	(foreign-lambda* scheme-object ([int bytes])
@@ -764,4 +819,4 @@ EOF
     (##core#inline "C_string_to_bytevector" str)
     (##sys#make-structure 'u8vector str)))
 
-(register-feature! 'srfi-4)
+(register-feature! 'srfi-4))

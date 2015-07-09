@@ -39,14 +39,12 @@
   (import r5rs)
   (define (bar) 99))
 
-(require-library srfi-4)
-
 (define foo-env (module-environment 'foo))
-(define srfi-4-env (module-environment 'srfi-4))
+(define csi-env (module-environment 'csi))
 
 (test-equal (eval '(bar) foo-env) 99)
 (test-error (eval 'baz foo-env))
-(test-equal (eval '(u8vector-ref (u8vector 0 1 2) 1) srfi-4-env) 1)
-(test-error (eval 'baz srfi-4-env))
+(test-equal (eval '(editor-command) csi-env) #f)
+(test-error (eval 'baz csi-env))
 
 (test-end)
