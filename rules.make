@@ -503,6 +503,9 @@ $(foreach lib, $(SETUP_API_OBJECTS_1),\
           $(eval $(call declare-emitted-import-lib-dependency,$(lib))))
 
 $(foreach lib, $(DYNAMIC_IMPORT_LIBRARIES),\
+          $(eval $(call declare-emitted-import-lib-dependency,$(lib))))
+
+$(foreach lib, $(DYNAMIC_CHICKEN_IMPORT_LIBRARIES),\
           $(eval $(call declare-emitted-chicken-import-lib-dependency,$(lib))))
 
 $(foreach lib, $(filter-out chicken,$(COMPILER_OBJECTS_1)),\
