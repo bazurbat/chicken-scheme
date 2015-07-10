@@ -864,7 +864,7 @@
 	  (##sys#meta-macro-environment (##sys#macro-environment))
 	  (##sys#macro-environment oldme)))))
 
-(define ##sys#eval-handler 
+(define eval-handler
   (make-parameter
    (lambda (x #!optional env)
      (let ((se (##sys#current-environment)))
@@ -879,7 +879,7 @@
 	     (else
 	      ((##sys#compile-to-closure x '() se #f #f #f) '() ) ) ) ) )))
 
-(define eval-handler ##sys#eval-handler)
+(define ##sys#eval-handler eval-handler)
 
 (define (eval x . env)
   (apply (##sys#eval-handler) 
@@ -1239,7 +1239,7 @@
 		       (err? (##sys#error loc "cannot load extension" id))
 		       (else #f) ) ) ) ) ) ) ) )
 
-(define (##sys#provide . ids)
+(define (provide . ids)
   (for-each
    (lambda (id)
      (##sys#check-symbol id 'provide)
@@ -1247,21 +1247,18 @@
        (set! ##sys#loaded-extensions (cons p ##sys#loaded-extensions)) ) ) 
    ids) )
 
-(define provide ##sys#provide)
+(define ##sys#provide provide)
 
-(define (##sys#provided? id)
+(define (provided? id)
   (and (member (##sys#canonicalize-extension-path id 'provided?) ##sys#loaded-extensions) 
        #t) )
 
-(define provided? ##sys#provided?)
+(define ##sys#provided? provided?)
 
-(define ##sys#require
-  (lambda ids
-    (for-each
-     (cut ##sys#load-extension <> 'require) 
-     ids) ) )
+(define (require . ids)
+  (for-each (cut ##sys#load-extension <> 'require) ids))
 
-(define require ##sys#require)
+(define ##sys#require require)
 
 (define ##sys#extension-information
   (let ([with-input-from-file with-input-from-file]
