@@ -937,7 +937,6 @@
 
 (define load-verbose (make-parameter (##sys#fudge 13)))
 
-(define (##sys#abort-load) #f)
 (define ##sys#current-source-filename #f)
 (define ##sys#current-load-path "")
 (define ##sys#dload-disabled #f)
@@ -1016,8 +1015,7 @@
 			 (##sys#current-load-path
 			  (and fname
 			       (let ((i (has-sep? fname)))
-				 (if i (##sys#substring fname 0 (fx+ i 1)) ""))))
-			 (##sys#abort-load (lambda () (abrt #f))))
+				 (if i (##sys#substring fname 0 (fx+ i 1)) "")))))
 	       (let ((in (if fname (open-input-file fname) input)))
 		 (##sys#dynamic-wind
 		  (lambda () #f)
