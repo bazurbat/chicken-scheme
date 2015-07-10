@@ -138,10 +138,6 @@ The number of language extensions, or '''eggs''', is constantly growing.
   generation, AJAX, and HTTP session management
 * data formats, including XML, JSON, and Unicode support
 
-CHICKEN is supported by SWIG (Simplified Wrapper and Interface
-Generator), a tool that produces quick-and-dirty interface modules
-for C libraries ([[http://www.swig.org]]). 
-
 This chapter provides you with an overview of the entire system, with
 enough information to get started writing and running small Scheme
 programs.
@@ -153,9 +149,10 @@ The master CHICKEN website is
 basic information about CHICKEN, downloads, and pointers to other key
 resources. 
 
-The CHICKEN wiki ([[http://wiki.call-cc.org]]) contains the most current
-version of the User's manual, along with various tutorials and other
-useful documents. The list of eggs is at [[/egg-index]].
+The CHICKEN wiki ([[http://wiki.call-cc.org]]) contains the most
+current version of the User's manual, along with various tutorials and
+other useful documents. The list of eggs is at
+[[http://wiki.call-cc.org/egg-index|http://wiki.call-cc.org/egg-index]].
 
 A very useful search facility for questions about CHICKEN is found at
 [[http://api.call-cc.org]]. The CHICKEN issue tracker is at
@@ -167,7 +164,9 @@ CHICKEN user, {{chicken-users}}
 of interest. The crew working on the CHICKEN system itself uses the
 very low-volume {{chicken-hackers}} list
 ([[http://lists.nongnu.org/mailman/listinfo/chicken-hackers]]) for
-communication.  
+communication.  For other topic-specific mailing lists (e.g.,
+announcements, security) and discussion groups, see
+[[http://wiki.call-cc.org/discussion-groups|http://wiki.call-cc.org/discussion-groups]].
 
 === Installing CHICKEN
 
@@ -179,7 +178,7 @@ Because it compiles to C, CHICKEN requires that a C compiler be
 installed on your system. (If you're not writing embedded C code, you
 can pretty much ignore the C compiler once you have installed it.) 
 
-* On a Linux system, the GNU Compiler Collection ({{gcc}}) should be
+* On a Linux system, a C toolchain (e.g., GCC, clang) should be
   installed as part of the basic operating system, or should be
   available through the package management system (e.g., APT,
   Synaptic, RPM, or Yum, depending upon your Linux distribution).
@@ -209,17 +208,20 @@ can pretty much ignore the C compiler once you have installed it.)
 Refer to the {{README}} file for the version you're installing for
 more information on the installation process. 
 
-Alternatively, third party packages in binary format are available. See
-[[/platforms]] for information about how to obtain them.
+Alternatively, third party packages in binary format are
+available. See
+[[http://wiki.call-cc.org/platforms|http://wiki.call-cc.org/platforms]]
+for information about how to obtain them.
 
 === Development environments
 
 The simplest development environment is a text editor and terminal
 window (Windows: Command Prompt, OSX: Terminal, Linux/Unix: xterm) for
-using the interpreter and/or calling the compiler. If you
-[[/egg/readline|install the {{readline}} egg]], you
-have all the benefits of command history in the interpreter, Emacs or
-vi-compatible line editing, and customization.
+using the interpreter and/or calling the compiler.  If you install one
+of the line editing extensions (e.g., [[/egg/readline|readline]],
+[[/egg/parley|parley]], [[/egg/linenoise|linenoise]], you have some
+useful command line editing features in the interpreter (e.g., Emacs
+or vi-compatible line editing, customization).
 
 You will need a text editor that knows Scheme; it's just too painful
 with editors that don't do parenthesis matching and proper
@@ -242,12 +244,8 @@ proportional fonts, in particular.)
 * Emacs ([[http://www.gnu.org/software/emacs]]) is an
 extensible, customizable, self-documenting editor available for
 Linux/Unix, Macintosh, and Windows systems; See
-[[/emacs]] for more information about the available options. 
-
-* Epsilon ([[http://www.lugaru.com]]) is a commercial (proprietary) text
-editor whose design was inspired by Emacs. Although Scheme support
-isn't provided, a Lisp mode is available on Lugaru's FTP site, and
-could with some work be made to duplicate the Emacs support.  
+[[http://wiki.call-cc.org/emacs|http://wiki.call-cc.org/emacs]]
+for more information about the available options.
 
 * SciTE ([[http://scintilla.sourceforge.net/SciTE.html]]), 
 unlike Emacs or Vim, follows typical graphical UI design conventions
@@ -373,8 +371,8 @@ To run it enter this in your shell:
 
 The {{-ss}} option sets several options that work smoothly together to
 execute a script. You can make the command directly executable from
-the shell by inserting a `[[Using the interpreter#Writing Scheme scripts|shebang line]]' at the beginning of the
-program.
+the shell by inserting a [[Using the interpreter#Writing Scheme scripts|shebang line]]
+at the beginning of the program.
 
 The {{-ss}} option arranges to call a procedure named {{main}}, with
 the command line arguments, packed in a list, as its arguments. (There
@@ -406,8 +404,9 @@ support dynamic loading, which includes modern versions of *BSD,
 Linux, Mac OS X, Solaris, and Windows. 
 
 We can compile our factorial function, producing a file named
-{{fact.so}} (`shared object' in Linux-ese, the same file type is used
-in OS X and Windows, rather than {{dylib}} or {{dll}}, respectively). 
+{{fact.so}} (''shared object'' in Linux-ese, the same file type is
+used in OS X and Windows, rather than {{dylib}} or {{dll}},
+respectively).
 
  chicken$ csc -dynamic fact.scm
  chicken$ csi -quiet
@@ -450,10 +449,10 @@ Scheme. Let's divide our palindrome program into a library module
 ({{pal-proc.scm}}) and a client module ({{pal-user.scm}}). 
 
 Here's the external library. We {{declare}} that {{pal-proc}} is a
-`unit', which is the basis of separately-compiled modules in
-CHICKEN. (Units deal with separate compilation, but don't involve
-separated namespaces; namespaced module systems are available as
-eggs.)
+''unit'', which is the basis of separately-compiled modules in
+CHICKEN. (Units deal with separate compilation, but don't necessarily
+involve separated namespaces; namespaces can be implemented by
+[[/manual/Modules|modules]].)
 
 <enscript highlight=scheme>
 ;;; Library pal-proc.scm
@@ -467,7 +466,7 @@ eggs.)
   (check 0 (sub1 (string-length x))))
 </enscript>
 
-Next we have some  client code that `uses' this separately-compiled
+Next we have some  client code that ''uses'' this separately-compiled
 module.  
 
 <enscript highlight=scheme>
