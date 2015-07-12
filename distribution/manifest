@@ -124,9 +124,9 @@ tests/executable-tests.scm
 tests/condition-tests.scm
 tests/fixnum-tests.scm
 tests/numbers-string-conversion-tests.scm
-tests/numbers-tests.scm
-tests/numbers-tests-ashinn.scm
-tests/numbers-tests-gauche.scm
+tests/numbers-test.scm
+tests/numbers-test-ashinn.scm
+tests/numbers-test-gauche.scm
 tests/path-tests.scm
 tests/posix-tests.scm
 tests/r4rstest.out
