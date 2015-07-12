@@ -1,4 +1,3 @@
-
 /* chicken.h - General headerfile for compiler generated executables
 ;
 ; Copyright (c) 2008-2015, The CHICKEN Team
