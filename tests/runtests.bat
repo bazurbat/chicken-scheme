@@ -7,6 +7,7 @@ set TEST_DIR=%cd%
 set OS_NAME=WindowsNT
 
 set CHICKEN=..\chicken
+set CHICKEN_PROFILE=..\chicken-profile
 set ASMFLAGS=-Wa,-w
 set FAST_OPTIONS=-O5 -d0 -b -disable-interrupts
 set PATH=%cd%\..;%PATH%
@@ -40,6 +41,12 @@ echo ======================================== optimizer tests  ...
 %compile% clustering-tests.scm -clustering
 if errorlevel 1 exit /b 1
 a.out
+if errorlevel 1 exit /b 1
+
+echo ======================================== profiler tests ...
+%compile% null.scm -profile -profile-name TEST.profile
+a.out
+%CHICKEN_PROFILE% TEST.profile
 if errorlevel 1 exit /b 1
 
 echo ======================================== scrutiny tests ...

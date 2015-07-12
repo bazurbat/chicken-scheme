@@ -48,6 +48,7 @@ done
 
 CHICKEN_REPOSITORY=${TEST_DIR}/test-repository
 CHICKEN=${TEST_DIR}/../chicken
+CHICKEN_PROFILE=${TEST_DIR}/../chicken-profile
 CHICKEN_INSTALL=${TEST_DIR}/../chicken-install
 CHICKEN_UNINSTALL=${TEST_DIR}/../chicken-uninstall
 ASMFLAGS=
@@ -84,6 +85,11 @@ $compile inlining-tests.scm -optimize-level 3
 echo "======================================== optimizer tests  ..."
 $compile clustering-tests.scm -clustering
 ./a.out
+
+echo "======================================== profiler tests ..."
+$compile null.scm -profile -profile-name TEST.profile
+./a.out
+$CHICKEN_PROFILE TEST.profile
 
 echo "======================================== scrutiny tests ..."
 $compile typematch-tests.scm -specialize -w
