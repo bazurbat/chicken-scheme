@@ -142,14 +142,14 @@
 			       ,%result))))
 	x)))
 
-(define-internal-compiler-syntax ((o #%o) x r c) ()
+(define-internal-compiler-syntax ((o #%o chicken.data-structures#o) x r c) ()
   (if (and (fx> (length x) 1)
-	   (memq 'o extended-bindings) ) ; s.a.
+	   (memq 'chicken.data-structures#o extended-bindings)) ; s.a.
       (let ((%tmp (r 'tmp)))
 	`(,(r 'lambda) (,%tmp) ,(foldr list %tmp (cdr x))))
       x))
 
-(define-internal-compiler-syntax ((sprintf #%sprintf format #%format) x r c)
+(define-internal-compiler-syntax ((sprintf #%sprintf chicken.extras#sprintf format #%format chicken.extras#format) x r c)
   (display write fprintf number->string write-char open-output-string get-output-string)
   (let* ((out (gensym 'out))
 	 (code (compile-format-string 
@@ -166,7 +166,7 @@
 	  (,(r 'get-output-string) ,out))
 	x)))
 
-(define-internal-compiler-syntax ((fprintf #%fprintf) x r c) 
+(define-internal-compiler-syntax ((fprintf #%fprintf chicken.extras#fprintf) x r c)
   (display write fprintf number->string write-char open-output-string get-output-string)
   (if (>= (length x) 3)
       (let ((code (compile-format-string 
@@ -176,7 +176,7 @@
 	(or code x))
       x))
 
-(define-internal-compiler-syntax ((printf #%printf) x r c)
+(define-internal-compiler-syntax ((printf #%printf chicken.extras#printf) x r c)
   (display write fprintf number->string write-char open-output-string get-output-string)
   (let ((code (compile-format-string 
 	       'printf '##sys#standard-output
@@ -188,7 +188,7 @@
   (call/cc
    (lambda (return)
      (and (>= (length args) 1)
-	  (memq func extended-bindings)	; s.a.
+	  (memq (symbol-append 'chicken.extras# func) extended-bindings) ; s.a.
 	  (or (string? (car args))
 	      (and (list? (car args))
 		   (c (r 'quote) (caar args))
@@ -207,7 +207,6 @@
 		  (index 0)
 		  (len (string-length fstr)) 
 		  (%out (r 'out))
-		  (%fprintf (r 'fprintf))
 		  (%let (r 'let))
 		  (%number->string (r 'number->string)))
 	      (define (fetch)
@@ -261,7 +260,7 @@
 				 ((#\?)
 				  (let* ([fstr (next)]
 					 [lst (next)] )
-				    (push `(##sys#apply ,%fprintf ,%out ,fstr ,lst))))
+				    (push `(##sys#apply chicken.extras#fprintf ,%out ,fstr ,lst))))
 				 ((#\~) (push `(##sys#write-char-0 #\~ ,%out)))
 				 ((#\% #\N) (push `(##sys#write-char-0 #\newline ,%out)))
 				 (else
