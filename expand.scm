@@ -29,6 +29,7 @@
 
 (declare
   (unit expand)
+  (uses extras)
   (disable-interrupts)
   (fixnum)
   (not inline ##sys#syntax-error-hook ##sys#compiler-syntax-hook
@@ -1159,7 +1160,7 @@
 	      (##sys#check-syntax 'cond clause '#(_ 1))
 	      (cond (else?
 		     (##sys#warn
-		      (sprintf "clause following `~S' clause in `cond'" else?)
+		      (chicken.extras#sprintf "clause following `~S' clause in `cond'" else?)
 		      (chicken.expand#strip-syntax clause))
 		     (expand rclauses else?)
 		     '(##core#begin))

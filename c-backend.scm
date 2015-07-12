@@ -30,8 +30,7 @@
 ;; Same goes for "platform" and "driver".
 (declare
   (unit c-backend)
-  (uses data-structures
-	c-platform compiler support))
+  (uses data-structures extras c-platform compiler support))
 
 (module chicken.compiler.c-backend
     (generate-code
@@ -43,6 +42,7 @@
 	chicken.compiler.core
 	chicken.compiler.c-platform
 	chicken.compiler.support
+	chicken.extras
 	chicken.foreign)
 
 (include "mini-srfi-1.scm")

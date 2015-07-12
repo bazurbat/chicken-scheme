@@ -27,7 +27,7 @@
 
 (declare
   (unit chicken-ffi-syntax)
-  (uses data-structures)
+  (uses data-structures extras)
   (disable-interrupts)
   (fixnum))
 
@@ -39,7 +39,8 @@
   (no-bound-checks)
   (no-procedure-checks))
 
-(import chicken.data-structures)
+(import chicken.data-structures
+	chicken.extras)
 
 (include "mini-srfi-1.scm")
 

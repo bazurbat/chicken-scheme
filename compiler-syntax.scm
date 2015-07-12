@@ -26,8 +26,7 @@
 
 (declare 
   (unit compiler-syntax)
-  (uses data-structures
-	support compiler) )
+  (uses data-structures extras support compiler))
 
 (module chicken.compiler.compiler-syntax
     (compiler-syntax-statistics)
@@ -35,7 +34,8 @@
 (import chicken scheme
 	chicken.compiler.support
 	chicken.compiler.core
-	chicken.data-structures)
+	chicken.data-structures
+	chicken.extras)
 
 (include "tweaks.scm")
 (include "mini-srfi-1.scm")
