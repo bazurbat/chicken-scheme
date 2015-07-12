@@ -368,7 +368,7 @@
 	     (let* ((n (length subs))
 		    (nf (+ n 1)) )
 	       (push-args subs i "C_SCHEME_UNDEFINED")
-	       (gen #t "C_" (first params) "_toplevel(" nf ",av);")))
+	       (gen #t "C_" (first params) "_toplevel(" nf ",av2);")))
 
 	    ((##core#return)
 	     (gen #t "return(")
@@ -518,7 +518,7 @@
 	(for-each 
 	 (lambda (uu) 
 	   (gen #t "C_noret_decl(C_" uu "_toplevel)"
-		#t "C_externimport void C_ccall C_" uu "_toplevel(C_word c,C_word av) C_noret;"))
+		#t "C_externimport void C_ccall C_" uu "_toplevel(C_word c,C_word *av) C_noret;"))
 	 used-units)
 	(unless (zero? n)
 	  (gen #t #t "static C_TLS C_word lf[" n "];") )
@@ -776,7 +776,7 @@
 		  (let ([ldemand (fold (lambda (lit n) (+ n (literal-size lit))) 0 literals)]
 			[llen (length literals)] )
 		    (gen #t "C_word *a;"
-			 #t "if(toplevel_initialized) C_kontinue(t1,C_SCHEME_UNDEFINED);"
+			 #t "if(toplevel_initialized) { C_kontinue(t1,C_SCHEME_UNDEFINED); }"
 			 #t "else C_toplevel_entry(C_text(\"" topname "\"));")
 		    (when disable-stack-overflow-checking
 		      (gen #t "C_disable_overflow_check=1;") )
@@ -788,7 +788,7 @@
 			(gen #t "C_resize_stack(" target-stack-size ");") ) )
 		    (gen #t "C_check_nursery_minimum(" demand ");"
 			 #t "if(!C_demand(" demand ")){"
-			 #t "C_save_and_reclaim((void*)toplevel, c, av);}"
+			 #t "C_save_and_reclaim((void*)C_toplevel, c, av);}"
 			 #t "toplevel_initialized=1;")
 		    (gen #t "if(!C_demand_2(" ldemand ")){"
 			 #t "C_save(t1);"
