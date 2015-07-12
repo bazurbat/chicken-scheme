@@ -774,7 +774,7 @@ typedef struct C_ptable_entry_struct
   void *ptr;
 } C_PTABLE_ENTRY;
 
-typedef void (C_ccall *C_proc)(C_word, C_word *);
+typedef void (C_ccall *C_proc)(C_word, C_word *) C_noret;
 
 
 /* Macros: */
@@ -1219,7 +1219,7 @@ typedef void (C_ccall *C_proc)(C_word, C_word *);
 #define C_pointer_address(x)            ((C_byte *)C_block_item((x), 0))
 #define C_block_address(ptr, n, x)      C_a_unsigned_int_to_num(ptr, n, x)
 #define C_offset_pointer(x, y)          (C_pointer_address(x) + (y))
-#define C_kontinue(k, r)                ((C_proc2)(void *)C_block_item(k,0))(2, (k), (r))
+#define C_kontinue(k, r)                { C_word avk[ 2 ]; avk[ 0 ] = (k); avk[ 1 ] = (r); ((C_proc)(void *)C_block_item((k),0))(2, avk); }
 #define C_fetch_byte(x, p)              (((unsigned C_byte *)C_data_pointer(x))[ p ])
 #define C_poke_integer(x, i, n)         (C_set_block_item(x, C_unfix(i), C_num_to_int(n)), C_SCHEME_UNDEFINED)
 #define C_pointer_to_block(p, x)        (C_set_block_item(p, 0, (C_word)C_data_pointer(x)), C_SCHEME_UNDEFINED)
@@ -1595,7 +1595,7 @@ C_varextern C_TLS void *C_restart_address;
 C_varextern C_TLS int C_entry_point_status;
 C_varextern C_TLS int C_gui_mode;
 
-C_varextern C_TLS void (C_fcall *C_restart_trampoline)(void *proc) C_regparm C_noret;
+C_varextern C_TLS void *C_restart_trampoline;
 C_varextern C_TLS void (*C_pre_gc_hook)(int mode);
 C_varextern C_TLS void (*C_post_gc_hook)(int mode, C_long ms);
 C_varextern C_TLS void (*C_panic_hook)(C_char *msg);
@@ -1746,62 +1746,62 @@ C_fctexport C_word C_dbg_hook(C_word x);
 C_fctexport void C_use_private_repository(C_char *path);
 C_fctexport C_char *C_private_repository_path();
 
-C_fctimport C_cpsproc(C_toplevel);
-C_fctimport C_cpsproc(C_invalid_procedure);
-C_fctexport C_cpsproc(C_stop_timer);
-C_fctexport C_cpsproc(C_apply);
-C_fctexport C_cpsproc(C_call_cc);
-C_fctexport C_cpsproc(C_continuation_graft);
-C_fctexport C_cpsproc(C_values);
-C_fctexport C_cpsproc(C_apply_values);
-C_fctexport C_cpsproc(C_call_with_values);
-C_fctexport C_cpsproc(C_u_call_with_values);
-C_fctexport C_cpsproc(C_times);
-C_fctexport C_cpsproc(C_plus);
-C_fctexport C_cpsproc(C_minus);
-C_fctexport C_cpsproc(C_divide);
-C_fctexport C_cpsproc(C_nequalp);
-C_fctexport C_cpsproc(C_greaterp);
-C_fctexport C_cpsproc(C_lessp);
-C_fctexport C_cpsproc(C_greater_or_equal_p);
-C_fctexport C_cpsproc(C_less_or_equal_p);
-C_fctexport C_cpsproc(C_expt);
-C_fctexport C_cpsproc(C_gc);
-C_fctexport C_cpsproc(C_open_file_port);
-C_fctexport C_cpsproc(C_allocate_vector);
-C_fctexport C_cpsproc(C_string_to_symbol);
-C_fctexport C_cpsproc(C_build_symbol);
-C_fctexport C_cpsproc(C_flonum_fraction);
-C_fctexport C_cpsproc(C_flonum_rat);
-C_fctexport C_cpsproc(C_quotient);
-C_fctexport C_cpsproc(C_number_to_string);
-C_fctexport C_cpsproc(C_fixnum_to_string);
-C_fctexport C_cpsproc(C_make_structure);
-C_fctexport C_cpsproc(C_make_symbol);
-C_fctexport C_cpsproc(C_make_pointer);
-C_fctexport C_cpsproc(C_make_tagged_pointer);
-C_fctexport C_cpsproc(C_ensure_heap_reserve);
-C_fctexport C_cpsproc(C_return_to_host);
-C_fctexport C_cpsproc(C_get_symbol_table_info);
-C_fctexport C_cpsproc(C_get_memory_info);
-C_fctexport C_cpsproc(C_context_switch);
-C_fctexport C_cpsproc(C_peek_signed_integer);
-C_fctexport C_cpsproc(C_peek_unsigned_integer);
-C_fctexport C_cpsproc(C_decode_seconds);
-C_fctexport C_cpsproc(C_software_type);
-C_fctexport C_cpsproc(C_machine_type);
-C_fctexport C_cpsproc(C_machine_byte_order);
-C_fctexport C_cpsproc(C_software_version);
-C_fctexport C_cpsproc(C_build_platform);
-C_fctexport C_cpsproc(C_register_finalizer);
-C_fctexport C_cpsproc(C_set_dlopen_flags);
-C_fctexport C_cpsproc(C_dload);
-C_fctexport C_cpsproc(C_become);
-C_fctexport C_cpsproc(C_locative_ref);
-C_fctexport C_cpsproc(C_call_with_cthulhu);
-C_fctexport C_cpsproc(C_copy_closure);
-C_fctexport C_cpsproc(C_dump_heap_state);
-C_fctexport C_cpsproc(C_filter_heap_objects);
+C_fctimport C_cpsproc(C_toplevel) C_noret;
+C_fctimport C_cpsproc(C_invalid_procedure) C_noret;
+C_fctexport C_cpsproc(C_stop_timer) C_noret;
+C_fctexport C_cpsproc(C_apply) C_noret;
+C_fctexport C_cpsproc(C_call_cc) C_noret;
+C_fctexport C_cpsproc(C_continuation_graft) C_noret;
+C_fctexport C_cpsproc(C_values) C_noret;
+C_fctexport C_cpsproc(C_apply_values) C_noret;
+C_fctexport C_cpsproc(C_call_with_values) C_noret;
+C_fctexport C_cpsproc(C_u_call_with_values) C_noret;
+C_fctexport C_cpsproc(C_times) C_noret;
+C_fctexport C_cpsproc(C_plus) C_noret;
+C_fctexport C_cpsproc(C_minus) C_noret;
+C_fctexport C_cpsproc(C_divide) C_noret;
+C_fctexport C_cpsproc(C_nequalp) C_noret;
+C_fctexport C_cpsproc(C_greaterp) C_noret;
+C_fctexport C_cpsproc(C_lessp) C_noret;
+C_fctexport C_cpsproc(C_greater_or_equal_p) C_noret;
+C_fctexport C_cpsproc(C_less_or_equal_p) C_noret;
+C_fctexport C_cpsproc(C_expt) C_noret;
+C_fctexport C_cpsproc(C_gc) C_noret;
+C_fctexport C_cpsproc(C_open_file_port) C_noret;
+C_fctexport C_cpsproc(C_allocate_vector) C_noret;
+C_fctexport C_cpsproc(C_string_to_symbol) C_noret;
+C_fctexport C_cpsproc(C_build_symbol) C_noret;
+C_fctexport C_cpsproc(C_flonum_fraction) C_noret;
+C_fctexport C_cpsproc(C_flonum_rat) C_noret;
+C_fctexport C_cpsproc(C_quotient) C_noret;
+C_fctexport C_cpsproc(C_number_to_string) C_noret;
+C_fctexport C_cpsproc(C_fixnum_to_string) C_noret;
+C_fctexport C_cpsproc(C_make_structure) C_noret;
+C_fctexport C_cpsproc(C_make_symbol) C_noret;
+C_fctexport C_cpsproc(C_make_pointer) C_noret;
+C_fctexport C_cpsproc(C_make_tagged_pointer) C_noret;
+C_fctexport C_cpsproc(C_ensure_heap_reserve) C_noret;
+C_fctexport C_cpsproc(C_return_to_host) C_noret;
+C_fctexport C_cpsproc(C_get_symbol_table_info) C_noret;
+C_fctexport C_cpsproc(C_get_memory_info) C_noret;
+C_fctexport C_cpsproc(C_context_switch) C_noret;
+C_fctexport C_cpsproc(C_peek_signed_integer) C_noret;
+C_fctexport C_cpsproc(C_peek_unsigned_integer) C_noret;
+C_fctexport C_cpsproc(C_decode_seconds) C_noret;
+C_fctexport C_cpsproc(C_software_type) C_noret;
+C_fctexport C_cpsproc(C_machine_type) C_noret;
+C_fctexport C_cpsproc(C_machine_byte_order) C_noret;
+C_fctexport C_cpsproc(C_software_version) C_noret;
+C_fctexport C_cpsproc(C_build_platform) C_noret;
+C_fctexport C_cpsproc(C_register_finalizer) C_noret;
+C_fctexport C_cpsproc(C_set_dlopen_flags) C_noret;
+C_fctexport C_cpsproc(C_dload) C_noret;
+C_fctexport C_cpsproc(C_become) C_noret;
+C_fctexport C_cpsproc(C_locative_ref) C_noret;
+C_fctexport C_cpsproc(C_call_with_cthulhu) C_noret;
+C_fctexport C_cpsproc(C_copy_closure) C_noret;
+C_fctexport C_cpsproc(C_dump_heap_state) C_noret;
+C_fctexport C_cpsproc(C_filter_heap_objects) C_noret;
 
 C_fctexport time_t C_fcall C_seconds(C_long *ms) C_regparm;
 C_fctexport C_word C_a_i_list(C_word **a, int c, ...);
