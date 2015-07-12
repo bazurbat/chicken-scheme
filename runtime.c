@@ -120,19 +120,6 @@ static C_TLS int timezone;
 # endif
 #endif
 
-#ifdef C_HACKED_APPLY
-# if defined(C_MACOSX) || defined(__MINGW32__) || defined(__CYGWIN__)
-extern void C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
-# else
-extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
-#  define C_do_apply_hack _C_do_apply_hack
-# endif
-#endif
-
-#if defined(C_NO_HACKED_APPLY) && defined(C_HACKED_APPLY)
-# undef C_HACKED_APPLY
-#endif
-
 /* Parameters: */
 
 #define RELAX_MULTIVAL_CHECK
@@ -277,7 +264,6 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 /* Type definitions: */
 
 typedef void (*TOPLEVEL)(C_word c, C_word self, C_word k) C_noret;
-typedef void (C_fcall *TRAMPOLINE)(void *proc) C_regparm C_noret;
 
 typedef struct lf_list_struct
 {
@@ -337,14 +323,14 @@ C_TLS sigjmp_buf C_restart;
 #else
 C_TLS jmp_buf C_restart;
 #endif
-C_TLS void *C_restart_address;
+C_TLS void *C_restart_trampoline;
+C_TLS C_word C_restart_c;
 C_TLS int C_entry_point_status;
 C_TLS int (*C_gc_mutation_hook)(C_word *slot, C_word val);
 C_TLS void (*C_gc_trace_hook)(C_word *var, int mode);
 C_TLS void (*C_panic_hook)(C_char *msg) = NULL;
 C_TLS void (*C_pre_gc_hook)(int mode) = NULL;
 C_TLS void (*C_post_gc_hook)(int mode, C_long ms) = NULL;
-C_TLS void (C_fcall *C_restart_trampoline)(void *proc) C_regparm C_noret;
 
 C_TLS int
   C_gui_mode = 0,
@@ -490,11 +476,9 @@ static void panic(C_char *msg) C_noret;
 static void usual_panic(C_char *msg) C_noret;
 static void horror(C_char *msg) C_noret;
 static void C_fcall initial_trampoline(void *proc) C_regparm C_noret;
-static C_ccall void termination_continuation(C_word c, C_word self, C_word result) C_noret;
-static void C_fcall mark_system_globals(void) C_regparm;
 static void C_fcall really_mark(C_word *x) C_regparm;
 static WEAK_TABLE_ENTRY *C_fcall lookup_weak_table_entry(C_word item, C_word container) C_regparm;
-static C_ccall void values_continuation(C_word c, C_word closure, C_word dummy, ...) C_noret;
+static C_cpsproc(values_continuation);
 static C_word add_symbol(C_word **ptr, C_word key, C_word string, C_SYMBOL_TABLE *stable);
 static C_regparm int C_fcall C_in_new_heapp(C_word x);
 static C_word C_fcall hash_string(int len, C_char *str, C_word m, C_word r, int ci) C_regparm;
@@ -508,22 +492,21 @@ static C_word C_fcall intern0(C_char *name) C_regparm;
 static void C_fcall update_locative_table(int mode) C_regparm;
 static LF_LIST *find_module_handle(C_char *name);
 
-static C_ccall void call_cc_wrapper(C_word c, C_word closure, C_word k, C_word result) C_noret;
-static C_ccall void call_cc_values_wrapper(C_word c, C_word closure, C_word k, ...) C_noret;
-static void gc_2(void *dummy) C_noret;
-static void allocate_vector_2(void *dummy) C_noret;
-static void make_structure_2(void *dummy) C_noret;
-static void generic_trampoline(void *dummy) C_noret;
-static void handle_interrupt(void *trampoline, void *proc) C_noret;
-static void callback_trampoline(void *dummy) C_noret;
-static C_ccall void callback_return_continuation(C_word c, C_word self, C_word r) C_noret;
-static void become_2(void *dummy) C_noret;
-static void copy_closure_2(void *dummy) C_noret;
-static void dump_heap_state_2(void *dummy) C_noret;
-static void C_fcall sigsegv_trampoline(void *) C_regparm;
-static void C_fcall sigill_trampoline(void *) C_regparm;
-static void C_fcall sigfpe_trampoline(void *) C_regparm;
-static void C_fcall sigbus_trampoline(void *) C_regparm;
+static C_cpsproc(call_cc_wrapper);
+static C_cpsproc(call_cc_values_wrapper);
+static C_cpsproc(gc_2);
+static C_cpsproc(allocate_vector_2);
+static C_cpsproc(make_structure_2);
+static C_cpsproc(generic_trampoline);
+static void handle_interrupt(void *trampoline) C_noret;
+static C_cpsproc(callback_return_continuation);
+static C_cpsproc(become_2);
+static C_cpsproc(copy_closure_2);
+static C_cpsproc(dump_heap_state_2);
+static C_cpsproc(sigsegv_trampoline);
+static C_cpsproc(sigill_trampoline);
+static C_cpsproc(sigfpe_trampoline);
+static C_cpsproc(sigbus_trampoline);
 
 static C_PTABLE_ENTRY *create_initial_ptable();
 
@@ -752,8 +735,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
   tracked_mutation_count = mutation_count = gc_count_1 = gc_count_1_total = gc_count_2 = 0;
   lf_list = NULL;
   C_register_lf2(NULL, 0, create_initial_ptable());
-  C_restart_address = toplevel;
-  C_restart_trampoline = initial_trampoline;
+  C_restart_trampoline = (void *)toplevel;
   trace_buffer = NULL;
   C_clear_trace_buffer();
   chicken_is_running = chicken_ran_once = 0;
@@ -1014,29 +996,25 @@ void initialize_symbol_table(void)
 }
 
 
-C_regparm void C_fcall 
-sigsegv_trampoline(void *dummy)
+void C_ccall sigsegv_trampoline(C_word c, C_word *av)
 {
   barf(C_MEMORY_VIOLATION_ERROR, NULL);
 }
 
 
-C_regparm void C_fcall 
-sigbus_trampoline(void *dummy)
+void C_ccall sigbus_trampoline(C_word c, C_word *av)
 {
   barf(C_BUS_ERROR, NULL);
 }
 
 
-C_regparm void C_fcall 
-sigfpe_trampoline(void *dummy)
+void C_ccall sigfpe_trampoline(C_word c, C_word *av)
 {
   barf(C_FLOATING_POINT_EXCEPTION_ERROR, NULL);
 }
 
 
-C_regparm void C_fcall 
-sigill_trampoline(void *dummy)
+void C_ccall sigill_trampoline(C_word c, C_word *av)
 {
   barf(C_ILLEGAL_INSTRUCTION_ERROR, NULL);
 }
@@ -1067,10 +1045,10 @@ void global_signal_handler(int signum)
     C_sigprocmask(SIG_UNBLOCK, &sset, NULL);
 
     switch(signum) {
-    case SIGSEGV: C_reclaim(sigsegv_trampoline, NULL);
-    case SIGFPE: C_reclaim(sigfpe_trampoline, NULL);
-    case SIGILL: C_reclaim(sigill_trampoline, NULL);
-    case SIGBUS: C_reclaim(sigbus_trampoline, NULL);
+    case SIGSEGV: C_reclaim(sigsegv_trampoline, 0);
+    case SIGFPE: C_reclaim(sigfpe_trampoline, 0);
+    case SIGILL: C_reclaim(sigill_trampoline, 0);
+    case SIGBUS: C_reclaim(sigbus_trampoline, 0);
     default: panic(C_text("invalid serious signal"));
     }
   }
@@ -1424,7 +1402,7 @@ C_word CHICKEN_run(void *toplevel)
   serious_signal_occurred = 0;
 
   if(!return_to_host)
-    (C_restart_trampoline)(C_restart_address);
+    ((C_proc)C_restart_trampoline)(C_restart_c, C_temporary_stack);
 
   chicken_is_running = 0;
   return C_restore;
@@ -1459,7 +1437,7 @@ C_regparm void C_fcall initial_trampoline(void *proc)
 
 /* The final continuation: */
 
-void C_ccall termination_continuation(C_word c, C_word self, C_word result)
+void C_ccall termination_continuation(C_word c, C_word *av)
 {
   if(debug_mode) {
     C_dbg(C_text("debug"), C_text("application terminated normally\n"));
@@ -1928,7 +1906,7 @@ C_word C_fcall C_callback(C_word closure, int argc)
 
   serious_signal_occurred = 0;
 
-  if(!callback_returned_flag) (C_restart_trampoline)(C_restart_address);
+  if(!callback_returned_flag) (C_restart_trampoline)(C_restart_c);
   else {
     C_memcpy(&C_restart, &prev, sizeof(C_restart));
     callback_returned_flag = 0;
@@ -1977,8 +1955,11 @@ C_word C_fcall C_callback_wrapper(void *proc, int argc)
 }
 
 
-void C_ccall callback_return_continuation(C_word c, C_word self, C_word r)
+void C_ccall callback_return_continuation(C_word c, C_word *av)
 {
+  C_word self = av[0];
+  C_word r = av[1];
+
   if(C_block_item(self, 1) == C_SCHEME_TRUE)
     panic(C_text("callback returned twice"));
 
@@ -1986,7 +1967,7 @@ void C_ccall callback_return_continuation(C_word c, C_word self, C_word r)
   callback_returned_flag = 1;
   C_set_block_item(self, 1, C_SCHEME_TRUE);
   C_save(r);
-  C_reclaim(NULL, NULL);
+  C_reclaim(NULL, 0);
 }
 
 
@@ -2270,35 +2251,22 @@ C_regparm int C_fcall C_in_fromspacep(C_word x)
 
 /* Cons the rest-aguments together: */
 
-C_regparm C_word C_fcall C_restore_rest(C_word *ptr, int num)
+C_regparm C_word C_fcall C_build_rest(C_word *ptr, C_word n, C_word *av)
 {
   C_word x = C_SCHEME_END_OF_LIST;
   C_SCHEME_BLOCK *node;
+  av += n;
 
-  while(num--) {
+  while(--n) {
     node = (C_SCHEME_BLOCK *)ptr;
     ptr += 3;
     node->header = C_PAIR_TYPE | (C_SIZEOF_PAIR - 1);
-    node->data[ 0 ] = C_restore;
+    node->data[ 0 ] = *(--av);
     node->data[ 1 ] = x;
     x = (C_word)node;
   }
 
   return x;
-}
-
-
-/* I? */
-C_regparm C_word C_fcall C_restore_rest_vector(C_word *ptr, int num)
-{
-  C_word *p0 = ptr;
-
-  *(ptr++) = C_VECTOR_TYPE | num;
-  ptr += num;
-
-  while(num--) *(--ptr) = C_restore;
-
-  return (C_word)p0;
 }
 
 
@@ -2719,7 +2687,18 @@ C_mutate_slot(C_word *slot, C_word val)
 /* Initiate garbage collection: */
 
 
-void C_save_and_reclaim(void *trampoline, void *proc, int n, ...)
+void C_save_and_reclaim(void *trampoline, int n, C_word *av)
+{
+  if(C_temporary_stack != av) { /* used in apply */
+    C_temporary_stack -= n;
+    memcpy(C_temporary_stack, av, n * sizeof(C_word));
+  }
+
+  C_reclaim(trampoline, n);
+}
+
+
+void C_save_and_reclaim_args(void *trampoline, int n, ...)
 {
   va_list v;
   
@@ -2728,7 +2707,7 @@ void C_save_and_reclaim(void *trampoline, void *proc, int n, ...)
   while(n--) C_save(va_arg(v, C_word));
 
   va_end(v);
-  C_reclaim(trampoline, proc);
+  C_reclaim(trampoline, n);
 }
 
 
@@ -2746,7 +2725,7 @@ static void mark(C_word *x) { \
 #endif
 
 
-C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
+C_regparm void C_fcall C_reclaim(void *trampoline, C_word c)
 {
   int i, j, n, fcount, weakn = 0;
   C_uword count, bytes;
@@ -2766,14 +2745,14 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
   /* assert(C_timer_interrupt_counter >= 0); */
 
   if(pending_interrupts_count > 0 && C_interrupts_enabled)
-    handle_interrupt(trampoline, proc);
+    handle_interrupt(trampoline);
 
   /* Note: the mode argument will always be GC_MINOR or GC_REALLOC. */
   if(C_pre_gc_hook != NULL) C_pre_gc_hook(GC_MINOR);
 
   finalizers_checked = 0;
-  C_restart_trampoline = (TRAMPOLINE)trampoline;
-  C_restart_address = proc;
+  C_restart_trampoline = (C_proc)trampoline;
+  C_restart_c = c;
   heap_scan_top = (C_byte *)C_align((C_uword)C_fromspace_top);
   gc_mode = GC_MINOR;
   start = C_fromspace_top;
@@ -3645,33 +3624,31 @@ C_regparm WEAK_TABLE_ENTRY *C_fcall lookup_weak_table_entry(C_word item, C_word 
 }
 
 
-void handle_interrupt(void *trampoline, void *proc)
+void handle_interrupt(void *trampoline)
 {
-  C_word *p, x, n;
+  C_word *p, h, reason, state, proc, n;
   double c;
+  C_word av[ 4 ]; 
 
   /* Build vector with context information: */
   n = C_temporary_stack_bottom - C_temporary_stack;
-  /* 19 <=> 2 headers + trampoline + proc + 1 extra slot + 9 for interning + 5 for string */
-  p = C_alloc(19 + n);
-  x = (C_word)p;
-  *(p++) = C_VECTOR_TYPE | C_BYTEBLOCK_BIT | (2 * sizeof(C_word));
+  /* 18 <=> 2 headers + trampoline + 1 extra slot + 9 for interning + 5 for string */
+  p = C_alloc(18 + n);
+  proc = (C_word)p;
+  *(p++) = C_VECTOR_TYPE | C_BYTEBLOCK_BIT | (1 * sizeof(C_word));
   *(p++) = (C_word)trampoline;
-  *(p++) = (C_word)proc;
-  C_save(x);
-  x = (C_word)p;
+  state = (C_word)p;
   *(p++) = C_VECTOR_TYPE | (n + 1);
-  *(p++) = C_restore;
+  *(p++) = proc;
   C_memcpy(p, C_temporary_stack, n * sizeof(C_word));
 
   /* Restore state to the one at the time of the interrupt: */
   C_temporary_stack = C_temporary_stack_bottom;
   C_stack_limit = saved_stack_limit;
-
+  
   /* Invoke high-level interrupt handler: */
-  C_save(C_fix(pending_interrupts[ --pending_interrupts_count ]));
-  C_save(x);
-  x = C_block_item(interrupt_hook_symbol, 0);
+  reason = C_fix(pending_interrupts[ --pending_interrupts_count ]);
+  proc = C_block_item(interrupt_hook_symbol, 0);
 
   if(C_immediatep(x))
     panic(C_text("`##sys#interrupt-hook' is not defined"));
@@ -3680,7 +3657,11 @@ void handle_interrupt(void *trampoline, void *proc)
   last_interrupt_latency = c;
   C_timer_interrupt_counter = C_initial_timer_interrupt_period;
   /* <- no continuation is passed: "##sys#interrupt-hook" may not return! */
-  C_do_apply(2, x, C_SCHEME_UNDEFINED); 
+  av[ 0 ] = proc;
+  av[ 1 ] = C_SCHEME_UNDEFINED;
+  av[ 2 ] = reason;
+  av[ 2 ] = state;
+  C_apply(3, av);
 }
 
 
@@ -3689,6 +3670,7 @@ C_unbound_variable(C_word sym)
 {
   barf(C_UNBOUND_VARIABLE_ERROR, NULL, sym);
 }
+
 
 /* XXX: This needs to be given a better name.
    C_retrieve used to exist but it just called C_fast_retrieve */
@@ -3709,9 +3691,9 @@ C_regparm C_word C_fcall C_retrieve2(C_word val, char *name)
 }
 
 
-void C_ccall
-C_invalid_procedure(int c, C_word self, ...)
+void C_ccall C_invalid_procedure(C_word c, C_word *av)
 {
+  C_word self = av[0];
   barf(C_NOT_A_CLOSURE_ERROR, NULL, self);  
 }
 
@@ -4033,8 +4015,10 @@ C_regparm C_word C_fcall C_start_timer(void)
 }
 
 
-void C_ccall C_stop_timer(C_word c, C_word closure, C_word k)
+void C_ccall C_stop_timer(C_word c, C_word *av)
 {
+  C_word closure = av[ 0 ];
+  C_word k = av[ 1 ];
   double t0 = C_cpu_milliseconds() - timer_start_ms;
   C_word 
     ab[ WORDS_PER_FLONUM * 2 + 7 ], /* 2 flonums, 1 vector of 6 elements */
@@ -4313,11 +4297,7 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
     return C_fix(C_getpid());
 
   case C_fix(34):		/* effective maximum for procedure arguments */
-#ifdef C_HACKED_APPLY
     return C_fix(TEMPORARY_STACK_SIZE);
-#else
-    return C_fix(126);
-#endif
 
   case C_fix(35):		/* unused */
     /* used to be apply-hook indicator */
@@ -4345,11 +4325,7 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
 #endif
 
   case C_fix(40):		/* assembly stub for "apply" available? */
-#if defined(C_HACKED_APPLY)
-    return C_SCHEME_TRUE;
-#else
     return C_SCHEME_FALSE;
-#endif
 
   case C_fix(41):		/* major CHICKEN version */
     return C_fix(C_MAJOR_VERSION);
@@ -5956,15 +5932,14 @@ C_regparm C_word C_fcall C_i_null_pointerp(C_word x)
 
 /* Primitives: */
 
-void C_ccall C_apply(C_word c, C_word closure, C_word k, C_word fn, ...)
+void C_ccall C_apply(C_word c, C_word *av)
 {
-  va_list v;
+  C_word closure = av[ 0 ];
+  C_word k = av[ 1 ];
+  C_word fn = av[ 2 ];
   int i, n = c - 3;
+  int m = n;    
   C_word x, skip;
-#ifdef C_HACKED_APPLY
-  C_word *buf = C_temporary_stack_limit;
-  void *proc;
-#endif
 
   if(c < 4) C_bad_min_argc(c, 4);
 
@@ -5972,161 +5947,65 @@ void C_ccall C_apply(C_word c, C_word closure, C_word k, C_word fn, ...)
     barf(C_NOT_A_CLOSURE_ERROR, "apply", fn);
   }
 
-  va_start(v, fn);
-
-  for(i = n; i > 1; --i) {
-    x = va_arg(v, C_word);
-#ifdef C_HACKED_APPLY
-    *(buf++) = x;
-#else
-    C_save(x);
-#endif
-  }
-
-  x = va_arg(v, C_word);
+  x = av[ c - 1 ];
 
   if(x != C_SCHEME_END_OF_LIST && (C_immediatep(x) || C_block_header(x) != C_PAIR_TAG))
     barf(C_BAD_ARGUMENT_TYPE_ERROR, "apply", x);
 
   for(skip = x; !C_immediatep(skip) && C_block_header(skip) == C_PAIR_TAG; skip = C_u_i_cdr(skip)) {
     x = C_u_i_car(skip);
-
-#ifdef C_HACKED_APPLY
-    if(buf >= C_temporary_stack_bottom) barf(C_TOO_MANY_PARAMETERS_ERROR, "apply");
-
-    *(buf++) = x;
-#else
-    C_save(x);
-
+    
     if(C_temporary_stack < C_temporary_stack_limit)
       barf(C_TOO_MANY_PARAMETERS_ERROR, "apply");
-#endif
-    ++n;
+
+    C_save(x);
+    ++m;
   }
 
-  va_end(v);
-  --n;
+  C_temporary_stack -= n;
 
-#ifdef C_HACKED_APPLY
-  /* 3 additional args + 1 slot for stack-pointer + two for stack-alignment to 16 bytes */
-  buf = alloca((n + 6) * sizeof(C_word));
-# ifdef __x86_64__
-  /* XXX Shouldn't this check for C_SIXTY_FOUR in general? */
-  buf = (void *)C_align16((C_uword)buf);
-# endif
-  buf[ 0 ] = n + 2;
-  buf[ 1 ] = fn;
-  buf[ 2 ] = k;
-  C_memcpy(&buf[ 3 ], C_temporary_stack_limit, n * sizeof(C_word));
-  proc = (void *)C_block_item(fn, 0);
-  C_do_apply_hack(proc, buf, n + 3);
-#else
-  C_do_apply(n, fn, k);
-#endif
+  if(C_temporary_stack < C_temprary_stack_limit)
+    barf(C_TOO_MANY_PARAMETERS_ERROR, "apply");
+
+  C_memcpy(C_temporary_stack, av + 3, n * sizeof(C_word));
+  --m;
+
+  ((C_proc)(void *)C_block_item(fn, 0))(m, C_temporary_stack);
 }
 
 
-void C_ccall C_do_apply(C_word n, C_word fn, C_word k)
+void C_ccall C_call_cc(C_word c, C_word *av)
 {
-  void *pr = (void *)C_block_item(fn, 0);
-  C_word *ptr = C_temporary_stack = C_temporary_stack_bottom;
-
-/* PTR_O_p<P>_<B>(o): list of COUNT = ((2 ** P) * B) '*(ptr-I)' arguments,
- * with offset I in range [o, o+COUNT-1].
- */
-#define PTR_O_p0_0(o)
-#define PTR_O_p1_0(o)
-#define PTR_O_p2_0(o)
-#define PTR_O_p3_0(o)
-#define PTR_O_p4_0(o)
-#define PTR_O_p5_0(o)
-#define PTR_O_p6_0(o)
-#define PTR_O_p7_0(o)
-#define PTR_O_p0_1(o)   , *(ptr-(o))
-#define PTR_O_p1_1(o)   , *(ptr-(o)), *(ptr-(o+1))
-#define PTR_O_p2_1(o)   PTR_O_p1_1(o) PTR_O_p1_1(o+2)
-#define PTR_O_p3_1(o)   PTR_O_p2_1(o) PTR_O_p2_1(o+4)
-#define PTR_O_p4_1(o)   PTR_O_p3_1(o) PTR_O_p3_1(o+8)
-#define PTR_O_p5_1(o)   PTR_O_p4_1(o) PTR_O_p4_1(o+16)
-#define PTR_O_p6_1(o)   PTR_O_p5_1(o) PTR_O_p5_1(o+32)
-#define PTR_O_p7_1(o)   PTR_O_p6_1(o) PTR_O_p6_1(o+64)
-
-/* CASE_C_PROC_p0 (n0,  p6,p5,p4,p3,p2,p1,p0):
- *  let's note <N> = <n0> - 2; the macro inserts:
- *      case <N>: ((C_cproc<n0>)pr) (<n0>, fn, k, <rest>);
- *  where <rest> is:    *(ptr-1), ..., *(ptr-<N>)
- *  (<rest> is empty for <n0> == 2).
- *  We must have:   n0 = SUM (i = 7 to 0, p<i> * (1 << i)).
- * CASE_C_PROC_p<N+1> (...):
- *  like CASE_C_PROC_p<N>, but with doubled output...
- */
-#define CASE_C_PROC_p0(n0,  p6,p5,p4,p3,p2,p1,p0) \
-    case (n0-2): ((C_proc##n0)pr)(n0, fn, k \
-PTR_O_p6_##p6(((n0-2)&0x80)+1)\
-PTR_O_p5_##p5(((n0-2)&0xC0)+1)\
-PTR_O_p4_##p4(((n0-2)&0xE0)+1)\
-PTR_O_p3_##p3(((n0-2)&0xF0)+1)\
-PTR_O_p2_##p2(((n0-2)&0xF8)+1)\
-PTR_O_p1_##p1(((n0-2)&0xFC)+1)\
-PTR_O_p0_##p0(((n0-2)&0xFE)+1));
-#define CASE_C_PROC_p1( n0,n1,  p6,p5,p4,p3,p2,p1) \
-        CASE_C_PROC_p0 (n0,  p6,p5,p4,p3,p2,p1,0) \
-        CASE_C_PROC_p0 (n1,  p6,p5,p4,p3,p2,p1,1)
-#define CASE_C_PROC_p2( n0,n1,n2,n3,  p6,p5,p4,p3,p2) \
-        CASE_C_PROC_p1 (n0,n1,  p6,p5,p4,p3,p2,0) \
-        CASE_C_PROC_p1 (n2,n3,  p6,p5,p4,p3,p2,1)
-#define CASE_C_PROC_p3( n0,n1,n2,n3,n4,n5,n6,n7,  p6,p5,p4,p3) \
-        CASE_C_PROC_p2 (n0,n1,n2,n3,  p6,p5,p4,p3,0) \
-        CASE_C_PROC_p2 (n4,n5,n6,n7,  p6,p5,p4,p3,1)
-
-  switch(n) {
-    CASE_C_PROC_p3 (2,3,4,5,6,7,8,9,  0,0,0,0)
-    CASE_C_PROC_p3 (10,11,12,13,14,15,16,17,  0,0,0,1)
-    CASE_C_PROC_p3 (18,19,20,21,22,23,24,25,  0,0,1,0)
-    CASE_C_PROC_p3 (26,27,28,29,30,31,32,33,  0,0,1,1)
-    CASE_C_PROC_p3 (34,35,36,37,38,39,40,41,  0,1,0,0)
-    CASE_C_PROC_p3 (42,43,44,45,46,47,48,49,  0,1,0,1)
-    CASE_C_PROC_p3 (50,51,52,53,54,55,56,57,  0,1,1,0)
-    CASE_C_PROC_p3 (58,59,60,61,62,63,64,65,  0,1,1,1)
-    CASE_C_PROC_p0 (66,  1,0,0,0,0,0,0)
-    CASE_C_PROC_p0 (67,  1,0,0,0,0,0,1)
-    CASE_C_PROC_p1 (68,69,  1,0,0,0,0,1)
-    CASE_C_PROC_p2 (70,71,72,73,  1,0,0,0,1)
-    CASE_C_PROC_p3 (74,75,76,77,78,79,80,81,  1,0,0,1)
-    CASE_C_PROC_p3 (82,83,84,85,86,87,88,89,  1,0,1,0)
-    CASE_C_PROC_p3 (90,91,92,93,94,95,96,97,  1,0,1,1)
-    CASE_C_PROC_p3 (98,99,100,101,102,103,104,105,  1,1,0,0)
-    CASE_C_PROC_p3 (106,107,108,109,110,111,112,113,  1,1,0,1)
-    CASE_C_PROC_p3 (114,115,116,117,118,119,120,121,  1,1,1,0)
-    CASE_C_PROC_p2 (122,123,124,125,  1,1,1,1,0)
-    CASE_C_PROC_p1 (126,127,  1,1,1,1,1,0)
-    CASE_C_PROC_p0 (128,  1,1,1,1,1,1,0)
-  default: barf(C_TOO_MANY_PARAMETERS_ERROR, "apply");
-  }
-}
-
-
-void C_ccall C_call_cc(C_word c, C_word closure, C_word k, C_word cont)
-{
-  C_word *a = C_alloc(3),
-         wrapper;
+  C_word closure = av[ 0 ];
+  C_word k = av[ 1 ];
+  C_word cont = av[ 2 ];
+  C_word *a = C_alloc(3);
+  C_word wrapper;
   void *pr = (void *)C_block_item(cont,0);
+  C_word av[ 3 ];
 
   if(C_immediatep(cont) || C_header_bits(cont) != C_CLOSURE_TYPE)
     barf(C_BAD_ARGUMENT_TYPE_ERROR, "call-with-current-continuation", cont);
 
   /* Check for values-continuation: */
-  if(C_block_item(k,0) == (C_word)values_continuation)
+  if(C_block_item(k, 0) == (C_word)values_continuation)
     wrapper = C_closure(&a, 2, (C_word)call_cc_values_wrapper, k);
   else wrapper = C_closure(&a, 2, (C_word)call_cc_wrapper, k);
 
-  ((C_proc3)pr)(3, cont, k, wrapper);
+  av[ 0 ] = cont;
+  av[ 1 ] = k;
+  av[ 2 ] = wrapper;
+  ((C_proc)pr)(3, av);
 }
 
 
-void C_ccall call_cc_wrapper(C_word c, C_word closure, C_word k, C_word result)
+void C_ccall call_cc_wrapper(C_word c, C_word *av)
 {
-  C_word cont = C_block_item(closure,1);
+  C_word
+    closure = av[ 0 ],
+    /* av[ 1 ] is k and ignored */
+    result = av[ 2 ],
+    cont = C_block_item(closure,1);
 
   if(c != 3) C_bad_argc(c, 3);
 
@@ -6134,82 +6013,94 @@ void C_ccall call_cc_wrapper(C_word c, C_word closure, C_word k, C_word result)
 }
 
 
-void C_ccall call_cc_values_wrapper(C_word c, C_word closure, C_word k, ...)
+void C_ccall call_cc_values_wrapper(C_word c, C_word *av)
 {
-  va_list v;
-  C_word cont = C_block_item(closure,1),
-         x1;
-  int n = c;
+  C_word
+    closure = av[ 0 ],
+    cont = C_block_item(closure,1),
+    x1,
+    n = c;
+  
+  av[ 0 ] = cont;
 
-  va_start(v, k);
+  if(c > 2) --n;
+  else av[ 1 ] = C_SCHEME_UNBOUND;
 
-  if(c > 2) {
-    x1 = va_arg(v, C_word);
-    --n;
-    
-    while(--c > 2) C_save(va_arg(v, C_word));
-  }
-  else x1 = C_SCHEME_UNBOUND;
-
-  va_end(v);
-  C_do_apply(n - 2, cont, x1);
+  C_apply(n - 2, av2);
 }
 
 
 /* I */
-void C_ccall C_continuation_graft(C_word c, C_word self, C_word k, C_word kk, C_word proc)
+void C_ccall C_continuation_graft(C_word c, C_word *av)
 {
-  ((C_proc2)C_fast_retrieve_proc(proc))(2, proc, C_block_item(kk, 1));
+  C_word
+    /* self = av[ 0 ] */
+    /* k = av[ 1 ] */
+    kk = av[ 2 ],
+    proc = av[ 3 ];
+
+  av[ 0 ] = proc;               /* reuse av */
+  av[ 1 ] = C_block_item(kk, 1);
+  ((C_proc)C_fast_retrieve_proc(proc))(2, av);
 }
 
 
-void C_ccall C_values(C_word c, C_word closure, C_word k, ...)
+void C_ccall C_values(C_word c, C_word *av)
 {
-  va_list v;
-  C_word n = c;
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    n = c;
 
   if(c < 2) C_bad_min_argc(c, 2);
 
-  va_start(v, k);
-
   /* Check continuation whether it receives multiple values: */
   if(C_block_item(k, 0) == (C_word)values_continuation) {
-    while(c-- > 2)
-      C_save(va_arg(v, C_word));
-
-    va_end(v);
-    C_do_apply(n - 2, k, C_SCHEME_UNBOUND); /* unbound value marks direct invocation */
+    av[ 0 ] = k;                /* reuse av */
+    av[ 1 ] = C_SCHEME_UNBOUND; /* unbound value marks direct invocation */
+    C_apply(n - 2, av);
   }
   
   if(c != 3) {
 #ifdef RELAX_MULTIVAL_CHECK
     if(c == 2) n = C_SCHEME_UNDEFINED;
-    else n = va_arg(v, C_word);
+    else n = av[ 2 ];
 #else
     barf(C_CONTINUATION_CANT_RECEIVE_VALUES_ERROR, "values", k);
 #endif
   }
-  else n = va_arg(v, C_word);
+  else n = av[ 2 ];
 
   va_end(v);
   C_kontinue(k, n);
 }
 
 
-void C_ccall C_apply_values(C_word c, C_word closure, C_word k, C_word lst)
+void C_ccall C_apply_values(C_word c, C_word *av)
 {
-  C_word n;
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    lst = av[ 2 ],
+    n;
 
   if(c != 3) C_bad_argc(c, 3);
 
   /* Check continuation wether it receives multiple values: */
   if(C_block_item(k, 0) == (C_word)values_continuation) {
+    C_word *av2;
+
     for(n = 0; !C_immediatep(lst) && C_block_header(lst) == C_PAIR_TAG; ++n) {
       C_save(C_u_i_car(lst));
       lst = C_u_i_cdr(lst);
     }
 
-    C_do_apply(n, k, C_SCHEME_UNBOUND); /* unbound value marks direct invocation */
+    /* copy into new array */
+    av2 = C_alloc(n + 2);
+    av2[ 0 ] = k;
+    av2[ 1 ] = C_SCHEME_UNBOUND; /* unbound value marks direct invocation */
+    C_memcpy(av2 + 2, C_temporary_stack, n * sizeof(C_word));
+    C_apply(n, av2);
   }
   
   if(C_immediatep(lst) || (C_block_header(lst) == C_PAIR_TAG && C_u_i_cdr(lst) == C_SCHEME_END_OF_LIST)) {
@@ -6226,10 +6117,15 @@ void C_ccall C_apply_values(C_word c, C_word closure, C_word k, C_word lst)
 }
 
 
-void C_ccall C_call_with_values(C_word c, C_word closure, C_word k, C_word thunk, C_word kont)
+void C_ccall C_call_with_values(C_word c, C_word *av)
 {
-  C_word *a = C_alloc(4),
-         kk;
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    thunk = av[ 2 ],
+    kont = av[ 3 ],
+    *a = C_alloc(4),
+    kk;
 
   if(c != 4) C_bad_argc(c, 4);
 
@@ -6240,62 +6136,72 @@ void C_ccall C_call_with_values(C_word c, C_word closure, C_word k, C_word thunk
     barf(C_BAD_ARGUMENT_TYPE_ERROR, "call-with-values", kont);
 
   kk = C_closure(&a, 3, (C_word)values_continuation, kont, k);
-  C_do_apply(0, thunk, kk);
+  av[ 0 ] = thunk;              /* reuse av */
+  av[ 1 ] = kk;
+  C_apply(0, av);
 }
 
 
-void C_ccall C_u_call_with_values(C_word c, C_word closure, C_word k, C_word thunk, C_word kont)
+void C_ccall C_u_call_with_values(C_word c, C_word *av)
 {
-  C_word *a = C_alloc(4),
-         kk;
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    thunk = av[ 2 ],
+    kont = av[ 3 ],
+    *a = C_alloc(4),
+    kk;
 
   kk = C_closure(&a, 3, (C_word)values_continuation, kont, k);
-  C_do_apply(0, thunk, kk);
+  av[ 0 ] = thunk;              /* reuse av */
+  av[ 1 ] = kk;
+  C_apply(0, av);
 }
 
 
-void C_ccall values_continuation(C_word c, C_word closure, C_word arg0, ...)
+void C_ccall values_continuation(C_word c, C_word *av)
 {
-  C_word kont = C_block_item(closure, 1),
-         k = C_block_item(closure, 2),
-         n = c,
-         *ptr;
-  va_list v;
+  C_word
+    closure = av[ 0 ],
+    kont = C_block_item(closure, 1),
+    k = C_block_item(closure, 2),
+    n = c,
+    arg0 = av[ 1 ],
+    *av2;
 
   if(arg0 == C_SCHEME_UNBOUND) { /* This continuation was called by 'values'... */
-    va_start(v, arg0);
-
-    for(; c-- > 2; C_save(va_arg(v, C_word)));
-
-    va_end(v);
+    av[ 0 ] = kont;              /* reuse av */
+    av[ 1 ] = k;
+    av2 = av;
   }
   else {			/* This continuation was captured and called explicity... */
+    av2 = C_alloc(n + 2);
     ++n;
-    c -= 1;
-
-    /* move temporary-stack contents upwards one slot: */
-    for(ptr = C_temporary_stack - c; --c; ++ptr) *ptr = ptr[ 1 ];
-
-    C_save(arg0);
+    --c;
+    av2[ 0 ] = kont;
+    av2[ 1 ] = k;
+    C_memcpy(av2 + 2, av + 2, (n - 2) * sizeof(C_word));
   }
 
-  C_do_apply(n - 2, kont, k);
+  C_apply(n - 2, av2);
 }
 
 
-void C_ccall C_times(C_word c, C_word closure, C_word k, ...)
+void C_ccall C_times(C_word c, C_word *av)
 {
-  va_list v;
-  C_word x, y;
-  C_word iresult = C_fix(1);
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    x, y,
+    iresult = C_fix(1);
   double fresult;
   C_alloc_flonum;
 
-  va_start(v, k);
   c -= 2;
+  av += 2;
 
   while(c--) {
-    x = va_arg(v, C_word);
+    x = *(av++);
     
     if(x & C_FIXNUM_BIT) {
       y = C_i_o_fixnum_times(iresult, x);
@@ -6313,12 +6219,11 @@ void C_ccall C_times(C_word c, C_word closure, C_word k, ...)
     else barf(C_BAD_ARGUMENT_TYPE_ERROR, "*", x);
   }
 
-  va_end(v);
   C_kontinue(k, iresult);
 
  flonum_result:
   while(c--) {
-    x = va_arg(v, C_word);
+    x = *(av++);
 
     if(x & C_FIXNUM_BIT)
       fresult *= (double)C_unfix(x);
@@ -6327,7 +6232,6 @@ void C_ccall C_times(C_word c, C_word closure, C_word k, ...)
     else barf(C_BAD_ARGUMENT_TYPE_ERROR, "*", x);
   }
 
-  va_end(v);
   C_kontinue_flonum(k, fresult);
 }
 
@@ -6361,19 +6265,21 @@ C_regparm C_word C_fcall C_2_times(C_word **ptr, C_word x, C_word y)
 }
 
 
-void C_ccall C_plus(C_word c, C_word closure, C_word k, ...)
+void C_ccall C_plus(C_word c, C_word *av)
 {
-  va_list v;
-  C_word x, y;
-  C_word iresult = C_fix(0);
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    x, y,
+    iresult = C_fix(0);
   double fresult;
   C_alloc_flonum;
 
-  va_start(v, k);
   c -= 2;
+  av += 2;
 
   while(c--) {
-    x = va_arg(v, C_word);
+    x = *(av++);
     
     if(x & C_FIXNUM_BIT) {
       y = C_i_o_fixnum_plus(iresult, x);
@@ -6391,12 +6297,11 @@ void C_ccall C_plus(C_word c, C_word closure, C_word k, ...)
     else barf(C_BAD_ARGUMENT_TYPE_ERROR, "+", x);
   }
 
-  va_end(v);
   C_kontinue(k, iresult);
 
  flonum_result:
   while(c--) {
-    x = va_arg(v, C_word);
+    x = *(av++);
 
     if(x & C_FIXNUM_BIT)
       fresult += (double)C_unfix(x);
@@ -6405,7 +6310,6 @@ void C_ccall C_plus(C_word c, C_word closure, C_word k, ...)
     else barf(C_BAD_ARGUMENT_TYPE_ERROR, "+", x);
   }
 
-  va_end(v);
   C_kontinue_flonum(k, fresult);
 }
 
@@ -6439,16 +6343,20 @@ C_regparm C_word C_fcall C_2_plus(C_word **ptr, C_word x, C_word y)
 }
 
 
-void C_ccall C_minus(C_word c, C_word closure, C_word k, C_word n1, ...)
+void C_ccall C_minus(C_word c, C_word *av)
 {
-  va_list v;
-  C_word x, y;
-  C_word iresult;
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    x, y, n1,
+    iresult;
   double fresult;
   int ff = 0;
   C_alloc_flonum;
 
   if(c < 3) C_bad_min_argc(c, 3);
+
+  n1 = av[ 2 ];
 
   if(n1 & C_FIXNUM_BIT) iresult = n1;
   else if(!C_immediatep(n1) && C_block_header(n1) == C_FLONUM_TAG) {
@@ -6462,13 +6370,13 @@ void C_ccall C_minus(C_word c, C_word closure, C_word k, C_word n1, ...)
     else C_kontinue_flonum(k, -fresult);
   }
 
-  va_start(v, n1);
   c -= 3;
+  av += 3;
 
   if(ff) goto flonum_result;
 
   while(c--) {
-    x = va_arg(v, C_word);
+    x = *(av++);
     
     if(x & C_FIXNUM_BIT) {
       y = C_i_o_fixnum_difference(iresult, x);
@@ -6486,12 +6394,11 @@ void C_ccall C_minus(C_word c, C_word closure, C_word k, C_word n1, ...)
     else barf(C_BAD_ARGUMENT_TYPE_ERROR, "-", x);
   }
 
-  va_end(v);
   C_kontinue(k, iresult);
 
  flonum_result:
   while(c--) {
-    x = va_arg(v, C_word);
+    x = *(av++);
 
     if(x & C_FIXNUM_BIT)
       fresult -= (double)C_unfix(x);
@@ -6500,7 +6407,6 @@ void C_ccall C_minus(C_word c, C_word closure, C_word k, C_word n1, ...)
     else barf(C_BAD_ARGUMENT_TYPE_ERROR, "-", x);
   }
 
-  va_end(v);
   C_kontinue_flonum(k, fresult);
 }
 
@@ -6535,16 +6441,20 @@ C_regparm C_word C_fcall C_2_minus(C_word **ptr, C_word x, C_word y)
 
 
 
-void C_ccall C_divide(C_word c, C_word closure, C_word k, C_word n1, ...)
+void C_ccall C_divide(C_word c, C_word *av)
 {
-  va_list v;
-  C_word n2;
-  C_word iresult, n3;
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    n1, n2,
+    iresult, n3;
   int fflag;
   double fresult, f2;
   C_alloc_flonum;
 
   if(c < 3) C_bad_min_argc(c, 3);
+
+  n1 = av[ 2 ];
 
   if(n1 & C_FIXNUM_BIT) {
     iresult = C_unfix(n1);
@@ -6573,11 +6483,11 @@ void C_ccall C_divide(C_word c, C_word closure, C_word k, C_word n1, ...)
     goto cont;
   }
 
-  va_start(v, n1);
   c -= 3;
+  av += 3;
 
   while(c--) {
-    n1 = va_arg(v, C_word);
+    n1 = *(av++);
     
     if(n1 & C_FIXNUM_BIT) {
       if(fflag) {
@@ -6616,8 +6526,6 @@ void C_ccall C_divide(C_word c, C_word closure, C_word k, C_word n1, ...)
     else barf(C_BAD_ARGUMENT_TYPE_ERROR, "/", n1);
   }
 
-  va_end(v);
-  
  cont:
   if(fflag) {
     C_kontinue_flonum(k, fresult);
@@ -6674,19 +6582,21 @@ C_regparm C_word C_fcall C_2_divide(C_word **ptr, C_word x, C_word y)
 }
 
 
-void C_ccall C_nequalp(C_word c, C_word closure, C_word k, ...)
+void C_ccall C_nequalp(C_word c, C_word *av)
 {
-  C_word x, i2, f, fflag, ilast;
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    x, i2, f, fflag, ilast;
   double flast, f2;
-  va_list v;
 
   c -= 2; 
   f = 1;
-  va_start(v, k);
+  av += 2;
 
   if(c == 0) goto cont;
   
-  x = va_arg(v, C_word);
+  x = *(av++);
 
   if(x & C_FIXNUM_BIT) {
     fflag = 0;
@@ -6699,7 +6609,7 @@ void C_ccall C_nequalp(C_word c, C_word closure, C_word k, ...)
   else barf(C_BAD_ARGUMENT_TYPE_ERROR, "=", x);
 
   while(--c) {
-    x = va_arg(v, C_word);
+    x = *(av++);
     
     if(x & C_FIXNUM_BIT) {
       if(fflag) {
@@ -6728,7 +6638,6 @@ void C_ccall C_nequalp(C_word c, C_word closure, C_word k, ...)
   }
 
  cont:
-  va_end(v);
   C_kontinue(k, C_mk_bool(f));
 }
 
@@ -6755,19 +6664,21 @@ C_regparm C_word C_fcall C_i_nequalp(C_word x, C_word y)
 }
 
 
-void C_ccall C_greaterp(C_word c, C_word closure, C_word k, ...)
+void C_ccall C_greaterp(C_word c, C_word *av)
 {
-  C_word x, i2, f, fflag, ilast;
+  C_word 
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    x, i2, f, fflag, ilast;
   double flast, f2;
-  va_list v;
 
   c -= 2; 
   f = 1;
-  va_start(v, k);
+  av += 2;
 
   if(c == 0) goto cont;
   
-  x = va_arg(v, C_word);
+  x = *(av++);
 
   if(x & C_FIXNUM_BIT) {
     fflag = 0;
@@ -6780,7 +6691,7 @@ void C_ccall C_greaterp(C_word c, C_word closure, C_word k, ...)
   else barf(C_BAD_ARGUMENT_TYPE_ERROR, ">", x);
 
   while(--c) {
-    x = va_arg(v, C_word);
+    x = *(av++);
     
     if(x & C_FIXNUM_BIT) {
       if(fflag) {
@@ -6809,7 +6720,6 @@ void C_ccall C_greaterp(C_word c, C_word closure, C_word k, ...)
   }
 
  cont:
-  va_end(v);
   C_kontinue(k, C_mk_bool(f));
 }
 
@@ -6836,19 +6746,21 @@ C_regparm C_word C_fcall C_i_greaterp(C_word x, C_word y)
 }
 
 
-void C_ccall C_lessp(C_word c, C_word closure, C_word k, ...)
+void C_ccall C_lessp(C_word c, C_word *av)
 {
-  C_word x, i2, f, fflag, ilast;
+  C_word 
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    x, i2, f, fflag, ilast;
   double flast, f2;
-  va_list v;
 
   c -= 2; 
   f = 1;
-  va_start(v, k);
+  av += 2;
 
   if(c == 0) goto cont;
   
-  x = va_arg(v, C_word);
+  x = *(av++);
 
   if(x &C_FIXNUM_BIT) {
     fflag = 0;
@@ -6861,7 +6773,7 @@ void C_ccall C_lessp(C_word c, C_word closure, C_word k, ...)
   else barf(C_BAD_ARGUMENT_TYPE_ERROR, "<", x);
 
   while(--c) {
-    x = va_arg(v, C_word);
+    x = *(av++);
     
     if(x &C_FIXNUM_BIT) {
       if(fflag) {
@@ -6890,7 +6802,6 @@ void C_ccall C_lessp(C_word c, C_word closure, C_word k, ...)
   }
 
  cont:
-  va_end(v);
   C_kontinue(k, C_mk_bool(f));
 }
 
@@ -6917,19 +6828,21 @@ C_regparm C_word C_fcall C_i_lessp(C_word x, C_word y)
 }
 
 
-void C_ccall C_greater_or_equal_p(C_word c, C_word closure, C_word k, ...)
+void C_ccall C_greater_or_equal_p(C_word c, C_word *av)
 {
-  C_word x, i2, f, fflag, ilast;
+  C_word 
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    x, i2, f, fflag, ilast;
   double flast, f2;
-  va_list v;
 
   c -= 2; 
   f = 1;
-  va_start(v, k);
+  av += 2;
 
   if(c == 0) goto cont;
   
-  x = va_arg(v, C_word);
+  x = *(av++);
 
   if(x &C_FIXNUM_BIT) {
     fflag = 0;
@@ -6942,7 +6855,7 @@ void C_ccall C_greater_or_equal_p(C_word c, C_word closure, C_word k, ...)
   else barf(C_BAD_ARGUMENT_TYPE_ERROR, ">=", x);
 
   while(--c) {
-    x = va_arg(v, C_word);
+    x = *(av++);
     
     if(x &C_FIXNUM_BIT) {
       if(fflag) {
@@ -6971,7 +6884,6 @@ void C_ccall C_greater_or_equal_p(C_word c, C_word closure, C_word k, ...)
   }
 
  cont:
-  va_end(v);
   C_kontinue(k, C_mk_bool(f));
 }
 
@@ -6998,19 +6910,21 @@ C_regparm C_word C_fcall C_i_greater_or_equalp(C_word x, C_word y)
 }
 
 
-void C_ccall C_less_or_equal_p(C_word c, C_word closure, C_word k, ...)
+void C_ccall C_less_or_equal_p(C_word c, C_word *av)
 {
-  C_word x, i2, f, fflag, ilast;
+  C_word 
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    x, i2, f, fflag, ilast;
   double flast, f2;
-  va_list v;
 
   c -= 2; 
   f = 1;
-  va_start(v, k);
+  av += 2;
 
   if(c == 0) goto cont;
   
-  x = va_arg(v, C_word);
+  x = *(av++);
 
   if(x &C_FIXNUM_BIT) {
     fflag = 0;
@@ -7023,7 +6937,7 @@ void C_ccall C_less_or_equal_p(C_word c, C_word closure, C_word k, ...)
   else barf(C_BAD_ARGUMENT_TYPE_ERROR, "<=", x);
 
   while(--c) {
-    x = va_arg(v, C_word);
+    x = *(av++);
     
     if(x &C_FIXNUM_BIT) {
       if(fflag) {
@@ -7052,7 +6966,6 @@ void C_ccall C_less_or_equal_p(C_word c, C_word closure, C_word k, ...)
   }
 
  cont:
-  va_end(v);
   C_kontinue(k, C_mk_bool(f));
 }
 
@@ -7079,13 +6992,19 @@ C_regparm C_word C_fcall C_i_less_or_equalp(C_word x, C_word y)
 }
 
 
-void C_ccall C_expt(C_word c, C_word closure, C_word k, C_word n1, C_word n2)
+void C_ccall C_expt(C_word c, C_word *av)
 {
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ], 
+    n1, n2, r;
   double m1, m2;
-  C_word r;
   C_alloc_flonum;
 
   if(c != 4) C_bad_argc(c, 4);
+
+  n1 = av[ 2 ];
+  n2 = av[ 3 ];
 
   if(n1 & C_FIXNUM_BIT) m1 = C_unfix(n1);
   else if(!C_immediatep(n1) && C_block_header(n1) == C_FLONUM_TAG)
@@ -7107,24 +7026,24 @@ void C_ccall C_expt(C_word c, C_word closure, C_word k, C_word n1, C_word n2)
 }
 
 
-void C_ccall C_gc(C_word c, C_word closure, C_word k, ...)
+void C_ccall C_gc(C_word c, C_word *av)
 {
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ];
   int f;
-  C_word arg;
-  C_long size = 0;
-  va_list v;
-
-  va_start(v, k);
+  C_word 
+    arg,
+    size = 0;
 
   if(c == 3) {
-    arg = va_arg(v, C_word);
+    arg = av[ 2 ];
     f = C_truep(arg);
   }
   else if(c != 2) C_bad_min_argc(c, 2);
   else f = 1;
 
   C_save(k);
-  va_end(v);
 
   if(c == 3) {
     if((arg & C_FIXNUM_BIT) != 0) size = C_unfix(arg);
@@ -7137,11 +7056,11 @@ void C_ccall C_gc(C_word c, C_word closure, C_word k, ...)
   }
   else if(f) C_fromspace_top = C_fromspace_limit;
 
-  C_reclaim((void *)gc_2, NULL);
+  C_reclaim((void *)gc_2, c);
 }
 
 
-void gc_2(void *dummy)
+void C_ccall gc_2(C_word c, C_word *av)
 {
   C_word k = C_restore;
   
@@ -7149,8 +7068,14 @@ void gc_2(void *dummy)
 }
 
 
-void C_ccall C_open_file_port(C_word c, C_word closure, C_word k, C_word port, C_word channel, C_word mode)
+void C_ccall C_open_file_port(C_word c, C_word *av)
 {
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ], 
+    port = av[ 2 ],
+    channel = av[ 3 ],
+    mode = av[ 4 ];
   C_FILEPTR fp = (C_FILEPTR)NULL;
   C_char fmode[ 4 ];
   C_word n;
@@ -7189,11 +7114,21 @@ void C_ccall C_open_file_port(C_word c, C_word closure, C_word k, C_word port, C
 }
 
 
-void C_ccall C_allocate_vector(C_word c, C_word closure, C_word k, C_word size, C_word bvecf, C_word init, C_word align8)
+void C_ccall C_allocate_vector(C_word c, C_word *av)
 {
-  C_uword bytes, n = C_unfix(size);
+  C_word 
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    size, bvecf, init, align8,
+    bytes,
+    n = C_unfix(size);
 
   if(c != 6) C_bad_argc(c, 6);
+
+  size = av[ 2 ];
+  bvecf = av[ 3 ];
+  init = av[ 4 ];
+  align8 = av[ 5 ];
 
   if(n > C_HEADER_SIZE_MASK)
     barf(C_OUT_OF_RANGE_ERROR, NULL, size, C_fix(C_HEADER_SIZE_MASK));
@@ -7216,7 +7151,7 @@ void C_ccall C_allocate_vector(C_word c, C_word closure, C_word k, C_word size, 
       C_fromspace_top = C_fromspace_limit; /* trigger major GC */
   
     C_save(C_SCHEME_TRUE);
-    C_reclaim((void *)allocate_vector_2, NULL);
+    C_reclaim((void *)allocate_vector_2, c);
   }
 
   C_save(C_SCHEME_FALSE);
@@ -7224,16 +7159,17 @@ void C_ccall C_allocate_vector(C_word c, C_word closure, C_word k, C_word size, 
 }
 
 
-void allocate_vector_2(void *dummy)
+void C_ccall allocate_vector_2(C_word c, C_word *av)
 {
-  C_word  mode = C_restore;
-  C_uword bytes = C_unfix(C_restore);
-  C_word  align8 = C_restore,
-          bvecf = C_restore,
-          init = C_restore;
-  C_word  size = C_unfix(C_restore);
-  C_word  k = C_restore,
-          *v0, v;
+  C_word 
+    mode = C_restore,
+    bytes = C_unfix(C_restore),
+    align8 = C_restore,
+    bvecf = C_restore,
+    init = C_restore,
+    size = C_unfix(C_restore),
+    k = C_restore,
+    *v0, v;
 
   if(C_truep(mode)) {
     while((C_uword)(C_fromspace_limit - C_fromspace_top) < (bytes + stack_size)) {
@@ -7274,13 +7210,19 @@ void allocate_vector_2(void *dummy)
 }
 
 
-void C_ccall C_string_to_symbol(C_word c, C_word closure, C_word k, C_word string)
-{
+void C_ccall C_string_to_symbol(C_word c, C_word *av) 
+{ 
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    string;
   int len, key;
   C_word s, *a = C_alloc(C_SIZEOF_SYMBOL + C_SIZEOF_BUCKET);
   C_char *name;
 
   if(c != 3) C_bad_argc(c, 3);
+
+  string = av[ 2 ];
 
   if(C_immediatep(string) || C_header_bits(string) != C_STRING_TYPE)
     barf(C_BAD_ARGUMENT_TYPE_ERROR, "string->symbol", string);
@@ -7296,16 +7238,25 @@ void C_ccall C_string_to_symbol(C_word c, C_word closure, C_word k, C_word strin
 }
 
 
-void C_ccall C_flonum_fraction(C_word c, C_word closure, C_word k, C_word n)
+void C_ccall C_flonum_fraction(C_word c, C_word *av) 
 {
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    n = av[ 2 ];
   double i, fn = C_flonum_magnitude(n);
   C_alloc_flonum;
 
   C_kontinue_flonum(k, modf(fn, &i));
 }
 
-void C_ccall C_flonum_rat(C_word c, C_word closure, C_word k, C_word n)
+
+void C_ccall C_flonum_rat(C_word c, C_word *av)
 {
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    n = av[ 2 ];
   double frac, tmp, numer, denom, fn = C_flonum_magnitude(n);
   double ga, gb;
   C_word ab[WORDS_PER_FLONUM * 2], *ap = ab;
@@ -7327,6 +7278,7 @@ void C_ccall C_flonum_rat(C_word c, C_word closure, C_word k, C_word n)
     numer = fn > 0.0 ? 1.0 : -1.0;
     denom = 1.0/0.0; /* +inf */
   }
+
   C_values(4, C_SCHEME_UNDEFINED, k, C_flonum(&ap, numer), C_flonum(&ap, denom));
 }
 
@@ -7370,13 +7322,20 @@ C_regparm C_word C_fcall C_a_i_flonum_round_proper(C_word **ptr, int c, C_word n
 }
 
 
-void C_ccall C_quotient(C_word c, C_word closure, C_word k, C_word n1, C_word n2)
+void C_ccall C_quotient(C_word c, C_word *av)
 {
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    n1, n2;
   double f1, f2, r;
   C_word result;
   C_alloc_flonum;
 
   if(c != 4) C_bad_argc(c, 4);
+
+  n1 = av[ 2 ];
+  n2 = av[ 3 ];
 
   if(n1 &C_FIXNUM_BIT) {
     if(n2 &C_FIXNUM_BIT) {
@@ -7663,24 +7622,27 @@ static char *to_n_nary(C_uword num, C_uword base)
 }
 
 
-void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, ...)
+void C_ccall C_number_to_string(C_word c, C_word *av)
 {
-  C_word radix, *a;
+  C_word
+    /* closure * av[ 0 ] */
+    k = av[ 1 ],
+    num,
+    radix, *a;
   C_char *p;
   double f;
-  va_list v;
   int neg = 0;
 
   if(c == 3) radix = 10;
   else if(c == 4) {
-    va_start(v, num);
-    radix = va_arg(v, C_word);
-    va_end(v);
+    radix = av[ 3 ];
     
     if(radix & C_FIXNUM_BIT) radix = C_unfix(radix);
     else barf(C_BAD_ARGUMENT_TYPE_BAD_BASE_ERROR, "number->string", radix);
   }
   else C_bad_argc(c, 3);
+
+  num = av[ 2 ];
 
   if(num & C_FIXNUM_BIT) {
     num = C_unfix(num);
@@ -7798,34 +7760,37 @@ C_fixnum_to_string(C_word c, C_word self, C_word k, C_word num)
 }
 
 
-void C_ccall C_make_structure(C_word c, C_word closure, C_word k, C_word type, ...)
+void C_ccall C_make_structure(C_word c, C_word *av)
 {
-  va_list v;
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    type = av[ 2 ];
   int i;
 
-  va_start(v, type);
+  av += 2;
 
-  for(i = c - 3; i--; C_save(va_arg(v, C_word)));
+  for(i = c - 3; i--; C_save(*(av++)));
 
-  va_end(v);
   C_save(type);
   C_save(k);
 
   if(!C_demand(c - 1)) 
-    C_reclaim((void *)make_structure_2, NULL);
+    C_reclaim((void *)make_structure_2, c);
 
   make_structure_2(NULL);
 }
 
 
-void make_structure_2(void *dummy)
+void C_ccall make_structure_2(C_word c, C_word *av)
 {
-  C_word k = C_restore,
-      type = C_restore,
-      size = C_rest_count(0),
-      *a = C_alloc(size + 2),
-      *s = a,
-      s0 = (C_word)s;
+  C_word
+    k = C_restore,
+    type = C_restore,
+    size = C_rest_count(0),
+    *a = C_alloc(size + 2),
+    *s = a,
+    s0 = (C_word)s;
 
   *(s++) = C_STRUCTURE_TYPE | (size + 1);
   *(s++) = type;
@@ -7838,10 +7803,15 @@ void make_structure_2(void *dummy)
 }
 
 
-void C_ccall C_make_symbol(C_word c, C_word closure, C_word k, C_word name)
+void C_ccall C_make_symbol(C_word c, C_word *av)
 {
-  C_word ab[ C_SIZEOF_SYMBOL ], *a = ab,
-         s0 = (C_word)a;
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    name = av[ 2 ],
+    ab[ C_SIZEOF_SYMBOL ], 
+    *a = ab,
+    s0 = (C_word)a;
 
   *(a++) = C_SYMBOL_TYPE | (C_SIZEOF_SYMBOL - 1);
   *(a++) = C_SCHEME_UNBOUND;
@@ -7851,38 +7821,52 @@ void C_ccall C_make_symbol(C_word c, C_word closure, C_word k, C_word name)
 }
 
 
-void C_ccall C_make_pointer(C_word c, C_word closure, C_word k)
+void C_ccall C_make_pointer(C_word c, C_word *av)
 {
-  C_word ab[ 2 ], *a = ab,
-         p;
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    ab[ 2 ], 
+    *a = ab,
+    p;
 
   p = C_mpointer(&a, NULL);
   C_kontinue(k, p);
 }
 
 
-void C_ccall C_make_tagged_pointer(C_word c, C_word closure, C_word k, C_word tag)
+void C_ccall C_make_tagged_pointer(C_word c, C_word *av)
 {
-  C_word ab[ 3 ], *a = ab,
-         p;
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    tag = av[ 2 ],
+    ab[ 3 ],
+    *a = ab,
+    p;
 
   p = C_taggedmpointer(&a, tag, NULL);
   C_kontinue(k, p);
 }
 
 
-void C_ccall C_ensure_heap_reserve(C_word c, C_word closure, C_word k, C_word n)
+void C_ccall C_ensure_heap_reserve(C_word c, C_word *av) 
 {
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    n = av[ 2 ];
+  
   C_save(k);
 
   if(!C_demand(C_bytestowords(C_unfix(n))))
-    C_reclaim((void *)generic_trampoline, NULL);
+    C_reclaim((void *)generic_trampoline, c);
 
   generic_trampoline(NULL);
 }
 
 
-void generic_trampoline(void *dummy)
+void C_ccall generic_trampoline(C_word c, C_word *av)
 {
   C_word k = C_restore;
 
@@ -7890,22 +7874,30 @@ void generic_trampoline(void *dummy)
 }
 
 
-void C_ccall C_return_to_host(C_word c, C_word closure, C_word k)
+void C_ccall C_return_to_host(C_word c, C_word *av)
 {
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ];
+
   return_to_host = 1;
   C_save(k);
-  C_reclaim((void *)generic_trampoline, NULL);
+  C_reclaim((void *)generic_trampoline, c);
 }
 
 
-void C_ccall C_get_symbol_table_info(C_word c, C_word closure, C_word k)
+void C_ccall C_get_symbol_table_info(C_word c, C_word *av)
 {
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ];
   double d1, d2;
   int n = 0, total;
   C_SYMBOL_TABLE *stp;
-  C_word x, y,
-         ab[ WORDS_PER_FLONUM * 2 + 5 ], /* 2 flonums + 1 vector of 4 elements */
-         *a = ab;
+  C_word
+    x, y,
+    ab[ WORDS_PER_FLONUM * 2 + 5 ], /* 2 flonums + 1 vector of 4 elements */
+    *a = ab;
 
   for(stp = symbol_table_list; stp != NULL; stp = stp->next)
     ++n;
@@ -7917,30 +7909,40 @@ void C_ccall C_get_symbol_table_info(C_word c, C_word closure, C_word k)
 }
 
 
-void C_ccall C_get_memory_info(C_word c, C_word closure, C_word k)
+void C_ccall C_get_memory_info(C_word c, C_word *av)
 {
-  C_word ab[ 3 ], *a = ab;
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    ab[ 3 ],
+    *a = ab;
 
   C_kontinue(k, C_vector(&a, 2, C_fix(heap_size), C_fix(stack_size)));
 }
 
 
-void C_ccall C_context_switch(C_word c, C_word closure, C_word k, C_word state)
+void C_ccall C_context_switch(C_word c, C_word *av)
 {
-  C_word n = C_header_size(state) - 1,
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    state = av[ 2 ],
+    n = C_header_size(state) - 1,
     adrs = C_block_item(state, 0);
-  TRAMPOLINE trampoline;
+  C_proc tp = (C_proc)C_block_item(adrs,0);
 
-  C_temporary_stack = C_temporary_stack_bottom - n;
-  C_memcpy(C_temporary_stack, (C_word *)state + 2, n * sizeof(C_word));
-  trampoline = (TRAMPOLINE)C_block_item(adrs,0);
-  trampoline((void *)C_block_item(adrs,1));
+  tp(n, (C_word *)state + 1);
 }
 
 
-void C_ccall C_peek_signed_integer(C_word c, C_word closure, C_word k, C_word v, C_word index)
+void C_ccall C_peek_signed_integer(C_word c, C_word *av)
 {
-  C_word x = C_block_item(v, C_unfix(index));
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    v = av[ 2 ],
+    index = av[ 3 ],
+    x = C_block_item(v, C_unfix(index));
   C_alloc_flonum;
 
   if((x & C_INT_SIGN_BIT) != (((C_uword)x << 1) & C_INT_SIGN_BIT)) {
@@ -7951,9 +7953,14 @@ void C_ccall C_peek_signed_integer(C_word c, C_word closure, C_word k, C_word v,
 }
 
 
-void C_ccall C_peek_unsigned_integer(C_word c, C_word closure, C_word k, C_word v, C_word index)
+void C_ccall C_peek_unsigned_integer(C_word c, C_word *av)
 {
-  C_word x = C_block_item(v, C_unfix(index));
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    v = av[ 2 ],
+    index = av[ 3 ],
+    x = C_block_item(v, C_unfix(index));
   C_alloc_flonum;
 
   if((x & C_INT_SIGN_BIT) || (((C_uword)x << 1) & C_INT_SIGN_BIT)) {
@@ -7964,12 +7971,19 @@ void C_ccall C_peek_unsigned_integer(C_word c, C_word closure, C_word k, C_word 
 }
 
 
-void C_ccall C_decode_seconds(C_word c, C_word closure, C_word k, C_word secs, C_word mode)
+void C_ccall C_decode_seconds(C_word c, C_word *av)
 {
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    secs = av[ 2 ],
+    mode = av[ 3 ];
   time_t tsecs;
   struct tm *tmt;
-  C_word ab[ 11 ], *a = ab,
-         info;
+  C_word
+    ab[ 11 ], 
+    *a = ab,
+    info;
 
   tsecs = (time_t)((secs & C_FIXNUM_BIT) != 0 ? C_unfix(secs) : C_flonum_magnitude(secs));
   
@@ -7996,8 +8010,11 @@ void C_ccall C_decode_seconds(C_word c, C_word closure, C_word k, C_word secs, C
 }
 
 
-void C_ccall C_machine_byte_order(C_word c, C_word closure, C_word k)
+void C_ccall C_machine_byte_order(C_word c, C_word *av)
 {
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ];
   char *str;
   C_word *a, s;
 
@@ -8019,9 +8036,12 @@ void C_ccall C_machine_byte_order(C_word c, C_word closure, C_word k)
 }
 
 
-void C_ccall C_machine_type(C_word c, C_word closure, C_word k)
+void C_ccall C_machine_type(C_word c, C_word *av)
 {
-  C_word *a, s;
+  C_word 
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    *a, s;
 
   if(c != 2) C_bad_argc(c, 2);
 
@@ -8032,9 +8052,12 @@ void C_ccall C_machine_type(C_word c, C_word closure, C_word k)
 }
 
 
-void C_ccall C_software_type(C_word c, C_word closure, C_word k)
+void C_ccall C_software_type(C_word c, C_word *av)
 {
-  C_word *a, s;
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    *a, s;
 
   if(c != 2) C_bad_argc(c, 2);
 
@@ -8045,9 +8068,12 @@ void C_ccall C_software_type(C_word c, C_word closure, C_word k)
 }
 
 
-void C_ccall C_build_platform(C_word c, C_word closure, C_word k)
+void C_ccall C_build_platform(C_word c, C_word *av)
 {
-  C_word *a, s;
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    *a, s;
 
   if(c != 2) C_bad_argc(c, 2);
 
@@ -8058,9 +8084,12 @@ void C_ccall C_build_platform(C_word c, C_word closure, C_word k)
 }
 
 
-void C_ccall C_software_version(C_word c, C_word closure, C_word k)
+void C_ccall C_software_version(C_word c, C_word *av)
 {
-  C_word *a, s;
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    *a, s;
 
   if(c != 2) C_bad_argc(c, 2);
 
@@ -8073,8 +8102,14 @@ void C_ccall C_software_version(C_word c, C_word closure, C_word k)
 
 /* Register finalizer: */
 
-void C_ccall C_register_finalizer(C_word c, C_word closure, C_word k, C_word x, C_word proc)
+void C_ccall C_register_finalizer(C_word c, C_word *av)
 {
+  C_word
+    /* closure = av[ 0 ]) */
+    k = av[ 1 ],
+    x = av[ 2 ],
+    proc = av[ 3 ];
+
   if(C_immediatep(x) || (!C_in_stackp(x) && !C_in_heapp(x))) /* not GCable? */
     C_kontinue(k, x);
 
@@ -8083,6 +8118,9 @@ void C_ccall C_register_finalizer(C_word c, C_word closure, C_word k, C_word x, 
 }
 
 
+/*XXX could this be made static? is it used in eggs somewhere? 
+  if not, declare as fcall/regparm (and static, remove from chicken.h)
+ */
 void C_ccall C_do_register_finalizer(C_word x, C_word proc)
 {
   C_word *ptr;
@@ -8116,6 +8154,7 @@ void C_ccall C_do_register_finalizer(C_word x, C_word proc)
 }
 
 
+/*XXX same here */
 int C_do_unregister_finalizer(C_word x)
 {
   int n;
@@ -8136,8 +8175,14 @@ int C_do_unregister_finalizer(C_word x)
 
 /* Dynamic loading of shared objects: */
 
-void C_ccall C_set_dlopen_flags(C_word c, C_word closure, C_word k, C_word now, C_word global)
+void C_ccall C_set_dlopen_flags(C_word c, C_word *av)
 {
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    now = av[ 2 ],
+    global = av[ 3 ];
+
 #if !defined(NO_DLOAD2) && defined(HAVE_DLFCN_H)
   dlopen_flags = (C_truep(now) ? RTLD_NOW : RTLD_LAZY) | (C_truep(global) ? RTLD_GLOBAL : RTLD_LOCAL);
 #endif
@@ -8145,8 +8190,14 @@ void C_ccall C_set_dlopen_flags(C_word c, C_word closure, C_word k, C_word now, 
 }
 
 
-void C_ccall C_dload(C_word c, C_word closure, C_word k, C_word name, C_word entry)
+void C_ccall C_dload(C_word c, C_word *av)
 {
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    name = av[ 2 ],
+    entry = av[ 3 ];
+
 #if !defined(NO_DLOAD2) && (defined(HAVE_DLFCN_H) || defined(HAVE_DL_H) || (defined(HAVE_LOADLIBRARY) && defined(HAVE_GETPROCADDRESS)))
   /* Force minor GC: otherwise the lf may contain pointers to stack-data
      (stack allocated interned symbols, for example) */
@@ -8303,9 +8354,13 @@ void dload_2(void *dummy)
 #endif
 
 
-void C_ccall C_become(C_word c, C_word closure, C_word k, C_word table)
+void C_ccall C_become(C_word c, C_word *av) 
 {
-  C_word tp, x, old, neu, i, *p;
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    table = av[ 2 ],
+    tp, x, old, neu, i, *p;
 
   i = forwarding_table_size;
   p = forwarding_table;
@@ -8335,9 +8390,10 @@ void C_ccall C_become(C_word c, C_word closure, C_word k, C_word table)
 }
 
 
-void become_2(void *dummy)
+void C_ccall become_2(C_word c, C_word *av)
 {
   C_word k = C_restore;
+
   *forwarding_table = 0;
   C_kontinue(k, C_SCHEME_UNDEFINED);
 }
@@ -8416,9 +8472,13 @@ C_regparm C_word C_fcall C_a_i_make_locative(C_word **a, int c, C_word type, C_w
 }
 
 
-void C_ccall C_locative_ref(C_word c, C_word closure, C_word k, C_word loc)
+void C_ccall C_locative_ref(C_word c, C_word *av)
 {
-  C_word *ptr, val;
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    loc = av[ 2 ],
+    *ptr, val;
   C_alloc_flonum;
 
   if(c != 3) C_bad_argc(c, 3);
@@ -8615,8 +8675,12 @@ void *C_lookup_procedure_ptr(C_char *id)
 }
 
 
-void C_ccall C_copy_closure(C_word c, C_word closure, C_word k, C_word proc)
+void C_ccall C_copy_closure(C_word c, C_word *av)
 {
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    proc = av[ 2 ];
   int n = C_header_size(proc);
 
   if(!C_demand(n + 1)) C_save_and_reclaim((void *)copy_closure_2, NULL, 2, proc, k);
@@ -8628,7 +8692,7 @@ void C_ccall C_copy_closure(C_word c, C_word closure, C_word k, C_word proc)
 }
 
 
-static void copy_closure_2(void *dummy)
+static void C_ccall  copy_closure_2(C_word c, C_word *av)
 {
   C_word 
     k = C_restore,
@@ -8647,9 +8711,13 @@ static void copy_closure_2(void *dummy)
 
 /* Creating black holes: */
 
-void C_call_with_cthulhu(C_word c, C_word self, C_word k, C_word proc)
+void C_ccall C_call_with_cthulhu(C_word c, C_word *av)
 {
-  C_word *a = C_alloc(3);
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    proc = av[ 2 ],
+    *a = C_alloc(3);
   
   k = C_closure(&a, 1, (C_word)termination_continuation);
   C_apply(4, C_SCHEME_UNDEFINED, k, proc, C_SCHEME_END_OF_LIST);
@@ -9034,13 +9102,16 @@ C_i_get_keyword(C_word kw, C_word args, C_word def)
 }
 
 
-void C_ccall
-C_dump_heap_state(C_word c, C_word closure, C_word k)
+void C_ccall C_dump_heap_state(C_word c, C_word *av)
 {
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ];
+
   /* make sure heap is compacted */
   C_save(k);
   C_fromspace_top = C_fromspace_limit; /* force major GC */
-  C_reclaim((void *)dump_heap_state_2, NULL);
+  C_reclaim((void *)dump_heap_state_2, c);
 }
 
 
@@ -9079,8 +9150,7 @@ hdump_count(C_word key, int n, int t)
 }
 
 
-static void 
-dump_heap_state_2(void *dummy)
+static void C_ccall dump_heap_state_2(C_word c, C_word *av)
 {
   C_word k = C_restore;
   HDUMP_BUCKET *b, *b2, **bp;
@@ -9205,8 +9275,7 @@ dump_heap_state_2(void *dummy)
 }
 
 
-static void 
-filter_heap_objects_2(void *dummy)
+static void C_ccall filter_heap_objects_2(C_word c, C_word *av)
 {
   void *func = C_pointer_address(C_restore);
   C_word userarg = C_restore;
@@ -9252,21 +9321,26 @@ filter_heap_objects_2(void *dummy)
 }
 
 
-void C_ccall
-C_filter_heap_objects(C_word c, C_word closure, C_word k, C_word func, C_word vector, 
-		      C_word userarg)
+void C_ccall C_filter_heap_objects(C_word c, C_word *av)
 {
+  C_word
+    /* closure = av[ 0 ] */
+    k = av[ 1 ],
+    func = av[ 2 ],
+    vector = av[ 3 ],
+    userarg = av[ 4 ];
+
   /* make sure heap is compacted */
   C_save(k);
   C_save(vector);
   C_save(userarg);
   C_save(func);
   C_fromspace_top = C_fromspace_limit; /* force major GC */
-  C_reclaim((void *)filter_heap_objects_2, NULL);
+  C_reclaim((void *)filter_heap_objects_2, c);
 }
 
 
-C_regparm C_word C_fcall
+C_regparm C_word C_fcall 
 C_i_file_exists_p(C_word name, C_word file, C_word dir)
 {
   struct stat buf;
