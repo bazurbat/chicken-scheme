@@ -176,7 +176,7 @@
     ##sys#check-open-port
     ##sys#check-char ##sys#check-vector ##sys#check-byte-vector ##sys#list ##sys#cons
     ##sys#call-with-values ##sys#fits-in-int? ##sys#fits-in-unsigned-int? ##sys#flonum-in-fixnum-range? 
-    ##sys#fudge ##sys#immediate? ##sys#direct-return ##sys#context-switch
+    ##sys#fudge ##sys#immediate? ##sys#context-switch
     ##sys#make-structure ##sys#apply ##sys#apply-values ##sys#continuation-graft
     ##sys#bytevector? ##sys#make-vector ##sys#setter ##sys#car ##sys#cdr ##sys#pair?
     ##sys#eq? ##sys#list? ##sys#vector? ##sys#eqv? ##sys#get-keyword
@@ -975,7 +975,6 @@
 (rewrite '##sys#foreign-pointer-argument 17 1 "C_i_foreign_pointer_argumentp")
 (rewrite '##sys#foreign-integer-argument 17 1 "C_i_foreign_integer_argumentp")
 (rewrite '##sys#foreign-unsigned-integer-argument 17 1 "C_i_foreign_unsigned_integer_argumentp")
-(rewrite '##sys#direct-return 17 2 "C_direct_return")
 
 (rewrite 'blob-size 2 1 "C_block_size" #f)
 
