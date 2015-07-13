@@ -894,7 +894,7 @@
 	     close-input-port close-output-port load read eof-object? read-char
 	     peek-char write display write-char newline with-input-from-file
 	     with-output-to-file eval
-	     char-ready? imag-part real-part make-rectangular make-polar
+	     char-ready? imag-part real-part make-rectangular make-polar angle
 	     magnitude numerator denominator
 	     scheme-report-environment null-environment interaction-environment
 	     else))
