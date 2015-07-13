@@ -142,46 +142,35 @@
 			       ,%result))))
 	x)))
 
-(define-internal-compiler-syntax ((o #%o chicken.data-structures#o) x r c) ()
+(define-internal-compiler-syntax ((chicken.data-structures#o) x r c) ()
   (if (and (fx> (length x) 1)
 	   (memq 'chicken.data-structures#o extended-bindings)) ; s.a.
       (let ((%tmp (r 'tmp)))
 	`(,(r 'lambda) (,%tmp) ,(foldr list %tmp (cdr x))))
       x))
 
-(define-internal-compiler-syntax ((sprintf #%sprintf chicken.extras#sprintf format #%format chicken.extras#format) x r c)
-  (display write fprintf number->string write-char open-output-string get-output-string)
+(define-internal-compiler-syntax ((chicken.extras#sprintf chicken.extras#format) x r c)
+  (display write number->string write-char open-output-string get-output-string)
   (let* ((out (gensym 'out))
-	 (code (compile-format-string 
-		(if (memq (car x) '(sprintf #%sprintf))
-		    'sprintf
-		    'format)
-		out 
-		x
-		(cdr x)
-		r c)))
+	 (code (compile-format-string
+		(if (eq? (car x) 'chicken.extras#sprintf) 'sprintf 'format)
+		out x (cdr x) r c)))
     (if code
 	`(,(r 'let) ((,out (,(r 'open-output-string))))
 	  ,code
 	  (,(r 'get-output-string) ,out))
 	x)))
 
-(define-internal-compiler-syntax ((fprintf #%fprintf chicken.extras#fprintf) x r c)
-  (display write fprintf number->string write-char open-output-string get-output-string)
+(define-internal-compiler-syntax ((chicken.extras#fprintf) x r c)
+  (display write number->string write-char open-output-string get-output-string)
   (if (>= (length x) 3)
-      (let ((code (compile-format-string 
-		   'fprintf (cadr x) 
-		   x (cddr x)
-		   r c)))
+      (let ((code (compile-format-string 'fprintf (cadr x) x (cddr x) r c)))
 	(or code x))
       x))
 
-(define-internal-compiler-syntax ((printf #%printf chicken.extras#printf) x r c)
-  (display write fprintf number->string write-char open-output-string get-output-string)
-  (let ((code (compile-format-string 
-	       'printf '##sys#standard-output
-	       x (cdr x)
-	       r c)))
+(define-internal-compiler-syntax ((chicken.extras#printf) x r c)
+  (display write number->string write-char open-output-string get-output-string)
+  (let ((code (compile-format-string 'printf '##sys#standard-output x (cdr x) r c)))
     (or code x)))
 
 (define (compile-format-string func out x args r c)
