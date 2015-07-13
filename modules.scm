@@ -899,8 +899,8 @@
 	     peek-char write display write-char newline with-input-from-file
 	     with-output-to-file eval
 	     char-ready? imag-part real-part magnitude numerator denominator
-	     scheme-report-environment null-environment interaction-environment
-	     else))
+             angle scheme-report-environment null-environment
+             interaction-environment else))
       (r4rs-syntax
        ;;XXX better would be to move these into the "chicken"
        ;;    module. "import[-for-syntax]" and "reexport" are in
