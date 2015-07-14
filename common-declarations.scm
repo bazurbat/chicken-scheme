@@ -31,12 +31,9 @@
  (debugbuild
   (define-syntax d
     (syntax-rules ()
-      ((_ arg1)
+      ((_ arg ...)
        (when (##sys#fudge 13) ; debug-mode
-         (chicken.extras#pp arg1)))
-      ((_ arg1 more ...)
-       (when (##sys#fudge 13)
-	 (print arg1 more ...))))))
+	 (print arg ...))))))
  (else
   (begin
     (declare
