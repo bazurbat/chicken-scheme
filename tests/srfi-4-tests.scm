@@ -55,6 +55,20 @@
   (assert (= 6  (read-u8vector! 10 u8vec input)))
   (assert (equal? u8vec #u8(117 118 119 120 121 122 108 109 110 111))))
 
+(let ((input (open-input-string "abcdefghijklmnopqrs")))
+  (assert (equal? (read-u8vector 5 input)
+		  #u8(97 98 99 100 101)))
+  (assert (equal? (read-u8vector 5 input) #u8(102 103 104 105 106)))
+  (assert (equal? (read-u8vector #f input)
+		  #u8(107 108 109 110 111 112 113 114 115)))
+  (with-input-from-string "abcdefghijklmnopqrs"
+   (lambda ()
+     (assert (equal? (read-u8vector 5)
+		     #u8(97 98 99 100 101)))
+     (assert (equal? (read-u8vector 5) #u8(102 103 104 105 106)))
+     (assert (equal? (read-u8vector)
+		     #u8(107 108 109 110 111 112 113 114 115))))))
+
 (assert (string=?
 	 "abc"
 	 (with-output-to-string
