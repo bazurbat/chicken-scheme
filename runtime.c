@@ -1898,7 +1898,9 @@ C_word C_fcall C_callback(C_word closure, int argc)
   av = C_alloc(argc + 2);
   av[ 0 ] = closure;
   av[ 1 ] = k;
+  /*XXX is the order of arguments an issue? */
   C_memcpy(av + 2, C_temporary_stack, (argc - 2) * sizeof(C_word));
+  C_temporary_stack = C_temporary_stack_bottom;
   
 #ifdef HAVE_SIGSETJMP
   if(!C_sigsetjmp(C_restart, 0)) C_do_apply(argc, av);
@@ -1908,8 +1910,12 @@ C_word C_fcall C_callback(C_word closure, int argc)
 
   serious_signal_occurred = 0;
 
-  if(!callback_returned_flag) 
-    ((C_proc)C_restart_trampoline)(C_restart_c, C_temporary_stack);
+  if(!callback_returned_flag) {
+    C_word *p = C_temporary_stack;
+    
+    C_temporary_stack = C_temporary_stack_bottom;
+    ((C_proc)C_restart_trampoline)(C_restart_c, p);
+  }
   else {
     C_memcpy(&C_restart, &prev, sizeof(C_restart));
     callback_returned_flag = 0;
@@ -2697,8 +2703,8 @@ C_mutate_slot(C_word *slot, C_word val)
 void C_save_and_reclaim(void *trampoline, int n, C_word *av)
 {
   if(C_temporary_stack != av) { /* used in apply */
-    C_temporary_stack -= n;
-    memcpy(C_temporary_stack, av, n * sizeof(C_word));
+    C_temporary_stack = C_temporary_stack_bottom - n;
+    C_memcpy(C_temporary_stack, av, n * sizeof(C_word));
   }
 
   C_reclaim(trampoline, n);
@@ -5979,6 +5985,7 @@ void C_ccall C_apply(C_word c, C_word *av)
     ++m;
   }
 
+  C_temporary_stack = C_temporary_stack_bottom;
   ((C_proc)(void *)C_block_item(fn, 0))(m + 1, C_temporary_stack_limit);
 }
 
