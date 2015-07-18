@@ -1409,8 +1409,12 @@ C_word CHICKEN_run(void *toplevel)
 
   serious_signal_occurred = 0;
 
-  if(!return_to_host)
-    ((C_proc)C_restart_trampoline)(C_restart_c, C_temporary_stack);
+  if(!return_to_host) {
+    C_word *p = C_temporary_stack;
+
+    C_temporary_stack = C_temporary_stack_bottom;
+    ((C_proc)C_restart_trampoline)(C_restart_c, p);
+  }
 
   chicken_is_running = 0;
   return C_restore;
@@ -7055,7 +7059,7 @@ void C_ccall C_gc(C_word c, C_word *av)
     k = av[ 1 ];
   int f;
   C_word 
-    arg,
+    arg, *p,
     size = 0;
 
   if(c == 3) {
@@ -7066,6 +7070,7 @@ void C_ccall C_gc(C_word c, C_word *av)
   else f = 1;
 
   C_save(k);
+  p = C_temporary_stack;
 
   if(c == 3) {
     if((arg & C_FIXNUM_BIT) != 0) size = C_unfix(arg);
@@ -7074,7 +7079,8 @@ void C_ccall C_gc(C_word c, C_word *av)
 
   if(size && !C_heap_size_is_fixed) {
     C_rereclaim2(size, 0);
-    gc_2(0, NULL);
+    C_temporary_stack = C_temporary_stack_bottom;
+    gc_2(0, p);
   }
   else if(f) C_fromspace_top = C_fromspace_limit;
 
@@ -7084,7 +7090,7 @@ void C_ccall C_gc(C_word c, C_word *av)
 
 void C_ccall gc_2(C_word c, C_word *av)
 {
-  C_word k = C_restore;
+  C_word k = av[ 0 ];
   
   C_kontinue(k, C_fix((C_uword)C_fromspace_limit - (C_uword)C_fromspace_top));
 }
@@ -7143,7 +7149,7 @@ void C_ccall C_allocate_vector(C_word c, C_word *av)
     k = av[ 1 ],
     size, bvecf, init, align8,
     bytes,
-    n;
+    n, *p;
 
   if(c != 6) C_bad_argc(c, 6);
 
@@ -7178,20 +7184,22 @@ void C_ccall C_allocate_vector(C_word c, C_word *av)
   }
 
   C_save(C_SCHEME_FALSE);
-  allocate_vector_2(0, NULL);
+  p = C_temporary_stack;
+  C_temporary_stack = C_temporary_stack_bottom;
+  allocate_vector_2(0, p);
 }
 
 
 void C_ccall allocate_vector_2(C_word c, C_word *av)
 {
   C_word 
-    mode = C_restore,
-    bytes = C_unfix(C_restore),
-    align8 = C_restore,
-    bvecf = C_restore,
-    init = C_restore,
-    size = C_unfix(C_restore),
-    k = C_restore,
+    mode = av[ 0 ],
+    bytes = C_unfix(av[ 1 ]),
+    align8 = av[ 2 ],
+    bvecf = av[ 3 ],
+    init = av[ 4 ],
+    size = C_unfix(av[ 5 ]),
+    k = av[ 6 ],
     *v0, v;
 
   if(C_truep(mode)) {
@@ -7796,7 +7804,8 @@ void C_ccall C_make_structure(C_word c, C_word *av)
   C_word
     /* closure = av[ 0 ] */
     k = av[ 1 ],
-    type = av[ 2 ];
+    type = av[ 2 ],
+    *p;
   int i;
 
   av += 2;
@@ -7809,15 +7818,17 @@ void C_ccall C_make_structure(C_word c, C_word *av)
   if(!C_demand(c - 1)) 
     C_reclaim((void *)make_structure_2, c);
 
-  make_structure_2(0, NULL);
+  p = C_temporary_stack;
+  C_temporary_stack = C_temporary_stack_bottom;
+  make_structure_2(0, p);
 }
 
 
 void C_ccall make_structure_2(C_word c, C_word *av)
 {
   C_word
-    k = C_restore,
-    type = C_restore,
+    k = av[ 0 ],
+    type = av[ 1 ],
     size = c - 2,
     *a = C_alloc(size + 2),
     *s = a,
@@ -7826,9 +7837,10 @@ void C_ccall make_structure_2(C_word c, C_word *av)
   *(s++) = C_STRUCTURE_TYPE | (size + 1);
   *(s++) = type;
   s += size;
+  av += 2;
 
   while(size--)
-    *(--s) = C_restore;
+    *(--s) = *(av++);
 
   C_kontinue(k, s0);
 }
@@ -7886,20 +7898,23 @@ void C_ccall C_ensure_heap_reserve(C_word c, C_word *av)
   C_word
     /* closure = av[ 0 ] */
     k = av[ 1 ],
-    n = av[ 2 ];
+    n = av[ 2 ],
+    *p;
   
   C_save(k);
 
   if(!C_demand(C_bytestowords(C_unfix(n))))
     C_reclaim((void *)generic_trampoline, c);
 
-  generic_trampoline(0, NULL);
+  p = C_temporary_stack;
+  C_temporary_stack = C_temporary_stack_bottom;
+  generic_trampoline(0, p);
 }
 
 
 void C_ccall generic_trampoline(C_word c, C_word *av)
 {
-  C_word k = C_restore;
+  C_word k = av[ 0 ];
 
   C_kontinue(k, C_SCHEME_UNDEFINED);
 }
@@ -8249,9 +8264,9 @@ void C_ccall dload_2(C_word c, C_word *av0)
 {
   void *handle, *p;
   C_word
-    entry = C_restore,
-    name = C_restore,
-    k = C_restore,
+    entry = av0[ 0 ],
+    name = av0[ 1 ],
+    k = av0[ 2 ],,
     av[ 2 ];
   C_char *mname = (C_char *)C_data_pointer(name);
 
@@ -8301,9 +8316,9 @@ void C_ccall dload_2(C_word c, C_word *av0)
 {
   void *handle, *p, *p2;
   C_word 
-    entry = C_restore,
-    name = C_restore,
-    k = C_restore,
+    entry = av0[ 0 ],
+    name = av0[ 1 ],
+    k = av0[ 2 ],
     av[ 2 ];
   C_char *topname = (C_char *)C_data_pointer(entry);
   C_char *mname = (C_char *)C_data_pointer(name);
@@ -8355,9 +8370,9 @@ void C_ccall dload_2(C_word c, C_word *av0)
   HINSTANCE handle;
   FARPROC p = NULL, p2;
   C_word
-    entry = C_restore,
-    name = C_restore,
-    k = C_restore,
+    entry = av0[ 0 ],
+    name = av0[ 1 ],
+    k = av0[ 2 ],
     av[ 2 ];
   C_char *topname = (C_char *)C_data_pointer(entry);
   C_char *mname = (C_char *)C_data_pointer(name);
@@ -8432,7 +8447,7 @@ void C_ccall C_become(C_word c, C_word *av)
 
 void C_ccall become_2(C_word c, C_word *av)
 {
-  C_word k = C_restore;
+  C_word k = av[ 0 ];
 
   *forwarding_table = 0;
   C_kontinue(k, C_SCHEME_UNDEFINED);
@@ -8735,7 +8750,8 @@ void C_ccall C_copy_closure(C_word c, C_word *av)
   C_word
     /* closure = av[ 0 ] */
     k = av[ 1 ],
-    proc = av[ 2 ];
+    proc = av[ 2 ],
+    *p;
   int n = C_header_size(proc);
 
   if(!C_demand(n + 1)) 
@@ -8743,7 +8759,9 @@ void C_ccall C_copy_closure(C_word c, C_word *av)
   else {
     C_save(proc);
     C_save(k);
-    copy_closure_2(0, NULL);
+    p = C_temporary_stack;
+    C_temporary_stack = C_temporary_stack_bottom;
+    copy_closure_2(0, p);
   }
 }
 
@@ -8751,8 +8769,8 @@ void C_ccall C_copy_closure(C_word c, C_word *av)
 static void C_ccall copy_closure_2(C_word c, C_word *av)
 {
   C_word 
-    k = C_restore,
-    proc = C_restore;
+    k = av[ 0 ],
+    proc = av[ 1 ];
   int cells = C_header_size(proc);
   C_word
     *ptr = C_alloc(cells + 1),
@@ -9212,7 +9230,7 @@ hdump_count(C_word key, int n, int t)
 
 static void C_ccall dump_heap_state_2(C_word c, C_word *av)
 {
-  C_word k = C_restore;
+  C_word k = av[ 0 ];
   HDUMP_BUCKET *b, *b2, **bp;
   int n, bytes;
   C_byte *scan;
@@ -9337,10 +9355,11 @@ static void C_ccall dump_heap_state_2(C_word c, C_word *av)
 
 static void C_ccall filter_heap_objects_2(C_word c, C_word *av)
 {
-  void *func = C_pointer_address(C_restore);
-  C_word userarg = C_restore;
-  C_word vector = C_restore;
-  C_word k = C_restore;
+  void *func = C_pointer_address(av[ 0 ]);
+  C_word 
+    userarg = av[ 1 ],
+    vector = av[ 2 ],
+    k = av[ 3 ];
   int n, bytes;
   C_byte *scan;
   C_SCHEME_BLOCK *sbp;
