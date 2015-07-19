@@ -21,8 +21,10 @@
 
 - Module system
   - The compiler has been modularised, for improved namespacing.  This
-     means names from the compiler should not leak out into the compiled
-     program's (macro) namespace anymore.
+    means names from the compiler should not leak out into the compiled
+    program's (macro) namespace anymore.
+  - The core units have been converted to modules under the "chicken"
+    namespace.
 
 4.9.1
 
