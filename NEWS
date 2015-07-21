@@ -61,6 +61,10 @@
 - Unit lolevel:
   - Restore long-lost but still documented "vector-like?" procedure (#983)
 
+- Unit "files":
+  - normalize-pathname no longer considers paths starting with ".//"
+    as absolute (#1202, reported by Haochi Kiang).
+
 - Unit "posix":
   - set-file-position! now allows negative positions for seek/cur (thanks
     to Seth Alves).

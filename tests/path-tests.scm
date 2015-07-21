@@ -31,6 +31,8 @@
 (test "/" (normalize-pathname "/./" 'unix))
 (test "/" (normalize-pathname "/./." 'unix))
 (test "." (normalize-pathname "./" 'unix))
+(test "a" (normalize-pathname "./a"))
+(test "a" (normalize-pathname ".///a"))
 (test "a" (normalize-pathname "a"))
 (test "a/" (normalize-pathname "a/" 'unix))
 (test "a/b" (normalize-pathname "a/b" 'unix))
