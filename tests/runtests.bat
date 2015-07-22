@@ -187,14 +187,16 @@ a.out
 if errorlevel 1 exit /b 1
 
 echo ======================================== meta-syntax tests ...
-%interpret% -bnq meta-syntax-test.scm -e "(import foo)" -e "(assert (equal? '((1)) (bar 1 2)))" -e "(assert (equal? '(list 1 2 3) (listify)))"
+del /f /q meta-syntax-test.import.*
+%interpret% -bnq meta-syntax-test.scm -e "(import meta-syntax-test)" -e "(assert (equal? '((1)) (bar 1 2)))" -e "(assert (equal? '(list 1 2 3) (listify)))"
 if errorlevel 1 exit /b 1
-%compile_s% meta-syntax-test.scm -j foo
+%compile_s% meta-syntax-test.scm -j meta-syntax-test
 if errorlevel 1 exit /b 1
-%compile_s% foo.import.scm
+%compile_s% meta-syntax-test.import.scm
 if errorlevel 1 exit /b 1
-%interpret% -bnq -e "(require-library meta-syntax-test)" -e "(import foo)" -e "(assert (equal? '((1)) (bar 1 2)))" -e "(assert (equal? '(list 1 2 3) (listify)))"
+%interpret% -bnq -e "(require-library meta-syntax-test)" -e "(import meta-syntax-test)" -e "(assert (equal? '((1)) (bar 1 2)))" -e "(assert (equal? '(list 1 2 3) (listify)))"
 if errorlevel 1 exit /b 1
+del /f /q meta-syntax-test.import.*
 
 echo ======================================== reexport tests ...
 %interpret% -bnq reexport-tests.scm
@@ -268,12 +270,12 @@ echo ======================================== import tests ...
 if errorlevel 1 exit /b 1
 
 echo ======================================== import library tests ...
-del /f /q ..\foo.import.* foo.import.*
-%compile% import-library-test1.scm -emit-import-library foo
+del /f /q import-library-test1.import.*
+%compile% import-library-test1.scm -emit-import-library import-library-test1
 if errorlevel 1 exit /b 1
 %interpret% -s import-library-test2.scm
 if errorlevel 1 exit /b 1
-%compile_s% foo.import.scm -o foo.import.so
+%compile_s% import-library-test1.import.scm -o import-library-test1.import.so
 if errorlevel 1 exit /b 1
 %interpret% -s import-library-test2.scm
 if errorlevel 1 exit /b 1
@@ -281,7 +283,7 @@ if errorlevel 1 exit /b 1
 if errorlevel 1 exit /b 1
 a.out
 if errorlevel 1 exit /b 1
-del /f /q foo.import.*
+del /f /q import-library-test1.import.*
 
 echo ======================================== optionals test ...
 %interpret% -s test-optional.scm
