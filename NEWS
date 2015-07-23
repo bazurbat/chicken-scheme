@@ -1,4 +1,4 @@
-4.10.0rc2
+4.10.0rc3
 
 - Security fixes
   - CVE-2014-6310: Use POSIX poll() on Android platform to avoid
