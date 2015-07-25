@@ -45,6 +45,7 @@ set(CHICKEN_DEPENDS)
 
 include(ChickenBuildTag)
 include(ChickenConfigure)
+include(ChickenBuild)
 
 set(CHICKEN_OPTIONS -optimize-level 2 -inline -ignore-repository -feature chicken-bootstrap)
 set(LIBRARY_OPTIONS -explicit-use -no-trace)
@@ -57,143 +58,6 @@ else()
     list(APPEND CHICKEN_OPTIONS -no-warnings)
     list(APPEND PROGRAM_OPTIONS -no-trace)
 endif()
-
-function(chicken_add_runtime name)
-    cmake_parse_arguments(runtime "STATIC;SHARED" "SUFFIX" "OPTIONS" ${ARGN})
-
-    if(runtime_STATIC)
-        set(type STATIC)
-    else()
-        set(type SHARED)
-        set(runtime_SHARED TRUE)
-    endif()
-
-    set(sources)
-    set(options ${runtime_OPTIONS})
-    set(c_sources chicken.h runtime.c ${CHICKEN_APPLY_HACK})
-
-    if(WIN32)
-        set(posix_scm posixwin.scm)
-    else()
-        set(posix_scm posixunix.scm)
-    endif()
-
-    set(scm_sources
-        ${posix_scm}
-        build-version.scm
-        chicken-ffi-syntax.scm
-        chicken-syntax.scm
-        data-structures.scm
-        eval.scm
-        expand.scm
-        extras.scm
-        files.scm
-        irregex.scm
-        library.scm
-        lolevel.scm
-        modules.scm
-        ports.scm
-        profiler.scm
-        scheduler.scm
-        srfi-1.scm
-        srfi-4.scm
-        stub.scm
-        tcp.scm
-        utils.scm)
-
-    if(NOT CHICKEN_5)
-        list(APPEND scm_sources
-            srfi-13.scm
-            srfi-14.scm
-            srfi-18.scm)
-    endif()
-
-    add_chicken_sources(sources ${type}
-        SUFFIX ${runtime_SUFFIX}
-        SOURCES ${scm_sources}
-        OPTIONS ${options})
-
-    if(NOT CHICKEN_5)
-        add_chicken_sources(sources srfi-69.scm ${type}
-            SUFFIX ${runtime_SUFFIX}
-            OPTIONS ${options} -extend private-namespace.scm)
-    endif()
-
-    add_library(${name} ${type} ${sources} ${c_sources})
-    wrap_chicken_target(${name} ${type} NO_RUNTIME)
-
-    set_property(TARGET ${name} PROPERTY
-        DEFINE_SYMBOL C_BUILDING_LIBCHICKEN)
-
-    if(UNIX AND runtime_SHARED)
-        # CHICKEN assumes this naming scheme in a number of places.
-        set_target_properties(${name} PROPERTIES
-            PREFIX "")
-
-        if(NOT ANDROID)
-            set_target_properties(${name} PROPERTIES
-                SUFFIX ""
-                OUTPUT_NAME ${name}${CMAKE_SHARED_LIBRARY_SUFFIX}.${API_VERSION})
-        endif()
-    endif()
-endfunction()
-
-function(chicken_add_compiler name)
-    cmake_parse_arguments(compiler
-        "STATIC;SHARED" "SUFFIX;OUTPUT_NAME" "OPTIONS" ${ARGN})
-
-    if(compiler_STATIC)
-        set(type STATIC)
-    endif()
-    if(NOT compiler_OUTPUT_NAME)
-        set(compiler_OUTPUT_NAME ${name})
-    endif()
-
-    set(sources)
-    set(options ${compiler_OPTIONS})
-    set(components
-        batch-driver
-        c-backend
-        c-platform
-        compiler-syntax
-        lfa2
-        optimizer
-        scrutinizer
-        support)
-
-    if(CHICKEN_5)
-        list(APPEND components core)
-
-        foreach(module ${components})
-            add_chicken_sources(sources ${module}.scm
-                SUFFIX ${compiler_SUFFIX}
-                EMIT_IMPORTS chicken.compiler.${module}
-                OPTIONS ${options})
-        endforeach()
-    else()
-        list(APPEND components compiler)
-        list(APPEND options -extend private-namespace.scm)
-
-        foreach(src ${components})
-            add_chicken_sources(sources ${src}.scm
-                SUFFIX ${compiler_SUFFIX}
-                OPTIONS ${options})
-        endforeach()
-    endif()
-
-    add_chicken_sources(sources
-        SUFFIX ${compiler_SUFFIX}
-        SOURCES chicken.scm
-        OPTIONS ${options})
-
-    add_executable(${name} ${sources})
-    wrap_chicken_target(${name} ${type})
-
-    set_target_properties(${name} PROPERTIES
-        OUTPUT_NAME ${compiler_OUTPUT_NAME})
-
-    set(compiler_OPTIONS ${options} PARENT_SCOPE)
-endfunction()
 
 # Bootstrapping when cross-compiling is quite messy process due to necessity to
 # deal with native toolchains. It is much simpler to build recent enough
@@ -211,13 +75,13 @@ set(CHICKEN_INCLUDE_DIRS ${chicken_BINARY_DIR})
 if(CHICKEN_BOOTSTRAP AND NOT CMAKE_CROSSCOMPILING)
     set(stage1_SUFFIX ".stage1")
 
-    chicken_add_runtime(libchicken-stage1 STATIC
+    add_chicken_runtime(libchicken-stage1 STATIC
         SUFFIX ${stage1_SUFFIX}
         OPTIONS ${LIBRARY_OPTIONS})
 
     set(CHICKEN_STATIC_LIBRARIES libchicken-stage1 ${CHICKEN_EXTRA_LIBRARIES})
 
-    chicken_add_compiler(chicken-compiler-stage1 STATIC
+    add_chicken_compiler(chicken-compiler-stage1 STATIC
         SUFFIX ${stage1_SUFFIX}
         OPTIONS ${PROGRAM_OPTIONS})
 
@@ -226,12 +90,12 @@ endif()
 
 list(APPEND CHICKEN_OPTIONS -specialize -types ${CHICKEN_TYPES_DB})
 
-chicken_add_runtime(libchicken SHARED
+add_chicken_runtime(libchicken SHARED
     OPTIONS ${LIBRARY_OPTIONS})
 
 set(CHICKEN_LIBRARIES libchicken ${CHICKEN_EXTRA_LIBRARIES})
 
-chicken_add_compiler(chicken-compiler OUTPUT_NAME chicken
+add_chicken_compiler(chicken-compiler OUTPUT_NAME chicken
     OPTIONS ${PROGRAM_OPTIONS})
 
 if(NOT CMAKE_CROSSCOMPILING)
@@ -245,7 +109,7 @@ install(TARGETS libchicken chicken-compiler
     RUNTIME DESTINATION ${INSTALL_BINDIR})
 
 if(BUILD_STATIC_LIBS)
-    chicken_add_runtime(libchicken-static STATIC
+    add_chicken_runtime(libchicken-static STATIC
         OPTIONS ${LIBRARY_OPTIONS})
 
     set(CHICKEN_STATIC_LIBRARIES libchicken-static ${CHICKEN_EXTRA_LIBRARIES})
