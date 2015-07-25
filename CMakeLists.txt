@@ -1,21 +1,13 @@
 cmake_minimum_required(VERSION 2.8.4)
 
-if(POLICY CMP0042)
-    # MACOSX_RPATH is enabled by default
-    cmake_policy(SET CMP0042 OLD)
-endif()
-if(POLICY CMP0048)
-    # The project() command manages VERSION variables
-    cmake_policy(SET CMP0048 NEW)
-endif()
+include(ChickenBuild)
 
-# search for CMake includes in the project directory first
-set(CMAKE_MODULE_PATH ${CMAKE_HOME_DIRECTORY}/cmake CACHE INTERNAL "")
-# override default platform compiler flags
-set(CMAKE_USER_MAKE_RULES_OVERRIDE
-    ${CMAKE_HOME_DIRECTORY}/cmake/ChickenPlatformOverride.cmake)
+_set_policies()
+_set_global_properties()
 
 project(chicken C ASM)
+
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 include(CMakeDependentOption)
 
@@ -30,22 +22,7 @@ mark_as_advanced(BUILD_STATIC_LIBS BUILD_SHARED_LIBS BUILD_STATIC_PROGRAMS)
 enable_testing()
 add_custom_target(BUILD_TESTS)
 
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-
-if(WIN32)
-    # Windows tries to load shared libraries from the same directory where
-    # the executable is placed. To bootstrap properly we need this to use the
-    # just compiled runtime.
-    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
-    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
-    set(CMAKE_PDB_OUTPUT_DIRECTORY     ${PROJECT_BINARY_DIR})
-elseif(XCODE_VERSION)
-    # Xcode assumes this, have not found a way to change it from CMake
-    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/build)
-    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/build)
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/build)
-endif()
+_set_output_directories()
 
 find_package(Chicken REQUIRED)
 
@@ -53,12 +30,12 @@ set(CHICKEN_RUN      ${CMAKE_SOURCE_DIR}/cmake/ChickenRun.cmake)
 set(CHICKEN_TYPES_DB ${CMAKE_SOURCE_DIR}/types.db)
 set(CHICKEN_DEPENDS  "")
 
-include(ChickenBuild)
-
 write_chicken_build_tag()
 find_chicken_apply_hack()
 
 include(ChickenConfigure)
+
+_generate_config_h()
 
 set(CHICKEN_OPTIONS -optimize-level 2 -inline -ignore-repository -feature chicken-bootstrap)
 set(LIBRARY_OPTIONS -explicit-use -no-trace)
