@@ -17,6 +17,16 @@ set(CMAKE_USER_MAKE_RULES_OVERRIDE
 
 project(chicken C ASM)
 
+include(CMakeDependentOption)
+
+option(BUILD_SHARED_LIBS "Build shared libraries" YES)
+option(BUILD_STATIC_LIBS "Build static libraries" NO)
+option(CHICKEN_BOOTSTRAP "Bootstrap build" YES)
+
+cmake_dependent_option(BUILD_STATIC_PROGRAMS "Build static programs" YES
+    "BUILD_STATIC_LIBS" NO)
+mark_as_advanced(BUILD_STATIC_LIBS BUILD_SHARED_LIBS BUILD_STATIC_PROGRAMS)
+
 enable_testing()
 add_custom_target(BUILD_TESTS)
 
@@ -43,10 +53,12 @@ set(CHICKEN_RUN      ${CMAKE_SOURCE_DIR}/cmake/ChickenRun.cmake)
 set(CHICKEN_TYPES_DB ${CMAKE_SOURCE_DIR}/types.db)
 set(CHICKEN_DEPENDS  "")
 
-include(ChickenConfigure)
 include(ChickenBuild)
 
 write_chicken_build_tag()
+find_chicken_apply_hack()
+
+include(ChickenConfigure)
 
 set(CHICKEN_OPTIONS -optimize-level 2 -inline -ignore-repository -feature chicken-bootstrap)
 set(LIBRARY_OPTIONS -explicit-use -no-trace)

@@ -1,6 +1,5 @@
 # - Chicken Parameters
 
-include(CMakeDependentOption)
 include(GNUInstallDirs)
 include(FindPackageMessage)
 
@@ -16,14 +15,6 @@ set(API_VERSION 7 CACHE INTERNAL "")
 
 # TODO: is there a way to detect this?
 set(STACKDIRECTION 1)
-
-option(BUILD_SHARED_LIBS "Build shared libraries" YES)
-option(BUILD_STATIC_LIBS "Build static libraries" NO)
-option(CHICKEN_BOOTSTRAP "Bootstrap build" YES)
-
-cmake_dependent_option(BUILD_STATIC_PROGRAMS "Build static programs" YES
-    "BUILD_STATIC_LIBS" NO)
-mark_as_advanced(BUILD_STATIC_LIBS BUILD_SHARED_LIBS BUILD_STATIC_PROGRAMS)
 
 option(CHICKEN_GC_HOOKS "Enable GC hooks" NO)
 option(CHICKEN_COLLECT_ALL_SYMBOLS "Always collect all unused symbols" NO)
@@ -183,26 +174,6 @@ foreach(lib ${CHICKEN_EXTRA_LIBRARIES})
     set(CHICKEN_CONFIG_MORE_LIBS "${CHICKEN_CONFIG_MORE_LIBS} -l${lib}")
 endforeach()
 string(STRIP "${CHICKEN_CONFIG_MORE_LIBS}" CHICKEN_CONFIG_MORE_LIBS)
-
-function(_chicken_find_apply_hack)
-    if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
-        set(arch x86-64)
-    elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "i686")
-        set(arch x86)
-    else()
-        set(arch ${CMAKE_SYSTEM_PROCESSOR})
-    endif()
-
-    set(source ${CMAKE_CURRENT_SOURCE_DIR}/apply-hack.${arch}.S)
-
-    if(EXISTS ${source} AND CMAKE_ASM_COMPILER_WORKS AND NOT MSVC)
-        set(CHICKEN_APPLY_HACK ${source} CACHE INTERNAL "")
-        set(C_HACKED_APPLY YES PARENT_SCOPE)
-        find_package_message(CHICKEN_APPLY_HACK "Found apply hack: ${source}"
-            "${CHICKEN_APPLY_HACK}")
-    endif()
-endfunction()
-_chicken_find_apply_hack()
 
 set(CHICKEN_CONFIG_H ${CMAKE_CURRENT_BINARY_DIR}/chicken-config.h)
 configure_file("chicken-config.h.in" ${CHICKEN_CONFIG_H})
