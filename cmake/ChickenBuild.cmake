@@ -39,6 +39,25 @@ function(write_chicken_build_tag)
     endif()
 endfunction()
 
+function(find_chicken_apply_hack)
+    if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+        set(arch x86-64)
+    elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "i686")
+        set(arch x86)
+    else()
+        set(arch ${CMAKE_SYSTEM_PROCESSOR})
+    endif()
+
+    set(source ${CMAKE_CURRENT_SOURCE_DIR}/apply-hack.${arch}.S)
+
+    if(EXISTS ${source} AND CMAKE_ASM_COMPILER_WORKS AND NOT MSVC)
+        set(CHICKEN_APPLY_HACK ${source} CACHE INTERNAL "")
+        set(C_HACKED_APPLY YES PARENT_SCOPE)
+        find_package_message(CHICKEN_APPLY_HACK "Found apply hack: ${source}"
+            "${CHICKEN_APPLY_HACK}")
+    endif()
+endfunction()
+
 function(add_chicken_runtime name)
     cmake_parse_arguments(runtime "STATIC;SHARED" "SUFFIX" "OPTIONS" ${ARGN})
 
