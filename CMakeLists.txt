@@ -39,13 +39,14 @@ endif()
 
 find_package(Chicken REQUIRED)
 
-set(CHICKEN_RUN ${CMAKE_SOURCE_DIR}/cmake/ChickenRun.cmake)
+set(CHICKEN_RUN      ${CMAKE_SOURCE_DIR}/cmake/ChickenRun.cmake)
 set(CHICKEN_TYPES_DB ${CMAKE_SOURCE_DIR}/types.db)
-set(CHICKEN_DEPENDS)
+set(CHICKEN_DEPENDS  "")
 
-include(ChickenBuildTag)
 include(ChickenConfigure)
 include(ChickenBuild)
+
+write_chicken_build_tag()
 
 set(CHICKEN_OPTIONS -optimize-level 2 -inline -ignore-repository -feature chicken-bootstrap)
 set(LIBRARY_OPTIONS -explicit-use -no-trace)
