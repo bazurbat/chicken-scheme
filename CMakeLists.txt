@@ -70,7 +70,7 @@ function(chicken_add_runtime name)
 
     set(sources)
     set(options ${runtime_OPTIONS})
-    set(c_sources chicken.h fs.h runtime.c ${CHICKEN_APPLY_HACK})
+    set(c_sources chicken.h runtime.c ${CHICKEN_APPLY_HACK})
 
     if(WIN32)
         set(posix_scm posixwin.scm)
