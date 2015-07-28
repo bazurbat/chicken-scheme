@@ -310,8 +310,8 @@
 	|   |-- libchicken.a
 	|   |-- libchicken.dll.a                      (Windows)
 	|   |-- libchicken.dylib                      (Macintosh)
-	|   |-- libchicken.so -> libchicken.so.6      (Unix)
-	|   `-- libchicken.so.6			      (Unix)
+	|   |-- libchicken.so -> libchicken.so.7      (Unix)
+	|   `-- libchicken.so.7			      (Unix)
 	`-- share
 	    |-- chicken
 	    |   |-- doc
