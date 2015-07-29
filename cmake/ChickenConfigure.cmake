@@ -174,3 +174,7 @@ foreach(lib ${CHICKEN_EXTRA_LIBRARIES})
     set(CHICKEN_CONFIG_MORE_LIBS "${CHICKEN_CONFIG_MORE_LIBS} -l${lib}")
 endforeach()
 string(STRIP "${CHICKEN_CONFIG_MORE_LIBS}" CHICKEN_CONFIG_MORE_LIBS)
+
+set(CHICKEN_CONFIG_H ${CMAKE_CURRENT_BINARY_DIR}/chicken-config.h)
+
+configure_file("chicken-config.h.in" ${CHICKEN_CONFIG_H})

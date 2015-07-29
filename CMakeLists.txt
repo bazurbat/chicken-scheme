@@ -1,28 +1,36 @@
 cmake_minimum_required(VERSION 2.8.4)
 
-include(ChickenBuild)
+if(POLICY CMP0042)
+    # MACOSX_RPATH is enabled by default
+    cmake_policy(SET CMP0042 OLD)
+endif()
+if(POLICY CMP0048)
+    # The project() command manages VERSION variables
+    cmake_policy(SET CMP0048 NEW)
+endif()
 
-_set_policies()
-_set_global_properties()
-
-project(chicken C ASM)
+set(CMAKE_MODULE_PATH ${CMAKE_HOME_DIRECTORY}/cmake)
+set(CMAKE_USER_MAKE_RULES_OVERRIDE ${CMAKE_MODULE_PATH}/ChickenPlatformOverride.cmake)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 include(CMakeDependentOption)
 
+project(chicken C ASM)
+
 option(BUILD_SHARED_LIBS "Build shared libraries" YES)
 option(BUILD_STATIC_LIBS "Build static libraries" NO)
-option(CHICKEN_BOOTSTRAP "Bootstrap build" YES)
+mark_as_advanced(BUILD_SHARED_LIBS BUILD_STATIC_LIBS)
 
 cmake_dependent_option(BUILD_STATIC_PROGRAMS "Build static programs" YES
     "BUILD_STATIC_LIBS" NO)
-mark_as_advanced(BUILD_STATIC_LIBS BUILD_SHARED_LIBS BUILD_STATIC_PROGRAMS)
+mark_as_advanced(BUILD_STATIC_PROGRAMS)
+
+option(CHICKEN_BOOTSTRAP "Bootstrap build" YES)
+mark_as_advanced(CHICKEN_BOOTSTRAP)
 
 enable_testing()
 add_custom_target(BUILD_TESTS)
-
-_set_output_directories()
 
 find_package(Chicken REQUIRED)
 
@@ -30,12 +38,13 @@ set(CHICKEN_RUN      ${CMAKE_SOURCE_DIR}/cmake/ChickenRun.cmake)
 set(CHICKEN_TYPES_DB ${CMAKE_SOURCE_DIR}/types.db)
 set(CHICKEN_DEPENDS  "")
 
+include(ChickenBuild)
+
+_set_output_directories()
 write_chicken_build_tag()
 find_chicken_apply_hack()
 
 include(ChickenConfigure)
-
-_generate_config_h()
 
 set(CHICKEN_OPTIONS -optimize-level 2 -inline -ignore-repository -feature chicken-bootstrap)
 set(LIBRARY_OPTIONS -explicit-use -no-trace)

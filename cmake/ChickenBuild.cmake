@@ -1,21 +1,3 @@
-macro(_set_policies)
-    if(POLICY CMP0042)
-        # MACOSX_RPATH is enabled by default
-        cmake_policy(SET CMP0042 OLD)
-    endif()
-    if(POLICY CMP0048)
-        # The project() command manages VERSION variables
-        cmake_policy(SET CMP0048 NEW)
-    endif()
-endmacro(_set_policies)
-
-macro(_set_global_properties)
-    set(CMAKE_MODULE_PATH
-        ${CMAKE_HOME_DIRECTORY}/cmake CACHE INTERNAL "")
-    set(CMAKE_USER_MAKE_RULES_OVERRIDE
-        ${CMAKE_HOME_DIRECTORY}/cmake/ChickenPlatformOverride.cmake)
-endmacro(_set_global_properties)
-
 macro(_set_output_directories)
     if(WIN32)
         # Windows tries to load shared libraries from the same directory where
@@ -92,11 +74,6 @@ function(find_chicken_apply_hack)
             "${CHICKEN_APPLY_HACK}")
     endif()
 endfunction()
-
-function(_generate_config_h)
-    set(CHICKEN_CONFIG_H ${CMAKE_CURRENT_BINARY_DIR}/chicken-config.h)
-    configure_file("chicken-config.h.in" ${CHICKEN_CONFIG_H})
-endfunction(_generate_config_h)
 
 function(add_chicken_runtime name)
     cmake_parse_arguments(runtime "STATIC;SHARED" "SUFFIX" "OPTIONS" ${ARGN})
