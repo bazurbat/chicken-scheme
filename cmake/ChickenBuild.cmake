@@ -150,7 +150,7 @@ function(add_chicken_runtime name)
         if(NOT ANDROID)
             set_target_properties(${name} PROPERTIES
                 SUFFIX ""
-                OUTPUT_NAME ${name}${CMAKE_SHARED_LIBRARY_SUFFIX}.${API_VERSION})
+                OUTPUT_NAME ${name}${CMAKE_SHARED_LIBRARY_SUFFIX}.${CHICKEN_API_VERSION})
         endif()
     endif()
 endfunction()
