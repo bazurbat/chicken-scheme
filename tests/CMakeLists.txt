@@ -8,6 +8,7 @@ set(CHICKEN_REPOSITORY ${CHICKEN_LOCAL_REPOSITORY}/$<CONFIGURATION>)
 set(CHICKEN_OPTIONS -ignore-repository
     -types ${CHICKEN_TYPES_DB}
     -include-path ${chicken_SOURCE_DIR})
+list(APPEND CHICKEN_INCLUDE_DIRS ${chicken_SOURCE_DIR})
 
 set(CHICKEN_TRIM ${CMAKE_HOME_DIRECTORY}/cmake/ChickenTrim.cmake)
 
