@@ -2,19 +2,14 @@
 
 include(GNUInstallDirs)
 
-set(C_GC_HOOKS 0)
-set(C_COLLECT_ALL_SYMBOLS 0)
-set(C_CROSS_CHICKEN 0)
-set(C_STACK_GROWS_DOWNWARD 1)
-
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(DEBUGBUILD 1)
-endif()
-
 find_program(CHICKEN_INSTALL_CC      gcc)
 find_program(CHICKEN_INSTALL_CXX     g++)
 find_program(CHICKEN_INSTALL_WINDRES windres)
 mark_as_advanced(CHICKEN_INSTALL_CC CHICKEN_INSTALL_CXX CHICKEN_INSTALL_WINDRES)
+
+if(NOT CHICKEN_INSTALL_WINDRES)
+    set(CHICKEN_INSTALL_WINDRES "")
+endif()
 
 set(CHICKEN_TARGET_CC      gcc     CACHE STRING "")
 set(CHICKEN_TARGET_CXX     g++     CACHE STRING "")
@@ -23,6 +18,8 @@ mark_as_advanced(CHICKEN_TARGET_CC CHICKEN_TARGET_CXX CHICKEN_TARGET_WINDRES)
 
 set(CHICKEN_TARGET_ROOT_DIR "" CACHE PATH "")
 set(CHICKEN_TARGET_RUN_PREFIX ${CMAKE_INSTALL_PREFIX} CACHE PATH "")
+mark_as_advanced(CHICKEN_TARGET_ROOT_DIR CHICKEN_TARGET_RUN_PREFIX)
+
 set(TARGET_PREFIX ${CHICKEN_TARGET_ROOT_DIR}${CHICKEN_TARGET_RUN_PREFIX})
 
 if(WIN32)
@@ -105,6 +102,11 @@ check_symbol_exists("strlcpy"        "string.h"  HAVE_STRLCPY)
 check_symbol_exists("strtoll"        "stdlib.h"  HAVE_STRTOLL)
 check_symbol_exists("strtoq"         "stdlib.h"  HAVE_STRTOQ)
 
+set(C_GC_HOOKS 0)
+set(C_COLLECT_ALL_SYMBOLS 0)
+set(C_CROSS_CHICKEN 0)
+set(C_STACK_GROWS_DOWNWARD 1)
+
 if(WIN32)
     set(C_USES_SONAME 0)
     set(C_WINDOWS_SHELL 1)
@@ -114,6 +116,7 @@ else()
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(DEBUGBUILD 1)
     set(CHICKEN_C_FLAGS_CONFIG ${CMAKE_C_FLAGS_DEBUG})
 elseif(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
     set(CHICKEN_C_FLAGS_CONFIG ${CMAKE_C_FLAGS_MINSIZEREL})
