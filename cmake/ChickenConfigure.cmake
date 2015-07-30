@@ -1,15 +1,6 @@
 # - Chicken Parameters
 
 include(GNUInstallDirs)
-include(FindPackageMessage)
-
-# The most of these settings are only needed to generate somewhat backward
-# compatible chicken-config.h and make CHICKEN's command line utilities happy,
-# this provides smoother migration path for those who are not yet ready to
-# fully embrace CMake. The host/target/cross split and prefixes are
-# deliberately not implemented because they add quite a lot of obscurity.
-# Cross compilation should work just fine with setting CMAKE_SYSTEM_NAME,
-# CMAKE_SYSTEM_PROCESSOR only.
 
 set(API_VERSION 7 CACHE INTERNAL "")
 
