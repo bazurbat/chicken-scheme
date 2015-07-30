@@ -169,20 +169,6 @@ function(_chicken_append_include_path_options source_file)
     endforeach()
 endfunction()
 
-# Sets the outputs for the specified CHICKEN source file. Internal.
-function(_chicken_set_outputs source_file out_file)
-    set(outputs ${out_file})
-
-    foreach(filename ${ARGN})
-        list(APPEND outputs ${CHICKEN_IMPORT_LIBRARY_DIR}/${filename})
-        set_property(SOURCE ${CHICKEN_IMPORT_LIBRARY_DIR}/${filename}
-            PROPERTY CHICKEN_IMPORT_LIBRARY YES)
-    endforeach()
-
-    set_property(SOURCE ${source_file} PROPERTY
-        CHICKEN_OUTPUTS ${outputs})
-endfunction()
-
 # Helper function for automatic dependecy extraction. Internal.
 function(_chicken_extract_depends out_var dep_path)
     set(result "")
@@ -244,12 +230,16 @@ function(_chicken_command out_var in_file)
     _chicken_append_include_path_options(${in_file} ${includes})
     _chicken_append_emit_options(${in_file} ${compile_EMIT_IMPORTS})
 
-    _chicken_set_outputs(${in_file} ${out_path} ${imports})
+    set(outputs ${out_path})
+
+    foreach(filename ${imports})
+        list(APPEND outputs ${CHICKEN_IMPORT_LIBRARY_DIR}/${filename})
+        set_property(SOURCE ${CHICKEN_IMPORT_LIBRARY_DIR}/${filename}
+            PROPERTY CHICKEN_IMPORT_LIBRARY YES)
+    endforeach()
 
     get_property(options SOURCE ${in_file}
         PROPERTY CHICKEN_OPTIONS)
-    get_property(outputs SOURCE ${in_file}
-        PROPERTY CHICKEN_OUTPUTS)
     get_property(import_library SOURCE ${in_file}
         PROPERTY CHICKEN_IMPORT_LIBRARY)
 
