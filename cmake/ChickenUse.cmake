@@ -44,7 +44,7 @@ macro(_chicken_parse_arguments)
     cmake_parse_arguments(compile
         "STATIC;SHARED;MODULE;EMBEDDED;EXTENSION;NO_RUNTIME"
         "SUFFIX;ERROR_FILE"
-        "SOURCES;EMIT_IMPORTS;OPTIONS;DEFINITIONS;DEPENDS"
+        "SOURCES;C_SOURCES;EMIT_IMPORTS;OPTIONS;DEFINITIONS;DEPENDS"
         ${ARGN})
 
     # Assume everything not in the above lists of parsed arguments to be input
@@ -283,6 +283,7 @@ function(_chicken_command out_var in_file)
 
     if(compile_ERROR_FILE)
         set(out_path ${compile_ERROR_FILE})
+        set(outputs ${out_path})
     else()
         list(APPEND chicken_command -output-file ${out_path})
     endif()
@@ -350,7 +351,13 @@ function(add_chicken_sources out_var)
         list(APPEND ${out_var} ${out_file})
     endforeach()
 
-    list(APPEND ${out_var} ${compile_SOURCES})
+    foreach(src ${compile_C_SOURCES})
+        _chicken_set_compile_definitions(${src})
+        list(APPEND ${out_var} ${src})
+    endforeach()
+
+    # TODO: need some other way to show them in IDE but not in out_var
+    # list(APPEND ${out_var} ${compile_SOURCES})
     set(${out_var} ${${out_var}} PARENT_SCOPE)
 endfunction()
 
