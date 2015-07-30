@@ -1,44 +1,20 @@
-# - Chicken Parameters
+# - Chicken Configure
 
 include(GNUInstallDirs)
 
-set(API_VERSION 7 CACHE INTERNAL "")
-
-# TODO: is there a way to detect this?
-set(STACKDIRECTION 1)
-
-option(CHICKEN_GC_HOOKS "Enable GC hooks" NO)
-option(CHICKEN_COLLECT_ALL_SYMBOLS "Always collect all unused symbols" NO)
-mark_as_advanced(CHICKEN_GC_HOOKS CHICKEN_COLLECT_ALL_SYMBOLS)
-
-if(CHICKEN_GC_HOOKS)
-    set(C_GC_HOOKS 1)
-endif()
-if(CHICKEN_COLLECT_ALL_SYMBOLS)
-    set(C_COLLECT_ALL_SYMBOLS 1)
-endif()
+set(C_GC_HOOKS 0)
+set(C_COLLECT_ALL_SYMBOLS 0)
+set(C_CROSS_CHICKEN 0)
+set(C_STACK_GROWS_DOWNWARD 1)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(DEBUGBUILD 1)
 endif()
 
-set(CHICKEN_CONFIG_CROSS 0 CACHE BOOL "Set C_CROSS_CHICKEN in chicken-config.h")
-mark_as_advanced(CHICKEN_CONFIG_CROSS)
-
-set(CHICKEN_INSTALL_NAME chicken CACHE STRING
-    "Canonical Chicken name")
-mark_as_advanced(CHICKEN_INSTALL_NAME)
-
 find_program(CHICKEN_INSTALL_CC          gcc)
 find_program(CHICKEN_INSTALL_CXX         g++)
 find_program(CHICKEN_INSTALL_RC_COMPILER windres)
 mark_as_advanced(CHICKEN_INSTALL_CC CHICKEN_INSTALL_CXX CHICKEN_INSTALL_RC_COMPILER)
-
-set(CHICKEN_TARGET_NAME  ${CHICKEN_INSTALL_NAME} CACHE STRING
-    "Canonical target Chicken name")
-set(CHICKEN_TARGET_FEATURES "" CACHE STRING
-    "Target features")
-mark_as_advanced(CHICKEN_TARGET_NAME CHICKEN_TARGET_FEATURES)
 
 set(CHICKEN_TARGET_CC          gcc     CACHE STRING "")
 set(CHICKEN_TARGET_CXX         g++     CACHE STRING "")
@@ -60,7 +36,7 @@ if(WIN32)
 else()
     set(INSTALL_BINDIR     bin)
     set(INSTALL_LIBDIR     lib)
-    set(INSTALL_EGGDIR     lib/${CHICKEN_INSTALL_NAME}/${API_VERSION})
+    set(INSTALL_EGGDIR     lib/${CHICKEN_INSTALL_NAME}/${CHICKEN_API_VERSION})
     set(INSTALL_DATADIR    share/${CHICKEN_INSTALL_NAME})
     set(INSTALL_DOCDIR     ${INSTALL_DATADIR}/doc)
     set(INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/${CHICKEN_INSTALL_NAME})
@@ -69,7 +45,7 @@ endif()
 
 set(TARGET_BINDIR      ${INSTALL_BINDIR})
 set(TARGET_LIBDIR      ${INSTALL_LIBDIR})
-set(TARGET_EGGDIR      ${TARGET_LIBDIR}/${CHICKEN_TARGET_NAME}/${API_VERSION})
+set(TARGET_EGGDIR      ${TARGET_LIBDIR}/${CHICKEN_TARGET_NAME}/${CHICKEN_API_VERSION})
 set(TARGET_DATADIR     share/${CHICKEN_TARGET_NAME})
 set(TARGET_INCLUDEDIR  ${CMAKE_INSTALL_INCLUDEDIR}/${CHICKEN_TARGET_NAME})
 

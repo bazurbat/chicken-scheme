@@ -29,6 +29,16 @@ mark_as_advanced(BUILD_STATIC_PROGRAMS)
 option(CHICKEN_BOOTSTRAP "Bootstrap build" YES)
 mark_as_advanced(CHICKEN_BOOTSTRAP)
 
+set(CHICKEN_INSTALL_NAME chicken CACHE STRING
+    "The name of CHICKEN library and directories")
+mark_as_advanced(CHICKEN_INSTALL_NAME)
+
+set(CHICKEN_TARGET_NAME  ${CHICKEN_INSTALL_NAME} CACHE STRING
+    "The name of target CHICKEN library and directories")
+set(CHICKEN_TARGET_FEATURES "" CACHE STRING
+    "Target features")
+mark_as_advanced(CHICKEN_TARGET_NAME CHICKEN_TARGET_FEATURES)
+
 enable_testing()
 add_custom_target(BUILD_TESTS)
 
