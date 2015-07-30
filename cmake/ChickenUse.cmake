@@ -139,15 +139,6 @@ function(_chicken_set_compile_options source_file)
         CHICKEN_OPTIONS ${options})
 endfunction()
 
-# Appends emit-import-library options to the specified CHICKEN source file
-# corresponding to the names given as arguments. Internal.
-function(_chicken_append_emit_options source_file)
-    foreach(emit ${ARGN})
-        set_property(SOURCE ${source_file} APPEND PROPERTY
-            CHICKEN_OPTIONS -emit-import-library ${emit})
-    endforeach()
-endfunction()
-
 # Appends include-path options to the specified CHICKEN source file
 # corresponding to the paths given as arguments. Internal.
 function(_chicken_append_include_path_options source_file)
@@ -215,11 +206,12 @@ function(_chicken_command out_var in_file)
 
     _chicken_set_compile_options(${in_file})
     _chicken_append_include_path_options(${in_file} ${includes})
-    _chicken_append_emit_options(${in_file} ${compile_EMIT_IMPORTS})
 
     set(outputs ${out_path})
 
     foreach(emit ${compile_EMIT_IMPORTS})
+        set_property(SOURCE ${in_file} APPEND PROPERTY
+            CHICKEN_OPTIONS -emit-import-library ${emit})
         set(_filename ${CHICKEN_IMPORT_LIBRARY_DIR}/${emit}.import.scm)
         list(APPEND outputs ${_filename})
         set_property(SOURCE ${_filename} PROPERTY CHICKEN_IMPORT_LIBRARY YES)
