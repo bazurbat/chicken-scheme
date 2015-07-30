@@ -98,18 +98,6 @@ function(_chicken_get_include_paths out_var source_file)
     set(${out_var} ${paths} PARENT_SCOPE)
 endfunction()
 
-# Sets the 'out_var' to the list of import library filenames corresponding to
-# the names given as arguments. Internal.
-function(_chicken_get_import_libraries out_var)
-    set(libs)
-
-    foreach(emit ${ARGN})
-        list(APPEND libs ${emit}.import.scm)
-    endforeach()
-
-    set(${out_var} ${libs} PARENT_SCOPE)
-endfunction()
-
 # Sets CHICKEN specific compile definitions for the specified C source file.
 # Internal. Assumes that arguments were parsed.
 function(_chicken_set_compile_definitions source_file)
@@ -224,7 +212,6 @@ function(_chicken_command out_var in_file)
     endif()
 
     _chicken_get_include_paths(includes ${in_file})
-    _chicken_get_import_libraries(imports ${compile_EMIT_IMPORTS})
 
     _chicken_set_compile_options(${in_file})
     _chicken_append_include_path_options(${in_file} ${includes})
@@ -232,10 +219,10 @@ function(_chicken_command out_var in_file)
 
     set(outputs ${out_path})
 
-    foreach(filename ${imports})
-        list(APPEND outputs ${CHICKEN_IMPORT_LIBRARY_DIR}/${filename})
-        set_property(SOURCE ${CHICKEN_IMPORT_LIBRARY_DIR}/${filename}
-            PROPERTY CHICKEN_IMPORT_LIBRARY YES)
+    foreach(emit ${compile_EMIT_IMPORTS})
+        set(_filename ${CHICKEN_IMPORT_LIBRARY_DIR}/${emit}.import.scm)
+        list(APPEND outputs ${_filename})
+        set_property(SOURCE ${_filename} PROPERTY CHICKEN_IMPORT_LIBRARY YES)
     endforeach()
 
     get_property(options SOURCE ${in_file}
