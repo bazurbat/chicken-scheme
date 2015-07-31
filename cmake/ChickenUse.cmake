@@ -68,7 +68,7 @@ endmacro()
 # Sets the 'out_var' to the list of include paths for the specified CHICKEN
 # source file. Internal.
 function(_chicken_get_include_paths out_var source_file)
-    set(paths)
+    set(paths "")
 
     get_filename_component(source_path ${source_file} ABSOLUTE)
     get_filename_component(source_dir ${source_path} DIRECTORY)
@@ -98,23 +98,9 @@ function(_chicken_get_include_paths out_var source_file)
     set(${out_var} ${paths} PARENT_SCOPE)
 endfunction()
 
-# Sets CHICKEN specific compile definitions for the specified C source file.
-# Internal. Assumes that arguments were parsed.
-function(_chicken_set_compile_definitions source_file)
-    if(compile_SHARED)
-        set_property(SOURCE ${source_file} APPEND PROPERTY
-            COMPILE_DEFINITIONS C_SHARED)
-    endif()
-
-    if(compile_EMBEDDED)
-        set_property(SOURCE ${source_file} APPEND PROPERTY
-            COMPILE_DEFINITIONS C_EMBEDDED)
-    endif()
-endfunction()
-
-# Sets generic options for the specified CHICKEN source file.
-# Internal. Assumes that arguments were parsed.
-function(_chicken_set_compile_options source_file)
+# Sets the 'out_var' to the list of CHICKEN compiler options for the specified
+# source file. Internal. Assumes that arguments were parsed.
+function(_chicken_get_options out_var source_file)
     set(options ${CHICKEN_OPTIONS})
 
     if(compile_SHARED AND NOT compile_EMBEDDED)
@@ -133,19 +119,33 @@ function(_chicken_set_compile_options source_file)
         list(APPEND options -feature compiling-extension)
     endif()
 
+    _chicken_get_include_paths(includes ${source_file})
+
+    foreach(path ${includes})
+        list(APPEND options -include-path ${path})
+    endforeach()
+
+    foreach(emit ${compile_EMIT_IMPORTS})
+        list(APPEND options -emit-import-library ${emit})
+    endforeach()
+
     list(APPEND options ${compile_OPTIONS})
 
-    set_property(SOURCE ${source_file} PROPERTY
-        CHICKEN_OPTIONS ${options})
+    set(${out_var} ${options} PARENT_SCOPE)
 endfunction()
 
-# Appends include-path options to the specified CHICKEN source file
-# corresponding to the paths given as arguments. Internal.
-function(_chicken_append_include_path_options source_file)
-    foreach(arg ${ARGN})
+# Sets CHICKEN specific compile definitions for the specified C source file.
+# Internal. Assumes that arguments were parsed.
+function(_chicken_set_compile_definitions source_file)
+    if(compile_SHARED)
         set_property(SOURCE ${source_file} APPEND PROPERTY
-            CHICKEN_OPTIONS -include-path ${arg})
-    endforeach()
+            COMPILE_DEFINITIONS C_SHARED)
+    endif()
+
+    if(compile_EMBEDDED)
+        set_property(SOURCE ${source_file} APPEND PROPERTY
+            COMPILE_DEFINITIONS C_EMBEDDED)
+    endif()
 endfunction()
 
 # Helper function for automatic dependecy extraction. Internal.
@@ -202,23 +202,18 @@ function(_chicken_command out_var in_file)
         get_filename_component(out_path ${CMAKE_CURRENT_BINARY_DIR}/${out_name} ABSOLUTE)
     endif()
 
-    _chicken_get_include_paths(includes ${in_file})
-
-    _chicken_set_compile_options(${in_file})
-    _chicken_append_include_path_options(${in_file} ${includes})
+    _chicken_get_options(options ${in_file})
 
     set(outputs ${out_path})
+    set(imports "")
 
     foreach(emit ${compile_EMIT_IMPORTS})
-        set_property(SOURCE ${in_file} APPEND PROPERTY
-            CHICKEN_OPTIONS -emit-import-library ${emit})
         set(_filename ${CHICKEN_IMPORT_LIBRARY_DIR}/${emit}.import.scm)
         list(APPEND outputs ${_filename})
+        list(APPEND imports ${emit}.import.scm)
         set_property(SOURCE ${_filename} PROPERTY CHICKEN_IMPORT_LIBRARY YES)
     endforeach()
 
-    get_property(options SOURCE ${in_file}
-        PROPERTY CHICKEN_OPTIONS)
     get_property(import_library SOURCE ${in_file}
         PROPERTY CHICKEN_IMPORT_LIBRARY)
 
