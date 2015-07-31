@@ -8,7 +8,6 @@ set(CHICKEN_REPOSITORY ${CHICKEN_LOCAL_REPOSITORY}/$<CONFIGURATION>)
 set(CHICKEN_OPTIONS -ignore-repository
     -types ${CHICKEN_TYPES_DB}
     -include-path ${chicken_SOURCE_DIR})
-set(CHICKEN_IMPORT_LIBRARY_DIR "")
 set(CHICKEN_DATA_DIR "")
 list(APPEND CHICKEN_INCLUDE_DIRS ${chicken_SOURCE_DIR})
 
@@ -29,8 +28,11 @@ function(add_chicken_test name)
 
     set(environment ${test_ENVIRONMENT})
     list(APPEND environment CHICKEN_REPOSITORY=${CHICKEN_REPOSITORY})
-    list(APPEND environment LD_LIBRARY_PATH=${chicken_BINARY_DIR})
-    list(APPEND environment DYLD_LIBRARY_PATH=${chicken_BINARY_DIR})
+    if(APPLE)
+        list(APPEND environment DYLD_LIBRARY_PATH=${chicken_BINARY_DIR})
+    elseif(UNIX)
+        list(APPEND environment LD_LIBRARY_PATH=${chicken_BINARY_DIR})
+    endif()
 
     if(test_PATH)
         file(TO_CMAKE_PATH "$ENV{PATH}" path)
@@ -57,10 +59,10 @@ function(add_chicken_test name)
 endfunction()
 
 function(add_compiled_test name)
-    cmake_parse_arguments(test "" "ARGS;OUTPUT_FILE" "" ${ARGN})
+    cmake_parse_arguments(test "" "ARGS;OUTPUT_FILE" "ENVIRONMENT" ${ARGN})
     add_chicken_executable(${name} ${test_UNPARSED_ARGUMENTS})
     add_chicken_test(${name} $<TARGET_FILE:${name}> ${test_ARGS}
-        OUTPUT_FILE "${test_OUTPUT_FILE}")
+        OUTPUT_FILE "${test_OUTPUT_FILE}" ENVIRONMENT ${test_ENVIRONMENT})
     add_dependencies(BUILD_TESTS ${name})
     set_target_properties(${name} PROPERTIES FOLDER "Tests")
 endfunction()
@@ -237,11 +239,11 @@ add_compiled_test(dynamic-wind dwindtst.scm
     OUTPUT_FILE dynamic-wind.out)
 
 add_test(NAME dynamic-wind-expected COMMAND ${CMAKE_COMMAND} -E compare_files
-    dynamic-wind.out dwindtst.expected.t)
+    dynamic-wind.out dwindtst.expected)
 set_tests_properties(dynamic-wind-expected PROPERTIES DEPENDS dynamic-wind)
 
 add_test(NAME dynamic-wind-i-expected COMMAND ${CMAKE_COMMAND} -E compare_files
-    dynamic-wind-i.out dwindtst.expected.t)
+    dynamic-wind-i.out dwindtst.expected)
 set_tests_properties(dynamic-wind-i-expected PROPERTIES DEPENDS dynamic-wind-i)
 
 # lolevel tests
@@ -355,9 +357,9 @@ add_chicken_interpreted_test(import SCRIPT import-tests.scm)
 # TODO: handle running with or without compiled import library
 
 add_chicken_module(import-library-test1 import-library-test1.scm
-    EMIT_IMPORTS import-library-test1-m)
+    EMIT_IMPORTS import-library-test1)
 set_property(TARGET import-library-test1 PROPERTY FOLDER "Tests")
-set_property(TARGET import-library-test1-m.import PROPERTY FOLDER "Tests")
+set_property(TARGET import-library-test1.import PROPERTY FOLDER "Tests")
 add_dependencies(BUILD_TESTS import-library-test1)
 
 add_chicken_interpreted_test(import-library SCRIPT import-library-test2.scm)
@@ -393,7 +395,7 @@ add_chicken_interpreted_test(r4rs SCRIPT r4rstest.scm -i
     -e "(set! ##sys#procedure->string (constantly \"#<procedure>\"))")
 
 add_test(NAME r4rs-expected COMMAND ${CMAKE_COMMAND} -E compare_files
-    r4rs-i.out r4rstest.out.t)
+    r4rs-i.out r4rstest.out)
 set_tests_properties(r4rs-expected PROPERTIES DEPENDS r4rs)
 
 # r5rs pitfalls
@@ -536,7 +538,8 @@ endif()
 set_target_properties(prepare-posix-tests PROPERTIES FOLDER "Tests")
 add_dependencies(BUILD_TESTS prepare-posix-tests)
 
-add_compiled_test(posix posix-tests.scm ARGS $<TARGET_FILE:csi>)
+add_compiled_test(posix posix-tests.scm
+    ENVIRONMENT CHICKEN_INTERPRETER=${CHICKEN_INTERPRETER})
 
 add_chicken_interpreted_test(posix
     -R posix -e "(delete-directory \"tmpdir\" #t)")
