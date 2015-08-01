@@ -305,12 +305,12 @@ set_tests_properties(meta-syntax-i meta-syntax-2-i
 
 # reexport tests
 
-add_chicken_library(reexport-m1 reexport-m1.scm EMIT_IMPORTS reexport-m1)
-add_chicken_library(reexport-m3 reexport-m3.scm EMIT_IMPORTS reexport-m3)
-add_chicken_library(reexport-m4 reexport-m4.scm EMIT_IMPORTS reexport-m4
+add_chicken_module(reexport-m1 reexport-m1.scm)
+add_chicken_module(reexport-m3 reexport-m3.scm)
+add_chicken_module(reexport-m4 reexport-m4.scm
     DEPENDS reexport-m3)
-add_chicken_library(reexport-m5 reexport-m5.scm EMIT_IMPORTS reexport-m5)
-add_chicken_library(reexport-m6 reexport-m6.scm EMIT_IMPORTS reexport-m6
+add_chicken_module(reexport-m5 reexport-m5.scm)
+add_chicken_module(reexport-m6 reexport-m6.scm
     DEPENDS reexport-m5)
 set_property(TARGET reexport-m1 reexport-m3 reexport-m4 reexport-m5 reexport-m6
     PROPERTY FOLDER "Tests")
@@ -318,14 +318,14 @@ set_property(TARGET reexport-m1 reexport-m3 reexport-m4 reexport-m5 reexport-m6
 add_dependencies(BUILD_TESTS reexport-m1 reexport-m3 reexport-m4 reexport-m5
     reexport-m6)
 
+add_chicken_interpreted_test(reexport SCRIPT reexport-tests.scm)
+
+add_compiled_test(reexport reexport-tests.scm)
+
 add_chicken_interpreted_test(reexport-m2 SCRIPT reexport-m2.scm)
 
 add_compiled_test(reexport-m2 reexport-m2.scm
     DEPENDS reexport-m1)
-
-add_chicken_interpreted_test(reexport SCRIPT reexport-tests.scm)
-
-add_compiled_test(reexport reexport-tests.scm)
 
 add_compiled_test(reexport-2 reexport-tests-2.scm
     DEPENDS reexport-m4 reexport-m6)
