@@ -2,6 +2,70 @@
 
 include(GNUInstallDirs)
 
+function(write_chicken_build_tag)
+    set(src_buildversion ${CMAKE_CURRENT_SOURCE_DIR}/buildversion)
+    set(buildversion ${CMAKE_CURRENT_BINARY_DIR}/buildversion)
+    set(buildid ${CMAKE_CURRENT_BINARY_DIR}/buildid)
+    set(buildbranch ${CMAKE_CURRENT_BINARY_DIR}/buildbranch)
+    set(buildtag ${CMAKE_CURRENT_BINARY_DIR}/buildtag.h)
+
+    file(STRINGS ${src_buildversion} version LIMIT_COUNT 1)
+
+    set(CHICKEN_VERSION "${version}" CACHE INTERNAL "")
+
+    if(${src_buildversion} IS_NEWER_THAN ${buildversion})
+        file(WRITE ${buildversion} ${version})
+    endif()
+
+    find_package(Git)
+    if(GIT_FOUND AND EXISTS ${CMAKE_HOME_DIRECTORY}/.git)
+        execute_process(
+            COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+            OUTPUT_VARIABLE git_rev
+            ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+        if(git_rev AND (${buildversion} IS_NEWER_THAN ${buildid}))
+            file(WRITE ${buildid} ${git_rev})
+        endif()
+
+        # TODO: handle detached head, other cases
+        execute_process(
+            COMMAND ${GIT_EXECUTABLE} rev-parse --abbrev-ref HEAD
+            OUTPUT_VARIABLE git_branch
+            ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+        if(git_branch AND (${buildversion} IS_NEWER_THAN ${buildbranch}))
+            file(WRITE ${buildbranch} ${git_branch})
+        endif()
+    endif()
+
+    # TODO: handle time, is hostname really needed?
+    if(${buildversion} IS_NEWER_THAN ${buildtag})
+        file(WRITE ${buildtag} "#define C_BUILD_TAG \"compiled on ${CMAKE_SYSTEM}\"\n")
+    endif()
+endfunction()
+
+write_chicken_build_tag()
+
+function(find_chicken_apply_hack)
+    if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+        set(arch x86-64)
+    elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "i686")
+        set(arch x86)
+    else()
+        set(arch ${CMAKE_SYSTEM_PROCESSOR})
+    endif()
+
+    set(source ${CMAKE_CURRENT_SOURCE_DIR}/apply-hack.${arch}.S)
+
+    if(EXISTS ${source} AND CMAKE_ASM_COMPILER_WORKS AND NOT MSVC)
+        set(CHICKEN_APPLY_HACK ${source} CACHE INTERNAL "")
+        set(C_HACKED_APPLY YES PARENT_SCOPE)
+        find_package_message(CHICKEN_APPLY_HACK "Found apply hack: ${source}"
+            "${CHICKEN_APPLY_HACK}")
+    endif()
+endfunction()
+
+find_chicken_apply_hack()
+
 find_program(CHICKEN_INSTALL_CC  gcc)
 find_program(CHICKEN_INSTALL_CXX g++)
 mark_as_advanced(CHICKEN_INSTALL_CC CHICKEN_INSTALL_CXX)
