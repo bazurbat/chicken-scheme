@@ -142,14 +142,13 @@ function(add_chicken_runtime name)
     set_property(TARGET ${name} PROPERTY
         DEFINE_SYMBOL C_BUILDING_LIBCHICKEN)
 
-    if(UNIX AND runtime_SHARED)
-        # CHICKEN assumes this naming scheme in a number of places.
-        set_target_properties(${name} PROPERTIES
-            PREFIX "")
+    set_target_properties(${name} PROPERTIES
+        PREFIX "")
 
-        if(NOT ANDROID)
+    if(runtime_SHARED)
+        if(APPLE OR ANDROID)
+        elseif(UNIX)
             set_target_properties(${name} PROPERTIES
-                SUFFIX ""
                 OUTPUT_NAME ${name}${CMAKE_SHARED_LIBRARY_SUFFIX}.${CHICKEN_API_VERSION})
         endif()
     endif()

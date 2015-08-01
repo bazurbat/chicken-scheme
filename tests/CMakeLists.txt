@@ -639,29 +639,30 @@ add_chicken_test(reinstall-install
     $<TARGET_FILE:chicken-install> -t local -l ${CMAKE_CURRENT_SOURCE_DIR}
     -csi $<TARGET_FILE:csi> reverser:1.0
     ENVIRONMENT CSC_OPTIONS=${CSC_OPTIONS} CSI_OPTIONS=${CSI_OPTIONS})
-set_tests_properties(reinstall-install PROPERTIES
-    DEPENDS reinstall-uninstall)
 
 add_chicken_interpreted_test(reinstall-run-rev-app
     ${chicken-tests_SOURCE_DIR}/rev-app.scm 1.0)
-set_tests_properties(reinstall-run-rev-app-i PROPERTIES
-    DEPENDS reinstall-install)
 
 add_chicken_test(reinstall-force
     $<TARGET_FILE:chicken-install> -t local -l ${CMAKE_CURRENT_SOURCE_DIR}
     -reinstall -force -csi $<TARGET_FILE:csi>
     ENVIRONMENT CSC_OPTIONS=${CSC_OPTIONS} CSI_OPTIONS=${CSI_OPTIONS})
-set_tests_properties(reinstall-force PROPERTIES
-    DEPENDS reinstall-run-rev-app-i)
 
 add_chicken_interpreted_test(reinstall-run-rev-app-2
     ${chicken-tests_SOURCE_DIR}/rev-app.scm 1.0)
+
+set_tests_properties(reinstall-install PROPERTIES
+    DEPENDS reinstall-uninstall)
+set_tests_properties(reinstall-run-rev-app-i PROPERTIES
+    DEPENDS reinstall-install)
+set_tests_properties(reinstall-force PROPERTIES
+    DEPENDS reinstall-run-rev-app-i)
 set_tests_properties(reinstall-run-rev-app-2-i PROPERTIES
     DEPENDS reinstall-force)
 
 # deployment tests
 
-# the same as CSC_OPTIONS2 but without rpath
+# the same as CSC_OPTIONS but without rpath
 set(CSC_OPTIONS2 -compiler $<TARGET_FILE:chicken-compiler> -v
     -I${chicken_SOURCE_DIR} -I${chicken_BINARY_DIR}
     -L${chicken_SOURCE_DIR} -L${chicken_BINARY_DIR}
@@ -684,9 +685,9 @@ set_tests_properties(deployment-install PROPERTIES
     DEPENDS reinstall-run-rev-app-2-i)
 
 add_chicken_test(deployment-deploy $<TARGET_FILE:csc>
-    -deploy -o rev-app
-    ${chicken-tests_SOURCE_DIR}/rev-app.scm
-    ENVIRONMENT CSC_OPTIONS=${CSC_OPTIONS2} CSI_OPTIONS=${CSI_OPTIONS}
+    -deploy -o rev-app ${chicken-tests_SOURCE_DIR}/rev-app.scm
+    ENVIRONMENT CSC_OPTIONS=${CSC_OPTIONS2}
+                CSI_OPTIONS=${CSI_OPTIONS}
                 TARGET_LIB_PATH=${chicken_BINARY_DIR})
 set_tests_properties(deployment-deploy PROPERTIES
     DEPENDS deployment-install)
@@ -741,10 +742,22 @@ chicken_add_benchmark(null -:Hd
 chicken_add_benchmark(compiler -:Hd
     SOURCE compiler.scm)
 
+add_custom_command(OUTPUT slatexdir
+    COMMAND ${CMAKE_COMMAND} -E make_directory slatexdir
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_SOURCE_DIR}/test.tex
+        ${CMAKE_CURRENT_BINARY_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_SOURCE_DIR}/slatex.sty
+        ${CMAKE_CURRENT_BINARY_DIR}
+    VERBATIM)
+add_custom_target(prepare-slatex-benchmark
+    DEPENDS slatexdir)
+set_target_properties(prepare-slatex-benchmark PROPERTIES FOLDER "Tests")
+add_dependencies(BUILD_TESTS prepare-slatex-benchmark)
+
 chicken_add_benchmark(slatex
     SOURCE slatex.scm)
-set_tests_properties(benchmark-slatex PROPERTIES
-    WORKING_DIRECTORY ${chicken-tests_SOURCE_DIR})
 
 chicken_add_benchmark(sgrep compiler.scm
     SOURCE sgrep.scm)
