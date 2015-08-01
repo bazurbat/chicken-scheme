@@ -83,7 +83,10 @@ DISTFILES = $(filter-out runtime.c,$(LIBCHICKEN_OBJECTS_1:=.c)) \
 	$(SETUP_API_OBJECTS_1:=.c) \
 	$(SETUP_API_OBJECTS_1:=.import.scm) $(SETUP_API_OBJECTS_1:=.import.c) \
 	$(IMPORT_LIBRARIES:=.import.c) \
-	posixunix.c posixwin.c
+	$(DYNAMIC_IMPORT_LIBRARIES:=.import.scm) \
+	$(foreach lib,$(DYNAMIC_CHICKEN_IMPORT_LIBRARIES),chicken.$(lib).import.scm) \
+	$(foreach lib,$(filter-out chicken,$(COMPILER_OBJECTS_1)),chicken.compiler.$(lib).import.scm) \
+	$(POSIX_IMPORT_LIBRARY:=.import.scm) posixunix.c posixwin.c
 # Remove the duplicate $(POSIXFILE) entry:
 DISTFILES := $(sort $(DISTFILES))
 
