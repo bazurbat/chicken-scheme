@@ -27,7 +27,12 @@
 
 (declare
   (block)
-  (uses data-structures ports utils files extras))
+  (uses data-structures eval utils files extras))
+
+(import chicken.data-structures
+	chicken.extras
+	chicken.files
+	chicken.utils)
 
 (include "mini-srfi-1.scm")
 

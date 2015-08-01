@@ -65,9 +65,15 @@
      shellpath
      setup-error-handling)
   
-  (import scheme chicken foreign
-	  irregex utils posix ports extras data-structures
-	  files)
+  (import scheme chicken
+	  chicken.data-structures
+	  chicken.extras
+	  chicken.files
+	  chicken.foreign
+	  chicken.ports
+	  chicken.posix
+	  chicken.irregex
+	  chicken.utils)
 
 (include "mini-srfi-1.scm")
 

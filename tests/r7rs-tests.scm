@@ -1,5 +1,7 @@
 ;; R7RS Tests
 
+(use (only ports with-input-from-string with-output-to-string))
+
 ;; Copied from R4RS tests
 (define cur-section '())
 

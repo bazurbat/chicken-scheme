@@ -36,9 +36,8 @@
 
 (declare
   (unit files)
-  (uses irregex data-structures)
+  (uses data-structures extras irregex)
   (fixnum)
-  (hide chop-pds absolute-pathname-root root-origin root-directory split-directory)
   (disable-interrupts) 
   (foreign-declare #<<EOF
 #include <errno.h>
@@ -51,6 +50,21 @@
 #endif
 EOF
 ))
+
+(module chicken.files
+  (delete-file* file-copy file-move make-pathname directory-null?
+   make-absolute-pathname create-temporary-directory
+   create-temporary-file decompose-directory decompose-pathname
+   absolute-pathname? pathname-directory pathname-extension
+   pathname-file pathname-replace-directory pathname-replace-extension
+   pathname-replace-file pathname-strip-directory
+   pathname-strip-extension normalize-pathname)
+
+(import scheme chicken)
+(import chicken.data-structures
+	chicken.extras
+	chicken.foreign
+	chicken.irregex)
 
 (include "common-declarations.scm")
 
@@ -445,3 +459,5 @@ EOF
          (rt (absolute-pathname-root dir))
          (org (root-origin rt)) )
     (values org (root-directory rt) (strip-origin-prefix org (and (not (null? ls)) ls))) ) )
+
+)

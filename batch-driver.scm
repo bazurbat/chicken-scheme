@@ -29,7 +29,7 @@
 ;; Same goes for "backend" and "platform".
 (declare
   (unit batch-driver)
-  (uses extras data-structures files
+  (uses eval extras data-structures files
 	support compiler-syntax compiler optimizer
 	;; TODO: Backend should be configurable
 	scrutinizer lfa2 c-platform c-backend) )
@@ -40,7 +40,10 @@
      user-options-pass user-read-pass user-preprocessor-pass user-pass
      user-post-analysis-pass)
 
-(import chicken scheme extras data-structures files
+(import chicken scheme
+	chicken.data-structures
+	chicken.extras
+	chicken.files
 	chicken.compiler.support
 	chicken.compiler.compiler-syntax
 	chicken.compiler.core
@@ -175,12 +178,14 @@
 	      arg) ) ) )
   (initialize-compiler)
   (set! explicit-use-flag (memq 'explicit-use options))
-  (let ((initforms `((##core#declare
+  (let ((initforms `((import-for-syntax scheme chicken)
+		     (import scheme chicken)
+		     (##core#declare
 		      ,@(append 
 			 default-declarations
 			 (if explicit-use-flag
 			     '()
-			     `((uses ,@units-used-by-default)) ) ) ) ) )
+			     `((uses ,@units-used-by-default)))))))
         (verbose (memq 'verbose options))
 	(outfile (cond ((memq 'output-file options) 
 			=> (lambda (node)

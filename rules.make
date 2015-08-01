@@ -489,6 +489,11 @@ define declare-emitted-import-lib-dependency
 $(1).import.scm: $(1).c
 endef
 
+define declare-emitted-chicken-import-lib-dependency
+.SECONDARY: chicken.$(1).import.scm
+chicken.$(1).import.scm: $(1).c
+endef
+
 define declare-emitted-compiler-import-lib-dependency
 .SECONDARY: chicken.compiler.$(1).import.scm
 chicken.compiler.$(1).import.scm: $(1).c
@@ -497,12 +502,24 @@ endef
 $(foreach lib, $(SETUP_API_OBJECTS_1),\
           $(eval $(call declare-emitted-import-lib-dependency,$(lib))))
 
+$(foreach lib, $(DYNAMIC_IMPORT_LIBRARIES),\
+          $(eval $(call declare-emitted-import-lib-dependency,$(lib))))
+
+$(foreach lib, $(DYNAMIC_CHICKEN_IMPORT_LIBRARIES),\
+          $(eval $(call declare-emitted-chicken-import-lib-dependency,$(lib))))
+
 $(foreach lib, $(filter-out chicken,$(COMPILER_OBJECTS_1)),\
           $(eval $(call declare-emitted-compiler-import-lib-dependency,$(lib))))
 
+# posix declared manually, as it varies based on POSIXFILE
+.SECONDARY: chicken.posix.import.scm
+chicken.posix.import.scm: $(POSIXFILE).c
+
 chicken.c: chicken.scm mini-srfi-1.scm \
 		chicken.compiler.batch-driver.import.scm \
-		chicken.compiler.c-platform.import.scm
+		chicken.compiler.c-platform.import.scm \
+		chicken.data-structures.import.scm \
+		chicken.utils.import.scm
 batch-driver.c: batch-driver.scm mini-srfi-1.scm \
 		chicken.compiler.core.import.scm \
 		chicken.compiler.compiler-syntax.import.scm \
@@ -511,27 +528,163 @@ batch-driver.c: batch-driver.scm mini-srfi-1.scm \
 		chicken.compiler.c-platform.import.scm \
 		chicken.compiler.lfa2.import.scm \
 		chicken.compiler.c-backend.import.scm \
-		chicken.compiler.support.import.scm
+		chicken.compiler.support.import.scm \
+		chicken.data-structures.import.scm
 c-platform.c: c-platform.scm mini-srfi-1.scm \
 		chicken.compiler.optimizer.import.scm \
 		chicken.compiler.support.import.scm \
-		chicken.compiler.core.import.scm
+		chicken.compiler.core.import.scm \
+		chicken.data-structures.import.scm \
+		chicken.extras.import.scm \
+		chicken.files.import.scm \
+		chicken.foreign.import.scm
 c-backend.c: c-backend.scm mini-srfi-1.scm \
 		chicken.compiler.c-platform.import.scm \
 		chicken.compiler.support.import.scm \
-		chicken.compiler.core.import.scm
+		chicken.compiler.core.import.scm \
+		chicken.data-structures.import.scm \
+		chicken.extras.import.scm
 core.c: core.scm mini-srfi-1.scm \
 		chicken.compiler.scrutinizer.import.scm \
-		chicken.compiler.support.import.scm
+		chicken.compiler.support.import.scm \
+		chicken.data-structures.import.scm \
+		chicken.eval.import.scm \
+		chicken.expand.import.scm \
+		chicken.extras.import.scm
 optimizer.c: optimizer.scm mini-srfi-1.scm \
-		chicken.compiler.support.import.scm
+		chicken.compiler.support.import.scm \
+		chicken.data-structures.import.scm \
+		chicken.extras.import.scm \
+		chicken.foreign.import.scm
+scheduler.c: scheduler.scm \
+		chicken.extras.import.scm
 scrutinizer.c: scrutinizer.scm mini-srfi-1.scm \
-		chicken.compiler.support.import.scm
-lfa2.c: lfa2.scm chicken.compiler.support.import.scm mini-srfi-1.scm
+		chicken.compiler.support.import.scm \
+		chicken.data-structures.import.scm \
+		chicken.expand.import.scm \
+		chicken.extras.import.scm \
+		chicken.files.import.scm \
+		chicken.ports.import.scm
+lfa2.c: lfa2.scm mini-srfi-1.scm \
+		chicken.compiler.support.import.scm \
+		chicken.extras.import.scm
 compiler-syntax.c: compiler-syntax.scm mini-srfi-1.scm \
 		chicken.compiler.support.import.scm \
-		chicken.compiler.core.import.scm
-support.c: support.scm mini-srfi-1.scm
+		chicken.compiler.core.import.scm \
+		chicken.data-structures.import.scm \
+		chicken.extras.import.scm
+chicken-ffi-syntax.c: chicken-ffi-syntax.scm \
+		chicken.data-structures.import.scm \
+		chicken.extras.import.scm
+support.c: support.scm mini-srfi-1.scm \
+		chicken.data-structures.import.scm \
+		chicken.expand.import.scm \
+		chicken.extras.import.scm \
+		chicken.files.import.scm \
+		chicken.foreign.import.scm \
+		chicken.ports.import.scm
+csc.c: csc.scm \
+		chicken.data-structures.import.scm \
+		chicken.files.import.scm \
+		chicken.utils.import.scm
+csi.c: csi.scm \
+		chicken.data-structures.import.scm \
+		chicken.extras.import.scm \
+		chicken.ports.import.scm
+chicken-bug.c: chicken-bug.scm \
+		chicken.data-structures.import.scm \
+		chicken.extras.import.scm \
+		chicken.foreign.import.scm \
+		chicken.tcp.import.scm \
+		chicken.utils.import.scm
+chicken-profile.c: chicken-profile.scm \
+		chicken.data-structures.import.scm
+chicken-status.c: chicken-status.scm \
+		chicken.data-structures.import.scm \
+		chicken.extras.import.scm \
+		chicken.files.import.scm \
+		chicken.foreign.import.scm \
+		chicken.irregex.import.scm \
+		chicken.ports.import.scm \
+		chicken.posix.import.scm \
+		setup-api.import.scm
+chicken-install.c: chicken-install.scm \
+		chicken.data-structures.import.scm \
+		chicken.extras.import.scm \
+		chicken.files.import.scm \
+		chicken.foreign.import.scm \
+		chicken.irregex.import.scm \
+		chicken.ports.import.scm \
+		chicken.posix.import.scm \
+		chicken.utils.import.scm \
+		setup-api.import.scm \
+		setup-download.import.scm
+chicken-uninstall.c: chicken-uninstall.scm \
+		chicken.data-structures.import.scm \
+		chicken.extras.import.scm \
+		chicken.files.import.scm \
+		chicken.foreign.import.scm \
+		chicken.irregex.import.scm \
+		chicken.ports.import.scm \
+		chicken.posix.import.scm \
+		chicken.utils.import.scm \
+		setup-api.import.scm
+setup-api.c: setup-api.scm \
+		chicken.data-structures.import.scm \
+		chicken.extras.import.scm \
+		chicken.files.import.scm \
+		chicken.foreign.import.scm \
+		chicken.irregex.import.scm \
+		chicken.ports.import.scm \
+		chicken.posix.import.scm \
+		chicken.utils.import.scm
+setup-download.c: setup-download.scm \
+		chicken.data-structures.import.scm \
+		chicken.extras.import.scm \
+		chicken.files.import.scm \
+		chicken.foreign.import.scm \
+		chicken.irregex.import.scm \
+		chicken.ports.import.scm \
+		chicken.posix.import.scm \
+		chicken.tcp.import.scm \
+		chicken.utils.import.scm \
+		setup-api.import.scm
+posixunix.c: posixunix.scm \
+		chicken.files.import.scm \
+		chicken.foreign.import.scm \
+		chicken.irregex.import.scm \
+		chicken.ports.import.scm
+posixwin.c: posixwin.scm \
+		chicken.files.import.scm \
+		chicken.foreign.import.scm \
+		chicken.irregex.import.scm \
+		chicken.ports.import.scm
+data-structures.c: data-structures.scm \
+		chicken.foreign.import.scm
+extras.c: extras.scm \
+		chicken.data-structures.import.scm
+eval.c: eval.scm \
+		chicken.expand.import.scm \
+		chicken.foreign.import.scm
+files.c: files.scm \
+		chicken.data-structures.import.scm \
+		chicken.extras.import.scm \
+		chicken.foreign.import.scm \
+		chicken.irregex.import.scm
+lolevel.c: lolevel.scm \
+		chicken.foreign.import.scm
+ports.c: ports.scm \
+		chicken.extras.import.scm
+tcp.c: tcp.scm \
+		chicken.foreign.import.scm \
+		chicken.ports.import.scm
+utils.c: utils.scm \
+		chicken.data-structures.import.scm \
+		chicken.extras.import.scm \
+		chicken.files.import.scm \
+		chicken.foreign.import.scm \
+		chicken.posix.import.scm \
+		chicken.irregex.import.scm
 
 define profile-flags
 $(if $(filter $(basename $(1)),$(PROFILE_OBJECTS)),-profile)
@@ -542,40 +695,37 @@ bootstrap-lib = $(CHICKEN) $(call profile-flags, $@) $< $(CHICKEN_LIBRARY_OPTION
 library.c: $(SRCDIR)library.scm $(SRCDIR)banner.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
 eval.c: $(SRCDIR)eval.scm $(SRCDIR)common-declarations.scm $(SRCDIR)mini-srfi-1.scm
-	$(bootstrap-lib)
+	$(bootstrap-lib) -emit-import-library chicken.eval
 expand.c: $(SRCDIR)expand.scm $(SRCDIR)synrules.scm $(SRCDIR)common-declarations.scm
-	$(bootstrap-lib)
+	$(bootstrap-lib) -emit-import-library chicken.expand
 modules.c: $(SRCDIR)modules.scm $(SRCDIR)common-declarations.scm $(SRCDIR)mini-srfi-1.scm
 	$(bootstrap-lib)
 extras.c: $(SRCDIR)extras.scm $(SRCDIR)common-declarations.scm
-	$(bootstrap-lib)
+	$(bootstrap-lib) -emit-import-library chicken.extras
 posixunix.c: $(SRCDIR)posixunix.scm $(SRCDIR)posix-common.scm $(SRCDIR)common-declarations.scm
-	$(bootstrap-lib) 
+	$(bootstrap-lib) -emit-import-library chicken.posix
 posixwin.c: $(SRCDIR)posixwin.scm $(SRCDIR)posix-common.scm $(SRCDIR)common-declarations.scm
-	$(bootstrap-lib) 
+	$(bootstrap-lib) -emit-import-library chicken.posix
 irregex.c: $(SRCDIR)irregex.scm $(SRCDIR)irregex-core.scm $(SRCDIR)irregex-utils.scm $(SRCDIR)common-declarations.scm
-	$(bootstrap-lib)
-#
-# The ones below just depend on their matching .scm file and common-declarations
-#
+	$(bootstrap-lib) -emit-import-library chicken.irregex
 chicken-syntax.c: $(SRCDIR)chicken-syntax.scm $(SRCDIR)common-declarations.scm $(SRCDIR)mini-srfi-1.scm
 	$(bootstrap-lib)
 chicken-ffi-syntax.c: $(SRCDIR)chicken-ffi-syntax.scm $(SRCDIR)common-declarations.scm $(SRCDIR)mini-srfi-1.scm
 	$(bootstrap-lib)
 data-structures.c: $(SRCDIR)data-structures.scm $(SRCDIR)common-declarations.scm
-	$(bootstrap-lib)
+	$(bootstrap-lib) -emit-import-library chicken.data-structures
 ports.c: $(SRCDIR)ports.scm $(SRCDIR)common-declarations.scm
-	$(bootstrap-lib)
+	$(bootstrap-lib) -emit-import-library chicken.ports
 files.c: $(SRCDIR)files.scm $(SRCDIR)common-declarations.scm
-	$(bootstrap-lib)
+	$(bootstrap-lib) -emit-import-library chicken.files
 lolevel.c: $(SRCDIR)lolevel.scm $(SRCDIR)common-declarations.scm
-	$(bootstrap-lib) 
+	$(bootstrap-lib) -emit-import-library chicken.lolevel
 tcp.c: $(SRCDIR)tcp.scm $(SRCDIR)common-declarations.scm
-	$(bootstrap-lib) 
+	$(bootstrap-lib) -emit-import-library chicken.tcp
 srfi-4.c: $(SRCDIR)srfi-4.scm $(SRCDIR)common-declarations.scm
-	$(bootstrap-lib) 
+	$(bootstrap-lib) -emit-import-library srfi-4
 utils.c: $(SRCDIR)utils.scm $(SRCDIR)common-declarations.scm
-	$(bootstrap-lib) 
+	$(bootstrap-lib) -emit-import-library chicken.utils
 scheduler.c: $(SRCDIR)scheduler.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) 
 profiler.c: $(SRCDIR)profiler.scm $(SRCDIR)common-declarations.scm
@@ -609,7 +759,7 @@ csi.c: $(SRCDIR)csi.scm $(SRCDIR)banner.scm
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@
 chicken-profile.c: $(SRCDIR)chicken-profile.scm $(SRCDIR)mini-srfi-1.scm
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ 
-chicken-install.c: $(SRCDIR)chicken-install.scm setup-download.c setup-api.c $(SRCDIR)mini-srfi-1.scm
+chicken-install.c: $(SRCDIR)chicken-install.scm $(SRCDIR)mini-srfi-1.scm
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ 
 chicken-uninstall.c: $(SRCDIR)chicken-uninstall.scm $(SRCDIR)mini-srfi-1.scm
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ 
@@ -623,7 +773,7 @@ chicken-bug.c: $(SRCDIR)chicken-bug.scm
 setup-api.c: $(SRCDIR)setup-api.scm $(SRCDIR)mini-srfi-1.scm
 	$(CHICKEN) $< $(CHICKEN_DYNAMIC_OPTIONS) -emit-import-library setup-api \
 	  -output-file $@ 
-setup-download.c: $(SRCDIR)setup-download.scm setup-api.c $(SRCDIR)mini-srfi-1.scm
+setup-download.c: $(SRCDIR)setup-download.scm $(SRCDIR)mini-srfi-1.scm
 	$(CHICKEN) $< $(CHICKEN_DYNAMIC_OPTIONS) -emit-import-library setup-download \
 	  -output-file $@ 
 
@@ -639,10 +789,10 @@ dist: distfiles html
 # Jim's `manual-labor' must be installed (just run "chicken-install manual-labor")
 html:
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) $(SRCDIR)manual-html
-	manual-labor $(SRCDIR)manual $(SRCDIR)manual-html
-	$(COPY_COMMAND) $(SRCDIR)chicken.png manual-html
-	$(COPY_COMMAND) $(SRCDIR)manual.css manual-html
-	$(COPY_COMMAND) $(SRCDIR)index.html manual-html
+	#manual-labor $(SRCDIR)manual $(SRCDIR)manual-html
+	#$(COPY_COMMAND) $(SRCDIR)chicken.png manual-html
+	#$(COPY_COMMAND) $(SRCDIR)manual.css manual-html
+	#$(COPY_COMMAND) $(SRCDIR)index.html manual-html
 
 # cleaning up
 
@@ -658,9 +808,9 @@ clean:
 	  $(LIBCHICKEN_SO_FILE) \
 	  $(PRIMARY_LIBCHICKEN) \
 	  lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(A) \
-	  $(PROGRAM_IMPORT_LIBRARIES) \
 	  $(IMPORT_LIBRARIES:=.import.so) $(LIBCHICKEN_IMPORT_LIBRARY) \
-	  $(SETUP_API_OBJECTS_1:=.so) $(SETUP_API_OBJECTS_1:=.import.so)
+	  $(SETUP_API_OBJECTS_1:=.so) $(SETUP_API_OBJECTS_1:=.import.so) \
+	  $(foreach lib,$(DYNAMIC_IMPORT_LIBRARIES),chicken.$(lib).import.scm)
 ifdef USES_SONAME
 	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX).so.$(BINARYVERSION)
 endif

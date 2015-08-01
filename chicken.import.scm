@@ -45,7 +45,7 @@
    call/cc
    case-sensitive
    char-name
-   chicken-home
+   (chicken-home . chicken.eval#chicken-home)
    chicken-version
    command-line-arguments
    condition-predicate
@@ -65,21 +65,23 @@
    current-milliseconds
    current-read-table
    current-seconds
-   define-reader-ctor
+   (define-reader-ctor . chicken.eval#define-reader-ctor)
    delete-file
    directory-exists?
+   (dynamic-load-libraries . chicken.eval#dynamic-load-libraries)
    enable-warnings
    equal=?
-   er-macro-transformer
+   (er-macro-transformer . chicken.expand#er-macro-transformer)
    errno
    error
+   (eval-handler . chicken.eval#eval-handler)
    exact-integer?
    exact-integer-sqrt
    exact-integer-nth-root
    exit
    exit-handler
-   expand
-   extension-information
+   (expand . chicken.expand#expand)
+   (extension-information . chicken.eval#extension-information)
    feature?
    features
    file-exists?
@@ -163,19 +165,21 @@
    get-condition-property
    get-environment-variable
    get-keyword
+   (get-line-number . chicken.expand#get-line-number)
    get-output-string
    get-properties
    getter-with-setter
    implicit-exit-handler
    infinite?
    integer-length
-   ir-macro-transformer
+   (ir-macro-transformer . chicken.expand#ir-macro-transformer)
    keyword->string
    keyword-style
    keyword?
-   load-library
-   load-relative
-   load-verbose
+   (load-library . chicken.eval#load-library)
+   (load-noisily . chicken.eval#load-noisily)
+   (load-relative . chicken.eval#load-relative)
+   (load-verbose . chicken.eval#load-verbose)
    machine-byte-order
    machine-type
    make-blob
@@ -213,10 +217,10 @@
    register-feature!
    remprop!
    rename-file
-   repl
-   repl-prompt
-   repository-path
-   require
+   (repl . chicken.eval#repl)
+   (repl-prompt . chicken.eval#repl-prompt)
+   (repository-path . chicken.eval#repository-path)
+   (require . chicken.eval#require)
    reset
    reset-handler
    return-to-host
@@ -236,22 +240,18 @@
    string->blob
    string->keyword
    string->uninterned-symbol
-   strip-syntax
+   (strip-syntax . chicken.expand#strip-syntax)
    sub1
    subvector
    symbol-append
    symbol-escape
    symbol-plist
-   syntax-error
+   (syntax-error . chicken.expand#syntax-error)
    system
    unregister-feature!
    vector-resize
    vector-copy!
    void
    warning
-   eval-handler
-   er-macro-transformer
-   ir-macro-transformer
-   dynamic-load-libraries
    with-exception-handler)
  ##sys#chicken-macro-environment)       ;XXX incorrect - won't work in compiled executable that does expansion

@@ -25,7 +25,6 @@
 
 
 (declare 
-  (hide ##sys#stat posix-error check-time-vector ##sys#find-files)
   (foreign-declare #<<EOF
 
 #include <signal.h>
@@ -204,12 +203,15 @@ EOF
   (er-macro-transformer
    (lambda (x r c)
      ;; no need to rename here
-     (let ((name (cadr x)))
+     (let* ((mode (cadr x))
+	    (name (symbol->string mode)))
        `(##core#begin
 	 (declare
 	   (foreign-declare
-	    ,(sprintf "#ifndef ~a~%#define ~a S_IFREG~%#endif~%" name name)))
-	 (define-foreign-variable ,name unsigned-int))))))
+	     ,(string-append "#ifndef " name "\n"
+			     "#define " name " S_IFREG\n"
+			     "#endif\n")))
+	 (define-foreign-variable ,mode unsigned-int))))))
 
 (stat-mode S_IFLNK)
 (stat-mode S_IFREG)
@@ -351,6 +353,9 @@ EOF
 (define fileno/stdin _stdin_fileno)
 (define fileno/stdout _stdout_fileno)
 (define fileno/stderr _stderr_fileno)
+
+(define open-input-file*)
+(define open-output-file*)
 
 (let ()
   (define (mode inp m loc)

@@ -1,7 +1,7 @@
 ;;;: test-irregex.scm
 
 
-(use extras irregex)
+(use data-structures extras irregex ports)
 
 (include "test.scm")
 

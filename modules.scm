@@ -26,6 +26,7 @@
 
 (declare
   (unit modules)
+  (uses eval expand)
   (disable-interrupts)
   (fixnum)
   (hide lookup merge-se module-indirect-exports)
@@ -304,9 +305,9 @@
 	(ifs (module-import-forms mod))
 	(sexports (module-sexports mod))
 	(mifs (module-meta-import-forms mod)))
-    `(,@(if (pair? ifs) `((eval '(import ,@(##sys#strip-syntax ifs)))) '())
-      ,@(if (pair? mifs) `((import ,@(##sys#strip-syntax mifs))) '())
-      ,@(##sys#fast-reverse (map ##sys#strip-syntax (module-meta-expressions mod)))
+    `(,@(if (pair? ifs) `((chicken.eval#eval '(import ,@(chicken.expand#strip-syntax ifs)))) '())
+      ,@(if (pair? mifs) `((import ,@(chicken.expand#strip-syntax mifs))) '())
+      ,@(##sys#fast-reverse (map chicken.expand#strip-syntax (module-meta-expressions mod)))
       (##sys#register-compiled-module
        ',(module-name mod)
        (list
@@ -321,7 +322,7 @@
 		 (let* ((name (car sexport))
 			(a (assq name dlist)))
 		   (cond ((pair? a) 
-			  `(cons ',(car sexport) ,(##sys#strip-syntax (cdr a))))
+			  `(cons ',(car sexport) ,(chicken.expand#strip-syntax (cdr a))))
 			 (else
 			  (dm "re-exported syntax" name mname)
 			  `',name))))
@@ -334,7 +335,7 @@
 		      ((assq (caar sd) sexports) (loop (cdr sd)))
 		      (else
 		       (let ((name (caar sd)))
-			 (cons `(cons ',(caar sd) ,(##sys#strip-syntax (cdar sd)))
+			 (cons `(cons ',(caar sd) ,(chicken.expand#strip-syntax (cdar sd)))
 			       (loop (cdr sd)))))))))))))
 
 (define (##sys#register-compiled-module name iexports vexports sexports #!optional
@@ -564,7 +565,7 @@
 				 (##sys#macro-environment
 				  (##sys#meta-macro-environment)))
 		    (fluid-let ((##sys#notices-enabled #f)) ; to avoid re-import warnings
-		      (##sys#load il #f #f)))
+		      (chicken.eval#load il)))
 		  (set! mod (##sys#find-module mname 'import)))
 	      (else
 	       (##sys#syntax-error-hook
@@ -587,7 +588,7 @@
 	    ((number? x) (number->string x))
 	    (else (##sys#syntax-error-hook loc "invalid prefix" ))))
     (define (import-name spec)
-      (let* ((mod (##sys#find-module/import-library (##sys#strip-syntax spec) 'import))
+      (let* ((mod (##sys#find-module/import-library (chicken.expand#strip-syntax spec) 'import))
 	     (vexp (module-vexports mod))
 	     (sexp (module-sexports mod))
 	     (iexp (module-iexports mod)))
@@ -891,12 +892,14 @@
 	     call-with-current-continuation input-port? output-port?
 	     current-input-port current-output-port call-with-input-file
 	     call-with-output-file open-input-file open-output-file
-	     close-input-port close-output-port load read eof-object? read-char
-	     peek-char write display write-char newline with-input-from-file
-	     with-output-to-file eval
+	     close-input-port close-output-port (load . chicken.eval#load)
+	     read read-char peek-char write display write-char newline eof-object?
+	     with-input-from-file with-output-to-file (eval . chicken.eval#eval)
 	     char-ready? imag-part real-part make-rectangular make-polar angle
 	     magnitude numerator denominator
-	     scheme-report-environment null-environment interaction-environment
+	     (scheme-report-environment . chicken.eval#scheme-report-environment)
+	     (null-environment . chicken.eval#null-environment)
+	     (interaction-environment . chicken.eval#interaction-environment)
 	     else))
       (r4rs-syntax
        ;;XXX better would be to move these into the "chicken"
@@ -913,6 +916,16 @@
   (##sys#register-primitive-module 'r5rs-null '() r4rs-syntax))
 
 (##sys#register-module-alias 'r5rs 'scheme)
+(##sys#register-module-alias 'data-structures 'chicken.data-structures)
+(##sys#register-module-alias 'extras 'chicken.extras)
+(##sys#register-module-alias 'files 'chicken.files)
+(##sys#register-module-alias 'foreign 'chicken.foreign)
+(##sys#register-module-alias 'irregex 'chicken.irregex)
+(##sys#register-module-alias 'lolevel 'chicken.lolevel)
+(##sys#register-module-alias 'ports 'chicken.ports)
+(##sys#register-module-alias 'posix 'chicken.posix)
+(##sys#register-module-alias 'tcp 'chicken.tcp)
+(##sys#register-module-alias 'utils 'chicken.utils)
 
 (register-feature! 'module-environments)
 

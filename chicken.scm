@@ -27,7 +27,7 @@
 
 (declare
   (uses chicken-syntax chicken-ffi-syntax 
-	srfi-4 utils files extras data-structures support
+	srfi-4 utils extras data-structures support
 	compiler optimizer lfa2 compiler-syntax scrutinizer
 	;; TODO: These three need to be made configurable somehow
 	batch-driver c-platform c-backend))
@@ -36,7 +36,9 @@
 (include "tweaks")
 
 (import chicken.compiler.batch-driver 
-	chicken.compiler.c-platform)
+	chicken.compiler.c-platform
+	chicken.data-structures
+	chicken.utils)
 
 (include "mini-srfi-1.scm")
 

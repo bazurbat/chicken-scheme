@@ -40,11 +40,11 @@
   (define (bar) 99))
 
 (define foo-env (module-environment 'foo))
-(define ds-env (module-environment 'data-structures))
+(define csi-env (module-environment 'csi))
 
 (test-equal (eval '(bar) foo-env) 99)
 (test-error (eval 'baz foo-env))
-(test-equal (eval '(conc 1 2) ds-env) "12")
-(test-error (eval 'baz ds-env))
+(test-equal (eval '(editor-command) csi-env) #f)
+(test-error (eval 'baz csi-env))
 
 (test-end)

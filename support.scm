@@ -27,7 +27,7 @@
 
 (declare (unit support)
 	 (not inline ##sys#user-read-hook) ; XXX: Is this needed?
-	 (uses data-structures files extras ports) )
+	 (uses data-structures eval extras files ports))
 
 (module chicken.compiler.support
     (compiler-cleanup-hook bomb collected-debugging-output debugging
@@ -75,7 +75,13 @@
      ;; in a lot of other places.
      number-type unsafe)
 
-(import chicken scheme foreign data-structures files extras ports)
+(import chicken scheme
+	chicken.data-structures
+	chicken.expand
+	chicken.extras
+	chicken.files
+	chicken.foreign
+	chicken.ports)
 
 (include "tweaks")
 (include "mini-srfi-1.scm")
@@ -1187,7 +1193,7 @@
 ;;; Convert result value, if a string:
 
 (define (finish-foreign-result type body) ; Used only in compiler.scm
-  (let ((type (##sys#strip-syntax type)))
+  (let ((type (strip-syntax type)))
     (case type
       [(c-string unsigned-c-string) `(##sys#peek-c-string ,body '0)]
       [(nonnull-c-string) `(##sys#peek-nonnull-c-string ,body '0)]
@@ -1583,7 +1589,7 @@
 ;;; Load support files
 
 (define (load-identifier-database name)	; Used only in batch-driver.scm
-  (and-let* ((rp (repository-path))
+  (and-let* ((rp (##sys#repository-path))
 	     (dbfile (file-exists? (make-pathname rp name))))
     (debugging 'p (sprintf "loading identifier database ~a ...~%" dbfile))
     (for-each

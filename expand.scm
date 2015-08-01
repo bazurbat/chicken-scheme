@@ -29,15 +29,21 @@
 
 (declare
   (unit expand)
+  (uses extras)
   (disable-interrupts)
   (fixnum)
-  (hide match-expression
-	macro-alias
-	check-for-multiple-bindings
-	d dd dm dx map-se
-	lookup check-for-redef) 
   (not inline ##sys#syntax-error-hook ##sys#compiler-syntax-hook
        ##sys#toplevel-definition-hook))
+
+(module chicken.expand
+  (expand
+   get-line-number
+   strip-syntax
+   syntax-error
+   er-macro-transformer
+   ir-macro-transformer)
+
+(import scheme chicken)
 
 (include "common-declarations.scm")
 
@@ -124,8 +130,6 @@
                   ((fx>= i len) vec)
                 (##sys#setslot vec i (walk (##sys#slot x i))))))
            (else x)))))
-
-(define ##sys#strip-syntax strip-syntax)
 
 (define (##sys#extend-se se vars #!optional (aliases (map gensym vars)))
   (for-each
@@ -313,8 +317,6 @@
 	  (loop exp2)
 	  exp2) ) ) )
 
-(define ##sys#expand expand)
-
 
 ;;; Extended (DSSSL-style) lambda lists
 ;
@@ -362,7 +364,7 @@
 				,(map (lambda (k)
 					(let ([s (car k)])
 					  `(,s (##sys#get-keyword
-						(##core#quote ,(->keyword (##sys#strip-syntax s))) ,(or hasrest rvar)
+						(##core#quote ,(->keyword (strip-syntax s))) ,(or hasrest rvar)
 						,@(if (pair? (cdr k)) 
 						      `((,%lambda () ,@(cdr k)))
 						      '())))))
@@ -637,14 +639,14 @@
 
 (define (syntax-error . args)
   (apply ##sys#signal-hook #:syntax-error
-	 (##sys#strip-syntax args)))
+	 (strip-syntax args)))
 
 (define ##sys#syntax-error-hook syntax-error)
 
 (define ##sys#syntax-error/context
   (lambda (msg arg)
     (define (syntax-imports sym)
-      (let loop ((defs (or (##sys#get (##sys#strip-syntax sym) '##core#db) '())))
+      (let loop ((defs (or (##sys#get (strip-syntax sym) '##core#db) '())))
 	(cond ((null? defs) '())
 	      ((eq? 'syntax (caar defs))
 	       (cons (cadar defs) (loop (cdr defs))))
@@ -660,10 +662,10 @@
 		   (outstr ": ")
 		   (##sys#print arg #t out)
 		   (outstr "\ninside expression `(")
-		   (##sys#print (##sys#strip-syntax (car ##sys#syntax-context)) #t out)
+		   (##sys#print (strip-syntax (car ##sys#syntax-context)) #t out)
 		   (outstr " ...)'"))
 		  (else 
-		   (let* ((sym (##sys#strip-syntax (car cx)))
+		   (let* ((sym (strip-syntax (car cx)))
 			  (us (syntax-imports sym)))
 		     (cond ((pair? us)
 			    (outstr msg)
@@ -883,7 +885,7 @@
 	       ((vector? sym)
 		(list->vector (mirror-rename (vector->list sym))))
 	       ((not (symbol? sym)) sym)
-	       (else		 ; Code stolen from ##sys#strip-syntax
+	       (else		 ; Code stolen from strip-syntax
 		(let ((renamed (lookup sym se) ) )
 		  (cond ((assq-reverse sym renv) =>
 			 (lambda (a)
@@ -918,6 +920,7 @@
 (define ##sys#er-transformer er-macro-transformer)
 (define ##sys#ir-transformer ir-macro-transformer)
 
+) ; chicken.expand module
 
 ;;; Macro definitions:
 
@@ -1157,8 +1160,8 @@
 	      (##sys#check-syntax 'cond clause '#(_ 1))
 	      (cond (else?
 		     (##sys#warn
-		      (sprintf "clause following `~S' clause in `cond'" else?)
-		      (##sys#strip-syntax clause))
+		      (chicken.extras#sprintf "clause following `~S' clause in `cond'" else?)
+		      (chicken.expand#strip-syntax clause))
 		     (expand rclauses else?)
 		     '(##core#begin))
 		    ((or (c %else (car clause))
@@ -1173,7 +1176,7 @@
                          (##sys#srfi-4-vector? (car clause))
                          (and (pair? (car clause))
                               (c (r 'quote) (caar clause))))
-		     (expand rclauses (strip-syntax (car clause)))
+		     (expand rclauses (chicken.expand#strip-syntax (car clause)))
 		     (cond ((and (fx= (length clause) 3)
 				 (c %=> (cadr clause)))
 			    `(,(caddr clause) ,(car clause)))
@@ -1226,7 +1229,7 @@
 		    (cond (else?
 			   (##sys#warn
 			    "clause following `else' clause in `case'"
-			    (##sys#strip-syntax clause))
+			    (chicken.expand#strip-syntax clause))
 			   (expand rclauses #t)
 			   '(##core#begin))
 			  ((c %else (car clause))
@@ -1324,16 +1327,16 @@
 		       (else
 			`(##sys#cons ,(walk head n) ,(walk tail n)) ) ) ) ) ) )
       (define (simplify x)
-	(cond ((match-expression x '(##sys#cons a (##core#quote ())) '(a))
+	(cond ((chicken.expand#match-expression x '(##sys#cons a (##core#quote ())) '(a))
 	       => (lambda (env) (simplify `(##sys#list ,(cdr (assq 'a env))))) )
-	      ((match-expression x '(##sys#cons a (##sys#list . b)) '(a b))
+	      ((chicken.expand#match-expression x '(##sys#cons a (##sys#list . b)) '(a b))
 	       => (lambda (env)
 		    (let ((bxs (assq 'b env)))
 		      (if (fx< (length bxs) 32)
 			  (simplify `(##sys#list ,(cdr (assq 'a env))
 						 ,@(cdr bxs) ) ) 
 			  x) ) ) )
-	      ((match-expression x '(##sys#append a (##core#quote ())) '(a))
+	      ((chicken.expand#match-expression x '(##sys#append a (##core#quote ())) '(a))
 	       => (lambda (env) (cdr (assq 'a env))) )
 	      (else x) ) )
       (##sys#check-syntax 'quasiquote form '(_ _))
@@ -1372,7 +1375,7 @@
 		     x
 		     (cons 'cond-expand clauses)) )
       (define (test fx)
-	(cond ((symbol? fx) (##sys#feature? (##sys#strip-syntax fx)))
+	(cond ((symbol? fx) (##sys#feature? (chicken.expand#strip-syntax fx)))
 	      ((not (pair? fx)) (err fx))
 	      (else
 	       (let ((head (car fx))
@@ -1442,7 +1445,7 @@
     (let ((len (length x)))
       (##sys#check-syntax 'module x '(_ symbol _ . #(_ 0)))
       (cond ((and (fx>= len 4) (c (r '=) (caddr x)))
-	     (let* ((x (##sys#strip-syntax x))
+	     (let* ((x (chicken.expand#strip-syntax x))
 		    (name (cadr x))
 		    (app (cadddr x)))
 	       (cond ((symbol? app)
@@ -1482,7 +1485,7 @@
 	     ;;XXX use module name in "loc" argument?
 	     (let ((exports
 		    (##sys#validate-exports
-		     (##sys#strip-syntax (caddr x)) 'module)))
+		     (chicken.expand#strip-syntax (caddr x)) 'module)))
 	       `(##core#module 
 		 ,(cadr x)
 		 ,(if (eq? '* exports)
@@ -1511,7 +1514,7 @@
   (lambda (x r c)
     (let ((exps 
 	   (##sys#validate-exports 
-	    (##sys#strip-syntax (cdr x))
+	    (chicken.expand#strip-syntax (cdr x))
 	    'export))
 	  (mod (##sys#current-module)))
       (when mod

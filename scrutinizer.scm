@@ -26,15 +26,19 @@
 
 (declare
   (unit scrutinizer)
-  (uses data-structures extras ports files
-	support) )
+  (uses data-structures eval expand extras ports files support))
 
 (module chicken.compiler.scrutinizer
     (scrutinize load-type-database emit-type-file
      validate-type check-and-validate-type install-specializations)
 
-(import chicken scheme data-structures extras ports files
-	chicken.compiler.support)
+(import chicken scheme
+	chicken.compiler.support
+	chicken.data-structures
+	chicken.expand
+	chicken.extras
+	chicken.files
+	chicken.ports)
 
 (include "tweaks")
 (include "mini-srfi-1.scm")
@@ -278,7 +282,7 @@
     (define (fragment x)
       (let ((x (build-expression-tree x)))
 	(let walk ((x x) (d 0))
-	  (cond ((atom? x) (##sys#strip-syntax x))
+	  (cond ((atom? x) (strip-syntax x))
 		((>= d +fragment-max-depth+) '...)
 		((list? x)
 		 (let* ((len (length x))
@@ -286,7 +290,7 @@
 				(append (take x +fragment-max-length+) '(...))
 				x)))
 		   (map (cute walk <> (add1 d)) xs)))
-		(else (##sys#strip-syntax x))))))
+		(else (strip-syntax x))))))
 
     (define (pp-fragment x)
       (string-chomp
@@ -1784,7 +1788,7 @@
 
 ;;; type-db processing
 
-(define (load-type-database name specialize #!optional (path (repository-path)))
+(define (load-type-database name specialize #!optional (path (##sys#repository-path)))
   (define (clean! name)
     (when specialize (mark-variable name '##compiler#clean #t)))
   (define (pure! name)
@@ -2101,7 +2105,7 @@
 	  (else (values #f #f #f)))))
 
 (define (check-and-validate-type type loc #!optional name)
-  (let-values (((t pred pure) (validate-type (##sys#strip-syntax type) name)))
+  (let-values (((t pred pure) (validate-type (strip-syntax type) name)))
     (or t 
 	(error loc "invalid type specifier" type))))
 

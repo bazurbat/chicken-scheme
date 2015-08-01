@@ -28,7 +28,6 @@
 (declare
   (unit eval)
   (uses expand modules)
-  (hide pds pdss pxss d) 
   (not inline ##sys#repl-read-hook ##sys#repl-print-hook 
        ##sys#read-prompt-hook ##sys#alias-global-hook ##sys#user-read-hook
        ##sys#syntax-error-hook))
@@ -49,8 +48,25 @@
 #define C_rnd_fix()		(C_fix(rand()))
 <#
 
+(module chicken.eval
+  (chicken-home define-reader-ctor dynamic-load-libraries
+   eval eval-handler extension-information
+   load load-library load-noisily load-relative load-verbose
+   interaction-environment null-environment scheme-report-environment
+   provide provided? repl repl-prompt require
+   repository-path set-dynamic-load-mode!)
+
+;; Exclude values defined within this module.
+(import (except scheme eval load interaction-environment null-environment scheme-report-environment))
+(import chicken)
+
+(import chicken.expand
+	chicken.foreign)
+
 (include "common-declarations.scm")
 (include "mini-srfi-1.scm")
+
+(register-feature! 'eval)
 
 (define-syntax d (syntax-rules () ((_ . _) (void))))
 
@@ -62,8 +78,7 @@
 (define-foreign-variable install-lib-name c-string "C_INSTALL_LIB_NAME")
 
 (define ##sys#core-library-modules
-  '(extras lolevel utils files tcp irregex posix srfi-4
-	   data-structures ports))
+  '(eval extras lolevel utils files tcp irregex posix srfi-4 data-structures ports))
 
 (define ##sys#core-syntax-modules
   '(chicken-syntax chicken-ffi-syntax))
@@ -308,7 +323,7 @@
 	       (##sys#syntax-error/context "illegal non-atomic object" x)]
 	      [(symbol? (##sys#slot x 0))
 	       (emit-syntax-trace-info tf x cntr)
-	       (let ((x2 (##sys#expand x se #f)))
+	       (let ((x2 (expand x se)))
 		 (d `(EVAL/EXPANDED: ,x2))
 		 (if (not (eq? x2 x))
 		     (compile x2 e h tf cntr se)
@@ -318,7 +333,7 @@
 		       (case head
 
 			 [(##core#quote)
-			  (let* ((c (##sys#strip-syntax (cadr x))))
+			  (let* ((c (strip-syntax (cadr x))))
 			    (case c
 			      [(-1) (lambda v -1)]
 			      [(0) (lambda v 0)]
@@ -570,7 +585,7 @@
 					      se
 					      (##sys#ensure-transformer
 					       (##sys#eval/meta (cadr b))
-					       (##sys#strip-syntax (car b)))))
+					       (strip-syntax (car b)))))
 					   (cadr x) ) 
 				      se) ) )
 			    (compile
@@ -584,7 +599,7 @@
 					     #f
 					     (##sys#ensure-transformer
 					      (##sys#eval/meta (cadr b))
-					      (##sys#strip-syntax (car b)))))
+					      (strip-syntax (car b)))))
 					  (cadr x) ) )
 				 (se2 (append ms se)) )
 			    (for-each 
@@ -628,13 +643,13 @@
 			  (##sys#with-module-aliases
 			   (map (lambda (b)
 				  (##sys#check-syntax 'functor b '(symbol symbol))
-				  (##sys#strip-syntax b))
+				  (strip-syntax b))
 				(cadr x))
 			   (lambda ()
 			     (compile `(##core#begin ,@(cddr x)) e #f tf cntr se))))
 
 			 ((##core#module)
-			  (let* ((x (##sys#strip-syntax x))
+			  (let* ((x (strip-syntax x))
 				 (name (cadr x))
 				 (exports 
 				  (or (eq? #t (caddr x))
@@ -701,7 +716,7 @@
 			 [(##core#require-extension)
 			  (let ((imp? (caddr x)))
 			    (compile
-			     (let loop ([ids (##sys#strip-syntax (cadr x))])
+			     (let loop ((ids (strip-syntax (cadr x))))
 			       (if (null? ids)
 				   '(##core#undefined)
 				   (let-values (((exp f real-id) 
@@ -720,12 +735,7 @@
 			  (compile '(##core#undefined) e #f tf cntr se) ]
 
 			 [(##core#declare)
-			  (if (memq #:compiling ##sys#features)
-			      ;; XXX FIXME: This is a bit of a hack.  Why is it needed at all?
-			      (for-each (lambda (d) (chicken.compiler.core#process-declaration d se)) (cdr x)) 
-			      (##sys#notice
-			       "declarations are ignored in interpreted code"
-			       x) )
+			  (##sys#notice "declarations are ignored in interpreted code" x)
 			  (compile '(##core#undefined) e #f tf cntr se) ]
 
 			 [(##core#define-inline ##core#define-constant)
@@ -746,7 +756,7 @@
 			 
 			 ((##core#typecase)
 			  ;; drops exp and requires "else" clause
-			  (cond ((assq 'else (##sys#strip-syntax (cdddr x))) =>
+			  (cond ((assq 'else (strip-syntax (cdddr x))) =>
 				 (lambda (cl)
 				   (compile (cadr cl) e h tf cntr se)))
 				(else
@@ -854,7 +864,7 @@
 	  (##sys#meta-macro-environment (##sys#macro-environment))
 	  (##sys#macro-environment oldme)))))
 
-(define ##sys#eval-handler 
+(define eval-handler
   (make-parameter
    (lambda (x #!optional env)
      (let ((se (##sys#current-environment)))
@@ -869,7 +879,7 @@
 	     (else
 	      ((##sys#compile-to-closure x '() se #f #f #f) '() ) ) ) ) )))
 
-(define eval-handler ##sys#eval-handler)
+(define ##sys#eval-handler eval-handler)
 
 (define (eval x . env)
   (apply (##sys#eval-handler) 
@@ -927,7 +937,6 @@
 
 (define load-verbose (make-parameter (##sys#fudge 13)))
 
-(define (##sys#abort-load) #f)
 (define ##sys#current-source-filename #f)
 (define ##sys#current-load-path "")
 (define ##sys#dload-disabled #f)
@@ -949,107 +958,108 @@
 	(loop (##sys#slot mode 1)) ) )
     (##sys#set-dlopen-flags! now global) ) )
 
-(let ([read read]
-      [write write]
-      [display display]
-      [newline newline]
-      [eval eval]
-      [open-input-file open-input-file]
-      [close-input-port close-input-port]
-      [string-append string-append] 
-      [topentry (##sys#make-c-string "C_toplevel")] )
-  (define (has-sep? str)
-    (let loop ([i (fx- (##sys#size str) 1)])
-      (and (not (zero? i))
-	   (if (memq (##core#inline "C_subchar" str i) '(#\\ #\/))
-	       i
-	       (loop (fx- i 1)) ) ) ) )
-  (define (badfile x)
-    (##sys#signal-hook #:type-error 'load "bad argument type - not a port or string" x) )
-  (set! ##sys#load 
-    (lambda (input evaluator pf #!optional timer printer)
-      (let* ((fname 
-	      (cond [(port? input) #f]
-		    [(not (string? input)) (badfile input)]
-		    ((##sys#file-exists? input #t #f 'load) input)
-		    (else
-		     (let ([fname2 (##sys#string-append input ##sys#load-dynamic-extension)])
-		       (if (and (not ##sys#dload-disabled)
-				(##sys#fudge 24) ; dload?
-				(##sys#file-exists? fname2 #t #f 'load))
-			   fname2
-			   (let ([fname3 (##sys#string-append input source-file-extension)])
-			     (if (##sys#file-exists? fname3 #t #f 'load)
-				 fname3
-				 input) ) ) ) )))
-	     [evproc (or evaluator eval)] )
-	(cond [(and (string? input) (not fname))
-	       (##sys#signal-hook #:file-error 'load "cannot open file" input) ]
-	      [(and (load-verbose) fname)
-	       (display "; loading ")
-	       (display fname)
-	       (display " ...\n") 
-	       (flush-output)] )
-	(or (and fname
-		 (or (##sys#dload (##sys#make-c-string fname 'load) topentry) 
-		     (and (not (has-sep? fname))
-			  (##sys#dload 
-			   (##sys#make-c-string
-			    (##sys#string-append "./" fname) 
-			    'load) 
-			   topentry) ) ) )
-	    (call-with-current-continuation
-	     (lambda (abrt)
-	       (fluid-let ((##sys#read-error-with-line-number #t)
-			   (##sys#current-source-filename fname)
-			   (##sys#current-load-path
-			    (and fname
-				 (let ((i (has-sep? fname)))
-				   (if i (##sys#substring fname 0 (fx+ i 1)) "") ) ) )
-			   (##sys#abort-load (lambda () (abrt #f))) )
-		 (let ((in (if fname (open-input-file fname) input)))
-		   (##sys#dynamic-wind
-		    (lambda () #f)
-		    (lambda ()
-		      (let ((c1 (peek-char in)))
-			(when (eq? c1 (integer->char 127))
-			  (##sys#error 
-			   'load 
-			   (##sys#string-append 
-			    "unable to load compiled module - " 
-			    (or _dlerror "unknown reason"))
-			   fname)))
-		      (let ((x1 (read in)))
-			(do ((x x1 (read in)))
-			    ((eof-object? x))
-			  (when printer (printer x))
-			  (##sys#call-with-values
-			   (lambda () 
-			     (if timer
-				 (time (evproc x)) 
-				 (evproc x) ) )
-			   (lambda results
-			     (when pf
-			       (for-each
-				(lambda (r) 
-				  (write r)
-				  (newline) )
-				results) ) ) ) ) ) )
-		    (lambda () (close-input-port in)) ) ) ) ) ) )
-	(##core#undefined) ) ) )
-  (set! load
-    (lambda (filename . evaluator)
-      (##sys#load filename (optional evaluator #f) #f) ) )
-  (set! load-relative
-    (lambda (filename . evaluator)
-      (##sys#load
-       (if (memq (string-ref filename 0) '(#\\ #\/))
-	   filename
-	   (##sys#string-append ##sys#current-load-path filename) )
-       (optional evaluator #f) #f) ) )
-  (set! load-noisily
-    (lambda (filename #!key (evaluator #f) (time #f) (printer #f))
-      (##sys#load filename evaluator #t time printer) ) ) )
+(define load/internal
+  (let ((read read)
+	(write write)
+	(display display)
+	(newline newline)
+	(eval eval)
+	(open-input-file open-input-file)
+	(close-input-port close-input-port)
+	(string-append string-append))
+    (lambda (input evaluator #!optional pf timer printer)
+      (define evalproc
+	(or evaluator eval))
+      (define topentry
+	(##sys#make-c-string "C_toplevel"))
+      (define (has-sep? str)
+	(let loop ([i (fx- (##sys#size str) 1)])
+	  (and (not (zero? i))
+	       (if (memq (##core#inline "C_subchar" str i) '(#\\ #\/))
+		   i
+		   (loop (fx- i 1))))))
+      (define fname
+	(cond ((port? input) #f)
+	      ((not (string? input))
+	       (##sys#signal-hook #:type-error 'load "bad argument type - not a port or string" input))
+	      ((##sys#file-exists? input #t #f 'load) input)
+	      (else
+	       (let ([fname2 (##sys#string-append input ##sys#load-dynamic-extension)])
+		 (if (and (not ##sys#dload-disabled)
+			  (##sys#fudge 24) ; dload?
+			  (##sys#file-exists? fname2 #t #f 'load))
+		     fname2
+		     (let ([fname3 (##sys#string-append input source-file-extension)])
+		       (if (##sys#file-exists? fname3 #t #f 'load)
+			   fname3
+			   input)))))))
+      (when (and (string? input) (not fname))
+	(##sys#signal-hook #:file-error 'load "cannot open file" input))
+      (when (and (load-verbose) fname)
+	(display "; loading ")
+	(display fname)
+	(display " ...\n")
+	(flush-output))
+      (or (and fname
+	       (or (##sys#dload (##sys#make-c-string fname 'load) topentry)
+		   (and (not (has-sep? fname))
+			(##sys#dload
+			 (##sys#make-c-string
+			  (##sys#string-append "./" fname)
+			  'load)
+			 topentry))))
+	  (call-with-current-continuation
+	   (lambda (abrt)
+	     (fluid-let ((##sys#read-error-with-line-number #t)
+			 (##sys#current-source-filename fname)
+			 (##sys#current-load-path
+			  (and fname
+			       (let ((i (has-sep? fname)))
+				 (if i (##sys#substring fname 0 (fx+ i 1)) "")))))
+	       (let ((in (if fname (open-input-file fname) input)))
+		 (##sys#dynamic-wind
+		  (lambda () #f)
+		  (lambda ()
+		    (let ((c1 (peek-char in)))
+		      (when (eq? c1 (integer->char 127))
+			(##sys#error
+			 'load
+			 (##sys#string-append
+			  "unable to load compiled module - "
+			  (or _dlerror "unknown reason"))
+			 fname)))
+		    (let ((x1 (read in)))
+		      (do ((x x1 (read in)))
+			  ((eof-object? x))
+			(when printer (printer x))
+			(##sys#call-with-values
+			 (lambda ()
+			   (if timer
+			       (time (evalproc x))
+			       (evalproc x)))
+			 (lambda results
+			   (when pf
+			     (for-each
+			      (lambda (r)
+				(write r)
+				(newline))
+			      results)))))))
+		  (lambda ()
+		    (close-input-port in))))))))
+      (##core#undefined))))
+
+(define (load filename . evaluator)
+  (load/internal filename (optional evaluator #f)))
+
+(define (load-relative filename . evaluator)
+  (load/internal
+   (if (memq (string-ref filename 0) '(#\\ #\/))
+       filename
+       (##sys#string-append ##sys#current-load-path filename))
+   (optional evaluator #f)))
+
+(define (load-noisily filename #!key (evaluator #f) (time #f) (printer #f))
+  (load/internal filename evaluator #t time printer))
 
 (define ##sys#load-library-extension 	; this is crude...
   (cond [(eq? (software-type) 'windows) windows-load-library-extension]
@@ -1165,7 +1175,7 @@
 		   (check (##sys#substring p 0 (fx- n 1))) ]
 		  [else p] ) ) ) ) ) ) )
 
-(define ##sys#repository-path
+(define repository-path
   (let ((rpath
 	 (if (##sys#fudge 22)		; private repository?
 	     (foreign-value "C_private_repository_path()" c-string)
@@ -1180,7 +1190,7 @@
 	  (set! rpath val)
 	  rpath))))
 
-(define repository-path ##sys#repository-path)
+(define ##sys#repository-path repository-path)
 
 (define ##sys#setup-mode #f)
 
@@ -1223,13 +1233,13 @@
 	      (else
 	       (let ([id2 (##sys#find-extension p #f)])
 		 (cond (id2
-			(##sys#load id2 #f #f)
+			(load/internal id2 #f)
 			(set! ##sys#loaded-extensions (cons p ##sys#loaded-extensions)) 
 			#t)
 		       (err? (##sys#error loc "cannot load extension" id))
 		       (else #f) ) ) ) ) ) ) ) )
 
-(define (##sys#provide . ids)
+(define (provide . ids)
   (for-each
    (lambda (id)
      (##sys#check-symbol id 'provide)
@@ -1237,21 +1247,18 @@
        (set! ##sys#loaded-extensions (cons p ##sys#loaded-extensions)) ) ) 
    ids) )
 
-(define provide ##sys#provide)
+(define ##sys#provide provide)
 
-(define (##sys#provided? id)
+(define (provided? id)
   (and (member (##sys#canonicalize-extension-path id 'provided?) ##sys#loaded-extensions) 
        #t) )
 
-(define provided? ##sys#provided?)
+(define ##sys#provided? provided?)
 
-(define ##sys#require
-  (lambda ids
-    (for-each
-     (cut ##sys#load-extension <> 'require) 
-     ids) ) )
+(define (require . ids)
+  (for-each (cut ##sys#load-extension <> 'require) ids))
 
-(define require ##sys#require)
+(define ##sys#require require)
 
 (define ##sys#extension-information
   (let ([with-input-from-file with-input-from-file]
@@ -1284,19 +1291,7 @@
 
 (define ##sys#do-the-right-thing
   (let ((vector->list vector->list))
-    (lambda (id comp? imp?)
-      (define (adjoin lst)
-	(if (memq id lst)
-	    lst
-	    (cons id lst)))
-      (define (add-req id syntax?)
-	(when comp?
-	  (##sys#hash-table-update!
-	   ;; XXX FIXME: This is a bit of a hack.  Why is it needed at all?
-	   chicken.compiler.core#file-requirements
-	   (if syntax? 'dynamic/syntax 'dynamic)
-	   adjoin
-	   (lambda () (list id)))))
+    (lambda (id comp? imp? #!optional (add-req void))
       (define (impform x id builtin?)
 	`(##core#begin
 	  ,x
@@ -1310,10 +1305,10 @@
 	    (##sys#syntax-error-hook 'require-extension "invalid SRFI number" n)))
       (define (doit id impid)
 	(cond ((or (memq id builtin-features)
-		   (if comp?
-		       (memq id builtin-features/compiled)
-		       (##sys#feature? id) ) )
-	       (values (impform '(##core#undefined) impid #t) #t id) )
+		   (and comp? (memq id builtin-features/compiled)))
+	       (values (impform '(##core#undefined) impid #t) #t id))
+	      ((and (not comp?) (##sys#feature? id))
+	       (values (impform '(##core#undefined) impid #f) #t id))
 	      ((memq id ##sys#core-library-modules)
 	       (values
 		(impform
@@ -1692,15 +1687,16 @@
 			       (##sys#read-error port "undefined sharp-comma constructor" spec) ) ) ) ) ) ) )
 	    (else (old char port)) ) ) ) )
 
+) ; eval module
 
 ;;; Simple invocation API:
 
 (declare
   (hide last-error run-safe store-result store-string
-	CHICKEN_yield CHICKEN_apply_to_string
-	CHICKEN_eval CHICKEN_eval_string CHICKEN_eval_to_string CHICKEN_eval_string_to_string
-	CHICKEN_apply CHICKEN_eval_apply CHICKEN_eval_to_string
-	CHICKEN_read CHICKEN_load CHICKEN_get_error_message) )
+	CHICKEN_yield CHICKEN_eval CHICKEN_eval_string
+	CHICKEN_eval_to_string CHICKEN_eval_string_to_string
+	CHICKEN_apply CHICKEN_apply_to_string CHICKEN_eval_apply
+	CHICKEN_read CHICKEN_load CHICKEN_get_error_message))
 	
 (define last-error #f)
 
@@ -1729,13 +1725,13 @@
 (define-external (CHICKEN_eval (scheme-object exp) ((c-pointer "C_word") result)) bool
   (run-safe
    (lambda ()
-     (store-result (eval exp) result) ) ) )
+     (store-result (chicken.eval#eval exp) result))))
 
 (define-external (CHICKEN_eval_string (c-string str) ((c-pointer "C_word") result)) bool
   (run-safe
    (lambda ()
-     (let ([i (open-input-string str)])
-       (store-result (eval (read i)) result)) )))
+     (let ((i (open-input-string str)))
+       (store-result (chicken.eval#eval (read i)) result)))))
 
 #>
 #define C_copy_result_string(str, buf, n)  (C_memcpy((char *)C_block_item(buf, 0), C_c_string(str), C_unfix(n)), ((char *)C_block_item(buf, 0))[ C_unfix(n) ] = '\0', C_SCHEME_TRUE)
@@ -1753,8 +1749,8 @@
   bool
   (run-safe
    (lambda ()
-     (let ([o (open-output-string)])
-       (write (eval exp) o) 
+     (let ((o (open-output-string)))
+       (write (chicken.eval#eval exp) o)
        (store-string (get-output-string o) bufsize buf)) ) ) )
 
 (define-external (CHICKEN_eval_string_to_string (c-string str) ((c-pointer "char") buf)
@@ -1762,8 +1758,8 @@
   bool
   (run-safe
    (lambda ()
-     (let ([o (open-output-string)])
-       (write (eval (read (open-input-string str))) o)
+     (let ((o (open-output-string)))
+       (write (chicken.eval#eval (read (open-input-string str))) o)
        (store-string (get-output-string o) bufsize buf)) ) ) )
 
 (define-external (CHICKEN_apply (scheme-object func) (scheme-object args) 
@@ -1776,18 +1772,18 @@
   bool
   (run-safe
    (lambda ()
-     (let ([o (open-output-string)])
+     (let ((o (open-output-string)))
        (write (apply func args) o) 
        (store-string (get-output-string o) bufsize buf)) ) ) )
 
 (define-external (CHICKEN_read (c-string str) ((c-pointer "C_word") result)) bool
   (run-safe
    (lambda ()
-     (let ([i (open-input-string str)])
+     (let ((i (open-input-string str)))
        (store-result (read i) result) ) ) ) )
 
 (define-external (CHICKEN_load (c-string str)) bool
-  (run-safe (lambda () (load str) #t)) )
+  (run-safe (lambda () (chicken.eval#load str) #t)))
 
 (define-external (CHICKEN_get_error_message ((c-pointer "char") buf) (int bufsize)) void
   (store-string (or last-error "No error") bufsize buf) )

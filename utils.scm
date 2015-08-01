@@ -31,6 +31,23 @@
   (fixnum)
   (disable-interrupts) )
 
+(module chicken.utils
+  (compile-file
+   compile-file-options
+   read-all
+   scan-input-lines
+   system*
+   yes-or-no?
+   qs)
+
+(import scheme chicken)
+(import chicken.data-structures
+	chicken.extras
+	chicken.files
+	chicken.foreign
+	chicken.posix
+	chicken.irregex)
+
 (include "common-declarations.scm")
 
 (register-feature! 'utils)
@@ -200,4 +217,5 @@ C_confirmation_dialog(char *msg, char *caption, int def, int abort) { return -1;
 		       (printf "~%Please enter \"yes\", \"no\" or \"abort\".~%")
 		       (printf "~%Please enter \"yes\" or \"no\".~%"))
 		   (loop) ) ) ) ) ) ) ) )
-  
+
+)

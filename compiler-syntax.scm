@@ -26,15 +26,16 @@
 
 (declare 
   (unit compiler-syntax)
-  (uses data-structures
-	support compiler) )
+  (uses data-structures extras support compiler))
 
 (module chicken.compiler.compiler-syntax
     (compiler-syntax-statistics)
 
-(import chicken scheme data-structures
+(import chicken scheme
 	chicken.compiler.support
-	chicken.compiler.core)
+	chicken.compiler.core
+	chicken.data-structures
+	chicken.extras)
 
 (include "tweaks.scm")
 (include "mini-srfi-1.scm")
@@ -141,53 +142,42 @@
 			       ,%result))))
 	x)))
 
-(define-internal-compiler-syntax ((o #%o) x r c) ()
+(define-internal-compiler-syntax ((chicken.data-structures#o) x r c) ()
   (if (and (fx> (length x) 1)
-	   (memq 'o extended-bindings) ) ; s.a.
+	   (memq 'chicken.data-structures#o extended-bindings)) ; s.a.
       (let ((%tmp (r 'tmp)))
 	`(,(r 'lambda) (,%tmp) ,(foldr list %tmp (cdr x))))
       x))
 
-(define-internal-compiler-syntax ((sprintf #%sprintf format #%format) x r c)
-  (display write fprintf number->string write-char open-output-string get-output-string)
+(define-internal-compiler-syntax ((chicken.extras#sprintf chicken.extras#format) x r c)
+  (display write number->string write-char open-output-string get-output-string)
   (let* ((out (gensym 'out))
-	 (code (compile-format-string 
-		(if (memq (car x) '(sprintf #%sprintf))
-		    'sprintf
-		    'format)
-		out 
-		x
-		(cdr x)
-		r c)))
+	 (code (compile-format-string
+		(if (eq? (car x) 'chicken.extras#sprintf) 'sprintf 'format)
+		out x (cdr x) r c)))
     (if code
 	`(,(r 'let) ((,out (,(r 'open-output-string))))
 	  ,code
 	  (,(r 'get-output-string) ,out))
 	x)))
 
-(define-internal-compiler-syntax ((fprintf #%fprintf) x r c) 
-  (display write fprintf number->string write-char open-output-string get-output-string)
+(define-internal-compiler-syntax ((chicken.extras#fprintf) x r c)
+  (display write number->string write-char open-output-string get-output-string)
   (if (>= (length x) 3)
-      (let ((code (compile-format-string 
-		   'fprintf (cadr x) 
-		   x (cddr x)
-		   r c)))
+      (let ((code (compile-format-string 'fprintf (cadr x) x (cddr x) r c)))
 	(or code x))
       x))
 
-(define-internal-compiler-syntax ((printf #%printf) x r c)
-  (display write fprintf number->string write-char open-output-string get-output-string)
-  (let ((code (compile-format-string 
-	       'printf '##sys#standard-output
-	       x (cdr x)
-	       r c)))
+(define-internal-compiler-syntax ((chicken.extras#printf) x r c)
+  (display write number->string write-char open-output-string get-output-string)
+  (let ((code (compile-format-string 'printf '##sys#standard-output x (cdr x) r c)))
     (or code x)))
 
 (define (compile-format-string func out x args r c)
   (call/cc
    (lambda (return)
      (and (>= (length args) 1)
-	  (memq func extended-bindings)	; s.a.
+	  (memq (symbol-append 'chicken.extras# func) extended-bindings) ; s.a.
 	  (or (string? (car args))
 	      (and (list? (car args))
 		   (c (r 'quote) (caar args))
@@ -206,7 +196,6 @@
 		  (index 0)
 		  (len (string-length fstr)) 
 		  (%out (r 'out))
-		  (%fprintf (r 'fprintf))
 		  (%let (r 'let))
 		  (%number->string (r 'number->string)))
 	      (define (fetch)
@@ -260,7 +249,7 @@
 				 ((#\?)
 				  (let* ([fstr (next)]
 					 [lst (next)] )
-				    (push `(##sys#apply ,%fprintf ,%out ,fstr ,lst))))
+				    (push `(##sys#apply chicken.extras#fprintf ,%out ,fstr ,lst))))
 				 ((#\~) (push `(##sys#write-char-0 #\~ ,%out)))
 				 ((#\% #\N) (push `(##sys#write-char-0 #\newline ,%out)))
 				 (else

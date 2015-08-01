@@ -26,7 +26,7 @@
 
 
 (declare
-  (uses ports extras)
+  (uses data-structures eval expand extras ports)
   (usual-integrations)
   (disable-interrupts)
   (compile-syntax)
@@ -53,6 +53,10 @@ EOF
 	print-banner run hexdump chop-separator lookup-script-file report
 	describe dump tty-input? history-list history-count
 	history-add history-ref history-clear history-show) )
+
+(import chicken.data-structures
+	chicken.extras
+	chicken.ports)
 
 
 ;;; Parameters:
@@ -312,7 +316,7 @@ EOF
 		      (case cmd
 			((x)
 			 (let ([x (read)])
-			   (pretty-print (##sys#strip-syntax (expand x)))
+			   (pretty-print (strip-syntax (expand x)))
 			   (##sys#void) ) )
 			((p)
 			 (let* ([x (read)]
@@ -1049,9 +1053,6 @@ EOF
       (when (member* '("-w" "-no-warnings") args)
 	(unless quiet (display "Warnings are disabled\n"))
 	(set! ##sys#warnings-enabled #f) )
-      (unless quiet
-	(load-verbose #t)
-	(print-banner) )
       (when (member* '("-i" "-case-insensitive") args)
 	(unless quiet (display "Identifiers and symbols are case insensitive\n"))
 	(register-feature! 'case-insensitive)
@@ -1087,8 +1088,17 @@ EOF
 	(keyword-style #:none)
 	(parentheses-synonyms #f)
 	(symbol-escape #f) )
-      (unless (or (member* '("-n" "-no-init") args) script eval?) (loadinit))
-      (when batch 
+      ;; Load the the default modules into the evaluation environment.
+      ;; This is done before setting load-verbose => #t to avoid
+      ;; spurious import messages.
+      (eval '(import-for-syntax scheme chicken))
+      (eval '(import scheme chicken))
+      (unless quiet
+	(load-verbose #t)
+	(print-banner))
+      (unless (or (member* '("-n" "-no-init") args) script eval?)
+	(loadinit))
+      (when batch
 	(set! ##sys#notices-enabled #f))
       (do ([args args (cdr args)])
 	  ((null? args)
@@ -1116,8 +1126,8 @@ EOF
 		 (set! args (cdr args)) )
 		(else
 		 (let ((scr (and script (car script))))
-		   (##sys#load 
-		    arg 
+		   (load
+		    arg
 		    (and (equal? "-sx" scr)
 			 (lambda (x)
 			   (let* ((str (with-output-to-string (cut pretty-print x)))
@@ -1131,8 +1141,7 @@ EOF
 				 (when (char=? #\newline c)
 				   (display "; " ##sys#standard-error))))
 			     (newline ##sys#standard-error)
-			     (eval x))))
-		    #f)
+			     (eval x)))))
 		   (when (equal? "-ss" scr)
 		     (call-with-values (cut main (command-line-arguments))
 		       (lambda results

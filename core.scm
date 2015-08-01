@@ -264,8 +264,7 @@
 
 (declare
  (unit compiler)
- (uses extras data-structures
-       scrutinizer support) )
+ (uses eval extras data-structures scrutinizer support))
 
 (module chicken.compiler.core
     (analyze-expression canonicalize-expression compute-database-statistics
@@ -314,9 +313,14 @@
      constant-table immutable-constants inline-table line-number-database-2
      line-number-database-size)
 
-(import chicken scheme foreign extras data-structures
+(import chicken scheme
 	chicken.compiler.scrutinizer
-	chicken.compiler.support)
+	chicken.compiler.support
+	chicken.data-structures
+	chicken.eval
+	chicken.expand
+	chicken.extras
+	chicken.foreign)
 
 (define (d arg1 . more)
   (when (##sys#fudge 13)		; debug mode?
@@ -587,7 +591,7 @@
 	     (set! ##sys#syntax-error-culprit x)
 	     (let* ((name0 (lookup (car x) se))
 		    (name (or (and (symbol? name0) (##sys#get name0 '##core#primitive)) name0))
-		    (xexpanded (##sys#expand x se compiler-syntax-enabled)))
+		    (xexpanded (expand x se compiler-syntax-enabled)))
 	       (when ln (update-line-number-database! xexpanded ln))
 	       (cond ((not (eq? x xexpanded))
 		      (walk xexpanded e se dest ldest h ln))
@@ -608,7 +612,7 @@
 				(walk (cadddr x) e se #f #f h ln) ) ) )
 
 			((##core#syntax ##core#quote)
-			 `(quote ,(##sys#strip-syntax (cadr x))))
+			 `(quote ,(strip-syntax (cadr x))))
 
 			((##core#check)
 			 (if unsafe
@@ -617,7 +621,7 @@
 
 			((##core#the)
 			 `(##core#the
-			   ,(##sys#strip-syntax (cadr x))
+			   ,(strip-syntax (cadr x))
 			   ,(caddr x)
 			   ,(walk (cadddr x) e se dest ldest h ln)))
 
@@ -626,7 +630,7 @@
 			   ,(or ln (cadr x))
 			   ,(walk (caddr x) e se #f #f h ln)
 			   ,@(map (lambda (cl)
-				    (list (##sys#strip-syntax (car cl))
+				    (list (strip-syntax (car cl))
 					  (walk (cadr cl) e se dest ldest h ln)))
 				  (cdddr x))))
 
@@ -644,11 +648,11 @@
 
 			((##core#inline_ref)
 			 `(##core#inline_ref
-			   (,(caadr x) ,(##sys#strip-syntax (cadadr x)))))
+			   (,(caadr x) ,(strip-syntax (cadadr x)))))
 
 			((##core#inline_loc_ref)
 			 `(##core#inline_loc_ref
-			   ,(##sys#strip-syntax (cadr x))
+			   ,(strip-syntax (cadr x))
 			   ,(walk (caddr x) e se dest ldest h ln)))
 
 			((##core#require-for-syntax)
@@ -663,12 +667,23 @@
 			((##core#require-extension)
 			 (let ((imp? (caddr x)))
 			   (walk
-			    (let loop ([ids (##sys#strip-syntax (cadr x))])
+			    (let loop ([ids (strip-syntax (cadr x))])
 			      (if (null? ids)
 				  '(##core#undefined)
 				  (let ((id (car ids)))
 				    (let-values (((exp f realid)
-						  (##sys#do-the-right-thing id #t imp?)))
+						  (##sys#do-the-right-thing
+						   id #t imp?
+						   (lambda (id* syntax?)
+						     (##sys#hash-table-update!
+						      ;; XXX FIXME: This is a bit of a hack.  Why is it needed at all?
+						      file-requirements
+						      (if syntax? 'dynamic/syntax 'dynamic)
+						      (lambda (lst)
+							(if (memq id* lst)
+							    lst
+							    (cons id* lst)))
+						      (lambda () (list id*)))))))
 				      (unless (or f
 						  (and (symbol? id)
 						       (or (feature? id)
@@ -774,7 +789,7 @@
 					     se
 					     (##sys#ensure-transformer
 					      (##sys#eval/meta (cadr b))
-					      (##sys#strip-syntax (car b)))))
+					      (strip-syntax (car b)))))
 					  (cadr x) )
 				     se) ) )
 			   (walk
@@ -789,7 +804,7 @@
 					   #f
 					   (##sys#ensure-transformer
 					    (##sys#eval/meta (cadr b))
-					    (##sys#strip-syntax (car b)))))
+					    (strip-syntax (car b)))))
 					(cadr x) ) )
 			       (se2 (append ms se)) )
 			  (for-each
@@ -841,7 +856,7 @@
 				(##sys#cons
 				 (##sys#ensure-transformer
 				  (##sys#eval/meta body)
-				  (##sys#strip-syntax var))
+				  (strip-syntax var))
 				 (##sys#current-environment))))
 			  (walk
 			   (if ##sys#enable-runtime-macros
@@ -868,7 +883,7 @@
 					(and (pair? (cdr b))
 					     (cons (##sys#ensure-transformer
 						    (##sys#eval/meta (cadr b))
-						    (##sys#strip-syntax (car b)))
+						    (strip-syntax (car b)))
 						   se))
 					(##sys#get name '##compiler#compiler-syntax) ) ) )
 				   (cadr x))))
@@ -902,13 +917,13 @@
 			(##sys#with-module-aliases
 			 (map (lambda (b)
 				(##sys#check-syntax 'functor b '(symbol symbol))
-				(##sys#strip-syntax b))
+				(strip-syntax b))
 			      (cadr x))
 			 (lambda ()
 			   (walk `(##core#begin ,@(cddr x)) e se dest ldest h ln))))
 
 		       ((##core#module)
-			(let* ((name (##sys#strip-syntax (cadr x)))
+			(let* ((name (strip-syntax (cadr x)))
 			       (exports
 				(or (eq? #t (caddr x))
 				    (map (lambda (exp)
@@ -923,7 +938,7 @@
 						  (##sys#syntax-error-hook
 						   'module
 						   "invalid export syntax" exp name))))
-					 (##sys#strip-syntax (caddr x)))))
+					 (strip-syntax (caddr x)))))
 			       (csyntax compiler-syntax))
 			  (when (##sys#current-module)
 			    (##sys#syntax-error-hook
@@ -1112,11 +1127,11 @@
 			 (walk (expand-foreign-primitive x) e se dest ldest h ln) )
 
 			((##core#define-foreign-variable)
-			 (let* ([var (##sys#strip-syntax (second x))]
-				[type (##sys#strip-syntax (third x))]
-				[name (if (pair? (cdddr x))
+			 (let* ((var (strip-syntax (second x)))
+				(type (strip-syntax (third x)))
+				(name (if (pair? (cdddr x))
 					  (fourth x)
-					  (symbol->string var) ) ] )
+					  (symbol->string var))))
 			   (set! foreign-variables
 			     (cons (list var type
 					 (if (string? name)
@@ -1126,9 +1141,9 @@
 			   '(##core#undefined) ) )
 
 			((##core#define-foreign-type)
-			 (let ([name (second x)]
-			       [type (##sys#strip-syntax (third x))]
-			       [conv (cdddr x)] )
+			 (let ((name (second x))
+			       (type (strip-syntax (third x)))
+			       (conv (cdddr x)))
 			   (cond [(pair? conv)
 				  (let ([arg (gensym)]
 					[ret (gensym)] )
@@ -1163,11 +1178,11 @@
 			   '(##core#undefined) ) )
 
 			((##core#let-location)
-			 (let* ([var (second x)]
-				[type (##sys#strip-syntax (third x))]
-				[alias (gensym)]
-				[store (gensym)]
-				[init (and (pair? (cddddr x)) (fourth x))] )
+			 (let* ((var (second x))
+				(type (strip-syntax (third x)))
+				(alias (gensym))
+				(store (gensym))
+				(init (and (pair? (cddddr x)) (fourth x))))
 			   (set-real-name! alias var)
 			   (set! location-pointer-map
 			     (cons (list alias store type) location-pointer-map) )
@@ -1389,9 +1404,7 @@
 	  (syntax-error "invalid declaration" spec) ) ) )
   (define (stripa x)			; global aliasing
     (##sys#globalize x se))
-  (define (strip x)			; raw symbol
-    (##sys#strip-syntax x))
-  (define stripu ##sys#strip-syntax)
+  (define stripu strip-syntax)
   (define (globalize-all syms)
     (filter-map
      (lambda (var)
@@ -1407,8 +1420,7 @@
    (lambda (return)
      (unless (pair? spec)
        (syntax-error "invalid declaration specification" spec) )
-     ;(pp `(DECLARE: ,(strip spec)))
-     (case (##sys#strip-syntax (car spec)) ; no global aliasing
+     (case (strip-syntax (car spec)) ; no global aliasing
        ((uses)
 	(let ((us (stripu (cdr spec))))
 	  (apply register-feature! us)
@@ -1444,7 +1456,7 @@
 		 (set! extended-bindings (lset-intersection/eq? syms default-extended-bindings)))]))
        ((number-type)
 	(check-decl spec 1 1)
-	(set! number-type (strip (cadr spec))))
+	(set! number-type (strip-syntax (cadr spec))))
        ((fixnum fixnum-arithmetic) (set! number-type 'fixnum))
        ((generic) (set! number-type 'generic))
        ((unsafe) (set! unsafe #t))
@@ -1486,7 +1498,7 @@
 	 (globalize-all (cdr spec))))
        ((not)
 	(check-decl spec 1)
-	(case (##sys#strip-syntax (second spec)) ; strip all
+	(case (strip-syntax (second spec)) ; strip all
 	  [(standard-bindings)
 	   (if (null? (cddr spec))
 	       (set! standard-bindings '())
@@ -1521,7 +1533,7 @@
 	      (globalize-all (cddr spec)))))
 	  [else
 	   (check-decl spec 1 1)
-	   (let ((id (strip (cadr spec))))
+	   (let ((id (strip-syntax (cadr spec))))
 	     (case id
 	       [(interrupts-enabled) (set! insert-timer-checks #f)]
 	       [(safe) (set! unsafe #t)]
@@ -1574,7 +1586,7 @@
 			(else
 			 (warning
 			  "invalid import-library specification" il))))
-		(strip (cdr spec))))))
+		(strip-syntax (cdr spec))))))
        ((profile)
 	(set! emit-profile #t)
 	(cond ((null? (cdr spec))
@@ -1604,9 +1616,9 @@
 	   (if (not (and (list? spec)
 			 (>= (length spec) 2)
 			 (symbol? (car spec))))
-	       (warning "illegal type declaration" (##sys#strip-syntax spec))
+	       (warning "illegal type declaration" (strip-syntax spec))
 	       (let ((name (##sys#globalize (car spec) se))
-		     (type (##sys#strip-syntax (cadr spec))))
+		     (type (strip-syntax (cadr spec))))
 		 (if (local? (car spec))
 		     (note-local (car spec))
 		     (let-values (((type pred pure) (validate-type type name)))
@@ -1628,18 +1640,18 @@
 			      (when (pair? (cddr spec))
 				(install-specializations
 				 name
-				 (##sys#strip-syntax (cddr spec)))))
+				 (strip-syntax (cddr spec)))))
 			     (else
 			      (warning
 			       "illegal `type' declaration"
-			       (##sys#strip-syntax spec)))))))))
+			       (strip-syntax spec)))))))))
 	 (cdr spec)))
        ((predicate)
 	(for-each
 	 (lambda (spec)
 	   (cond ((and (list? spec) (symbol? (car spec)) (= 2 (length spec)))
 		  (let ((name (##sys#globalize (car spec) se))
-			(type (##sys#strip-syntax (cadr spec))))
+			(type (strip-syntax (cadr spec))))
 		    (if (local? (car spec))
 			(note-local (car spec))
 			(let-values (((type pred pure) (validate-type type name)))
@@ -1685,14 +1697,14 @@
 	  (else (loop (car type)))))
        ((or (symbol? type) (string? type)) type)
        (else 'a))))
-  (let* ((rtype (##sys#strip-syntax rtype))
-	 (argtypes (##sys#strip-syntax argtypes))
-	 [params (if argnames
+  (let* ((rtype (strip-syntax rtype))
+	 (argtypes (strip-syntax argtypes))
+	 (params (if argnames
 		     (map gensym argnames)
-		     (map (o gensym type->symbol) argtypes))]
-	 [f-id (gensym 'stub)]
-	 [bufvar (gensym)]
-	 [rsize (estimate-foreign-result-size rtype)] )
+		     (map (o gensym type->symbol) argtypes)))
+	 (f-id (gensym 'stub))
+	 (bufvar (gensym))
+	 (rsize (estimate-foreign-result-size rtype)))
     (when sname (set-real-name! f-id (string->symbol sname)))
     (set! foreign-lambda-stubs
       (cons (make-foreign-stub f-id rtype sname argtypes argnames body cps callback)
@@ -1716,7 +1728,7 @@
 
 (define (expand-foreign-lambda exp callback?)
   (let* ((name (third exp))
-	 (sname (cond ((symbol? name) (symbol->string (##sys#strip-syntax name)))
+	 (sname (cond ((symbol? name) (symbol->string (strip-syntax name)))
 		      ((string? name) name)
 		      (else (quit-compiling
 			     "name `~s' of foreign procedure has wrong type"
@@ -1726,23 +1738,23 @@
     (create-foreign-stub rtype sname argtypes #f #f callback? callback?) ) )
 
 (define (expand-foreign-lambda* exp callback?)
-  (let* ([rtype (second exp)]
-	 [args (third exp)]
-	 [body (apply string-append (cdddr exp))]
- 	 [argtypes (map (lambda (x) (car x)) args)]
+  (let* ((rtype (second exp))
+	 (args (third exp))
+	 (body (apply string-append (cdddr exp)))
+ 	 (argtypes (map (lambda (x) (car x)) args))
 	 ;; C identifiers aren't hygienically renamed inside body strings
-	 [argnames (map cadr (##sys#strip-syntax args))] )
+	 (argnames (map cadr (strip-syntax args))))
     (create-foreign-stub rtype #f argtypes argnames body callback? callback?) ) )
 
 ;; TODO: Try to fold this procedure into expand-foreign-lambda*
 (define (expand-foreign-primitive exp)
-  (let* ([hasrtype (and (pair? (cddr exp)) (not (string? (caddr exp))))]
-	 [rtype (if hasrtype (second exp) 'void)]
-	 [args (##sys#strip-syntax (if hasrtype (third exp) (second exp)))]
-	 [body (apply string-append (if hasrtype (cdddr exp) (cddr exp)))]
- 	 [argtypes (map (lambda (x) (car x)) args)]
+  (let* ((hasrtype (and (pair? (cddr exp)) (not (string? (caddr exp)))))
+	 (rtype (if hasrtype (second exp) 'void))
+	 (args (strip-syntax (if hasrtype (third exp) (second exp))))
+	 (body (apply string-append (if hasrtype (cdddr exp) (cddr exp))))
+ 	 (argtypes (map (lambda (x) (car x)) args))
 	 ;; C identifiers aren't hygienically renamed inside body strings
-	 [argnames (map cadr (##sys#strip-syntax args))] )
+	 (argnames (map cadr (strip-syntax args))))
     (create-foreign-stub rtype #f argtypes argnames body #f #t) ) )
 
 

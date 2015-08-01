@@ -310,7 +310,7 @@ if errorlevel 1 exit /b 1
 
 echo ======================================== r4rstest ...
 echo (expect mult-float-print-test to fail)
-%interpret% -e "(set! ##sys#procedure->string (constantly \"#<procedure>\"))" -i -s r4rstest.scm >r4rstest.log
+%interpret% -R data-structures -e "(set! ##sys#procedure->string (constantly \"#<procedure>\"))" -i -s r4rstest.scm >r4rstest.log
 if errorlevel 1 exit /b 1
 
 type r4rstest.log

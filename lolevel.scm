@@ -27,13 +27,6 @@
 
 (declare
   (unit lolevel)
-  (hide ipc-hook-0 *set-invalid-procedure-call-handler! xproc-tag
-   ##sys#check-block
-   ##sys#check-become-alist
-   ##sys#check-generic-structure
-   ##sys#check-generic-vector
-   pv-buf-ref pv-buf-set!)
-  (not inline ipc-hook-0 ##sys#invalid-procedure-call-hook)
   (foreign-declare #<<EOF
 #ifndef C_NONUNIX
 # include <sys/mman.h>
@@ -42,6 +35,27 @@
 #define C_memmove_o(to, from, n, toff, foff) C_memmove((char *)(to) + (toff), (char *)(from) + (foff), (n))
 EOF
 ) )
+
+(module chicken.lolevel
+  (address->pointer align-to-word allocate block-ref block-set!
+   extend-procedure extended-procedure? free locative->object
+   locative-ref locative-set! locative? make-locative
+   make-pointer-vector make-record-instance make-weak-locative
+   move-memory! mutate-procedure! number-of-bytes number-of-slots
+   object->pointer object-become! object-copy pointer+ pointer->address
+   pointer->object pointer-f32-ref pointer-f32-set! pointer-f64-ref
+   pointer-f64-set! pointer-like? pointer-s16-ref pointer-s16-set!
+   pointer-s32-ref pointer-s32-set! pointer-s8-ref pointer-s8-set!
+   pointer-tag pointer-u16-ref pointer-u16-set! pointer-u32-ref
+   pointer-u32-set! pointer-u8-ref pointer-u8-set! pointer-vector
+   pointer-vector-fill! pointer-vector-length pointer-vector-ref
+   pointer-vector-set! pointer-vector? pointer=? pointer? procedure-data
+   record->vector record-instance-length record-instance-slot
+   record-instance-slot-set! record-instance-type record-instance?
+   set-procedure-data! tag-pointer tagged-pointer? vector-like?)
+
+(import scheme chicken)
+(import chicken.foreign)
 
 (include "common-declarations.scm")
 
@@ -573,3 +587,5 @@ EOF
 (define (pointer-vector-length pv)
   (##sys#check-structure pv 'pointer-vector 'pointer-vector-length)
   (##sys#slot pv 1))
+
+)

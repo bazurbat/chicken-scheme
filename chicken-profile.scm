@@ -28,8 +28,10 @@
 (declare
   (block)
   (uses data-structures
-	posix
-	utils))
+	posix))
+
+(import chicken.data-structures
+	chicken.posix)
 
 (include "mini-srfi-1.scm")
 

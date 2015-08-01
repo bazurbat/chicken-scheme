@@ -34,13 +34,14 @@
 
 (declare
   (unit lfa2)
-  (uses support) )
+  (uses extras support))
 
 (module chicken.compiler.lfa2
     (perform-secondary-flow-analysis)
 
 (import chicken scheme
-	chicken.compiler.support)
+	chicken.compiler.support
+	chicken.extras)
 
 (include "tweaks")
 (include "mini-srfi-1.scm")
