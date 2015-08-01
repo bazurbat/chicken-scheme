@@ -214,6 +214,9 @@ function(_chicken_command out_var in_file)
         set_property(SOURCE ${_filename} PROPERTY CHICKEN_IMPORT_LIBRARY YES)
     endforeach()
 
+    set_property(SOURCE ${out_path} APPEND PROPERTY
+        COMPILE_DEFINITIONS ${compile_DEFINITIONS})
+
     get_property(import_library SOURCE ${in_file}
         PROPERTY CHICKEN_IMPORT_LIBRARY)
 
