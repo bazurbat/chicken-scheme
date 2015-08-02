@@ -305,7 +305,7 @@ foreach(module ${runtime_CHICKEN_MODULES})
         OPTIONS ${IMPORT_LIBRARY_OPTIONS})
 endforeach()
 
-add_chicken_library(posix.import IMPORT_MODULE
+add_chicken_library(chicken.posix.import IMPORT_MODULE
     SOURCES ${CHICKEN_IMPORT_LIBRARY_DIR}/chicken.posix.import.scm
     OPTIONS ${IMPORT_LIBRARY_OPTIONS})
 
