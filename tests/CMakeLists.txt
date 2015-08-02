@@ -2,8 +2,9 @@ project(chicken-tests C)
 
 set(CHICKEN_COMPILER $<TARGET_FILE:chicken-compiler>)
 set(CHICKEN_INTERPRETER $<TARGET_FILE:csi>)
+set(CHICKEN_DEPENDS "")
 set(CHICKEN_LIBRARIES libchicken ${CHICKEN_EXTRA_LIBRARIES})
-set(CHICKEN_REPOSITORY ${CHICKEN_LOCAL_REPOSITORY}/$<CONFIGURATION>)
+set(CHICKEN_REPOSITORY ${CHICKEN_LOCAL_REPOSITORY})
 
 set(CHICKEN_OPTIONS -ignore-repository
     -types ${CHICKEN_TYPES_DB}
@@ -60,11 +61,12 @@ endfunction()
 
 function(add_compiled_test name)
     cmake_parse_arguments(test "" "ARGS;OUTPUT_FILE" "ENVIRONMENT" ${ARGN})
-    add_chicken_executable(${name} ${test_UNPARSED_ARGUMENTS})
-    add_chicken_test(${name} $<TARGET_FILE:${name}> ${test_ARGS}
+    set(target ${name}-test)
+    add_chicken_executable(${target} ${test_UNPARSED_ARGUMENTS})
+    add_chicken_test(${name} $<TARGET_FILE:${target}> ${test_ARGS}
         OUTPUT_FILE "${test_OUTPUT_FILE}" ENVIRONMENT ${test_ENVIRONMENT})
-    add_dependencies(BUILD_TESTS ${name})
-    set_target_properties(${name} PROPERTIES FOLDER "Tests")
+    add_dependencies(BUILD_TESTS ${target})
+    set_target_properties(${target} PROPERTIES FOLDER "Tests")
 endfunction()
 
 function(add_chicken_interpreted_test name)
@@ -117,7 +119,7 @@ add_chicken_interpreted_test(version SCRIPT version-tests.scm)
 
 # compiler tests
 
-add_compiled_test(compiler compiler-tests.scm)
+# add_compiled_test(compiler compiler-tests.scm)
 
 # compiler inlining tests
 
@@ -203,7 +205,7 @@ if(NOT MSVC)
     add_compiled_test(callback callback-tests.scm)
 
     add_chicken_test(callback-twice
-        $<TARGET_FILE:callback> twice)
+        $<TARGET_FILE:callback-test> twice)
     set_tests_properties(callback-twice PROPERTIES WILL_FAIL TRUE)
 endif()
 
@@ -452,12 +454,6 @@ add_chicken_interpreted_test(ec-2 $<TARGET_FILE:ec-mod> ec-tests.scm)
 # add_compiled_test(ec ec-tests.scm
 #     DEPENDS ec-mod)
 
-# hash-table tests
-
-if(NOT CHICKEN_5)
-    add_chicken_interpreted_test(hash-table SCRIPT hash-table-tests.scm)
-endif()
-
 # port tests
 
 add_custom_command(OUTPUT compiler.scm COMMAND ${CMAKE_COMMAND} -E copy
@@ -483,25 +479,9 @@ add_compiled_test(numbers-string-conversion numbers-string-conversion-tests.scm)
 
 add_chicken_interpreted_test(srfi-4 SCRIPT srfi-4-tests.scm)
 
-if(NOT CHICKEN_5)
-    add_chicken_interpreted_test(srfi-13 SCRIPT srfi-13-tests.scm)
-    add_compiled_test(srfi-14 srfi-14-tests.scm)
-endif()
-
 # condition tests
 
 add_chicken_interpreted_test(condition SCRIPT condition-tests.scm)
-
-# srfi-18 tests
-if(NOT CHICKEN_5)
-    add_chicken_interpreted_test(srfi-18-simple-thread SCRIPT simple-thread-test.scm)
-    add_chicken_interpreted_test(srfi-18-mutex SCRIPT mutex-test.scm)
-
-    # tries to use sys/time.h unconditionally
-    if(NOT MSVC)
-        add_compiled_test(srfi-18-signal srfi-18-signal-test.scm)
-    endif()
-endif()
 
 # data-structures tests
 
@@ -544,13 +524,6 @@ add_compiled_test(posix posix-tests.scm
 add_chicken_interpreted_test(posix
     -R posix -e "(delete-directory \"tmpdir\" #t)")
 set_tests_properties(posix-i PROPERTIES REQUIRED_FILES tmpdir/.dotfile)
-
-# signal tests
-
-# causes debugger hook
-if(NOT MSVC)
-    add_compiled_test(signal signal-tests.scm)
-endif()
 
 # regular expression tests
 
@@ -614,7 +587,7 @@ add_compiled_test(private-repository private-repository-test.scm
     ARGS ${CMAKE_CURRENT_BINARY_DIR})
 
 add_chicken_test(private-repository-with-path
-    $<TARGET_FILE:private-repository> ${CMAKE_CURRENT_BINARY_DIR}
+    $<TARGET_FILE:private-repository-test> ${CMAKE_CURRENT_BINARY_DIR}
     PATH ${CMAKE_CURRENT_BINARY_DIR})
 
 # reinstall tests
@@ -768,10 +741,6 @@ chicken_add_benchmark(fft-boxed 2000 11
 chicken_add_benchmark(fft-unboxed 2000 11
     SOURCE fft.scm SUFFIX 2
     OPTIONS -feature unboxed)
-
-chicken_add_benchmark(thread-list 1000000
-    SOURCE thread-list.scm
-    OPTIONS -fixnum-arithmetic)
 
 chicken_add_benchmark(gobble 1000000000
     SOURCE gobble.scm)
