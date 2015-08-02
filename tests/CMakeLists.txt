@@ -24,9 +24,16 @@ if(WIN32)
     set_property(TARGET copy_libchicken PROPERTY FOLDER "Tests")
 endif()
 
+function(add_test_executable name)
+    add_chicken_executable(${ARGV})
+    add_dependencies(BUILD_TESTS ${name})
+    set_target_properties(${name} PROPERTIES FOLDER "Tests")
+endfunction()
+
 function(add_test_module name)
     add_chicken_module(${ARGV})
     add_dependencies(BUILD_TESTS ${name})
+    set_target_properties(${name} PROPERTIES FOLDER "Tests")
 endfunction()
 
 function(add_chicken_test name)
@@ -190,22 +197,17 @@ add_compiled_test(specialization-test-2 specialization-test-2.scm
 
 # specialization benchmark
 
-add_chicken_executable(fft-normal fft.scm
+add_test_executable(test-fft-normal fft.scm
     OPTIONS -optimize-level 2 -debug-level 0 -local -disable-interrupts
-        -block)
+            -block)
 
-add_chicken_executable(fft-specialized fft.scm
+add_test_executable(test-fft-specialized fft.scm
     SUFFIX -specialized
     OPTIONS -optimize-level 2 -debug-level 0 -local -disable-interrupts
-        -block -specialize -debug x)
+            -block -specialize -debug x)
 
-add_dependencies(BUILD_TESTS fft-normal fft-specialized)
-
-add_test(NAME fft-normal COMMAND fft-normal 1000 7)
-add_test(NAME fft-specialized COMMAND fft-specialized 1000 7)
-
-set_property(TARGET fft-normal fft-specialized PROPERTY FOLDER "Tests")
-
+add_chicken_test(fft-normal test-fft-normal 1000 7)
+add_chicken_test(fft-specialized test-fft-specialized 1000 7)
 
 # callback tests
 
@@ -306,18 +308,13 @@ add_chicken_interpreted_test(meta-syntax-2
 
 # reexport tests
 
-add_chicken_module(reexport-m1 reexport-m1.scm)
-add_chicken_module(reexport-m3 reexport-m3.scm)
-add_chicken_module(reexport-m4 reexport-m4.scm
+add_test_module(reexport-m1 reexport-m1.scm)
+add_test_module(reexport-m3 reexport-m3.scm)
+add_test_module(reexport-m4 reexport-m4.scm
     DEPENDS reexport-m3)
-add_chicken_module(reexport-m5 reexport-m5.scm)
-add_chicken_module(reexport-m6 reexport-m6.scm
+add_test_module(reexport-m5 reexport-m5.scm)
+add_test_module(reexport-m6 reexport-m6.scm
     DEPENDS reexport-m5)
-set_property(TARGET reexport-m1 reexport-m3 reexport-m4 reexport-m5 reexport-m6
-    PROPERTY FOLDER "Tests")
-
-add_dependencies(BUILD_TESTS reexport-m1 reexport-m3 reexport-m4 reexport-m5
-    reexport-m6)
 
 add_chicken_interpreted_test(reexport SCRIPT reexport-tests.scm)
 
@@ -333,8 +330,7 @@ add_compiled_test(reexport-2 reexport-tests-2.scm
 
 # functor tests
 
-add_chicken_module(square-functor square-functor.scm)
-set_property(TARGET square-functor PROPERTY FOLDER "Tests")
+add_test_module(square-functor square-functor.scm)
 
 add_compiled_test(functor functor-tests.scm)
 add_chicken_interpreted_test(functor SCRIPT functor-tests.scm)
@@ -355,13 +351,11 @@ add_compiled_test(compiler-syntax compiler-syntax-tests.scm)
 add_chicken_interpreted_test(import SCRIPT import-tests.scm)
 
 # import library tests
+
 # TODO: handle running with or without compiled import library
 
-add_chicken_module(import-library-test1 import-library-test1.scm
+add_test_module(import-library-test1 import-library-test1.scm
     EMIT_IMPORTS import-library-test1)
-set_property(TARGET import-library-test1 PROPERTY FOLDER "Tests")
-set_property(TARGET import-library-test1.import PROPERTY FOLDER "Tests")
-add_dependencies(BUILD_TESTS import-library-test1)
 
 add_chicken_interpreted_test(import-library SCRIPT import-library-test2.scm)
 
@@ -418,11 +412,8 @@ add_compiled_test(module module-tests-compiled.scm)
 
 # module tests (chained)
 
-add_chicken_module(chained-modules test-chained-modules.scm
+add_test_module(chained-modules test-chained-modules.scm
     EMIT_IMPORTS m3)
-set_property(TARGET chained-modules PROPERTY FOLDER "Tests")
-set_property(TARGET m3.import PROPERTY FOLDER "Tests")
-add_dependencies(BUILD_TESTS chained-modules)
 
 add_chicken_interpreted_test(modules-chained SCRIPT test-chained-modules.scm)
 
@@ -443,10 +434,7 @@ add_custom_target(prepare-ec-tests
     DEPENDS ec.scm ec-tests.scm)
 add_dependencies(BUILD_TESTS prepare-ec-tests)
 
-add_chicken_module(ec-mod ec.scm EMIT_IMPORTS ec)
-set_property(TARGET prepare-ec-tests ec-mod PROPERTY FOLDER "Tests")
-set_property(TARGET ec.import PROPERTY FOLDER "Tests")
-add_dependencies(BUILD_TESTS ec-mod)
+add_test_module(ec-mod ec.scm EMIT_IMPORTS ec)
 
 add_chicken_interpreted_test(ec ec.scm ec-tests.scm)
 
@@ -544,9 +532,10 @@ add_chicken_interpreted_test(glob SCRIPT test-glob.scm)
 # compiler/nursery stress test
 
 foreach(s 100000 120000 200000 250000 300000 350000 400000 450000 500000)
-    add_chicken_test(compiler-nursery-stress-${s} $<TARGET_FILE:chicken-compiler>
+    add_chicken_test(compiler-nursery-stress-${s} chicken-compiler
         -ignore-repository ${chicken_SOURCE_DIR}/utils.scm -:s${s}
-        -include-path ${chicken_SOURCE_DIR})
+        -output-file tmp.c -include-path ${chicken_SOURCE_DIR}
+        -include-path ${CHICKEN_IMPORT_LIBRARY_DIR})
 endforeach()
 
 # symbol-GC tests
