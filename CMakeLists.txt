@@ -59,7 +59,7 @@ find_package(Chicken REQUIRED)
 
 set(CHICKEN_RUN      ${CMAKE_SOURCE_DIR}/cmake/ChickenRun.cmake)
 set(CHICKEN_TYPES_DB ${CMAKE_SOURCE_DIR}/types.db)
-set(CHICKEN_DEPENDS ${CHICKEN_INTERPRETER} -ss
+set(CHICKEN_DEPENDS  ${CHICKEN_INTERPRETER} -ss
     ${CMAKE_CURRENT_LIST_DIR}/chicken-depends.scm)
 
 include(ChickenConfigure)
@@ -158,7 +158,7 @@ function(add_chicken_runtime name)
     set(c_sources chicken.h runtime.c ${CHICKEN_APPLY_HACK})
 
     foreach(module ${runtime_GENERIC_MODULES})
-        add_chicken_sources(sources ${type}
+        add_chicken_sources(sources
             SUFFIX ${runtime_SUFFIX}
             SOURCES ${module}.scm
             EMIT_IMPORTS ${module}
@@ -166,20 +166,20 @@ function(add_chicken_runtime name)
     endforeach()
 
     foreach(module ${runtime_CHICKEN_MODULES})
-        add_chicken_sources(sources ${type}
+        add_chicken_sources(sources
             SUFFIX ${runtime_SUFFIX}
             SOURCES ${module}.scm
             EMIT_IMPORTS chicken.${module}
             OPTIONS ${options})
     endforeach()
 
-    add_chicken_sources(sources ${type}
+    add_chicken_sources(sources
         SUFFIX ${runtime_SUFFIX}
         SOURCES ${runtime_POSIX_MODULE}.scm
         EMIT_IMPORTS chicken.posix
         OPTIONS ${options})
 
-    add_chicken_sources(sources ${type}
+    add_chicken_sources(sources
         SUFFIX ${runtime_SUFFIX}
         SOURCES ${scm_sources}
         OPTIONS ${options})
@@ -208,8 +208,6 @@ function(add_chicken_compiler name)
 
     if(compiler_STATIC)
         set(type STATIC)
-    else()
-        set(type SHARED)
     endif()
 
     if(NOT compiler_OUTPUT_NAME)

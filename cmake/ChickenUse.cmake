@@ -62,8 +62,6 @@ macro(_chicken_parse_arguments)
         set(compile_SHARED TRUE)
     elseif(compile_IMPORT_MODULE)
         set(compile_TYPE MODULE)
-    else()
-        set(compile_TYPE SHARED)
     endif()
 endmacro()
 
@@ -152,6 +150,8 @@ endfunction()
 
 # Helper function for automatic dependecy extraction. Internal.
 function(_chicken_extract_depends out_var dep_path)
+    set(imports "")
+    set(includes "")
     set(result "")
 
     include(${dep_path} OPTIONAL)
@@ -186,11 +186,6 @@ function(_chicken_command out_var in_file)
     string(REGEX REPLACE
         "(.*)\\.scm$" "\\1${compile_SUFFIX}.chicken.c"
         out_file ${in_file})
-
-    # The custom commands have sensible defaults for relative input and output
-    # paths which makes verbose mode look cleaner but we need absolute paths
-    # for other logic anyway, so the sources are always refereced by absolute
-    # pathnames to avoid ambiguity.
 
     get_filename_component(in_path ${in_file} ABSOLUTE)
 
@@ -393,7 +388,7 @@ endfunction()
 function(add_chicken_library name)
     _chicken_parse_arguments(${ARGN})
 
-    set(sources)
+    set(sources "")
     add_chicken_sources(sources ${compile_TYPE} ${ARGN})
 
     add_library(${name} ${compile_TYPE} ${sources})
