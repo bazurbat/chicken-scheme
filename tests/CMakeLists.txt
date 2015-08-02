@@ -24,6 +24,11 @@ if(WIN32)
     set_property(TARGET copy_libchicken PROPERTY FOLDER "Tests")
 endif()
 
+function(add_test_module name)
+    add_chicken_module(${ARGV})
+    add_dependencies(BUILD_TESTS ${name})
+endfunction()
+
 function(add_chicken_test name)
     cmake_parse_arguments(test "" "PATH;OUTPUT_FILE" "ENVIRONMENT" ${ARGN})
 
@@ -70,18 +75,22 @@ function(add_compiled_test name)
 endfunction()
 
 function(add_chicken_interpreted_test name)
-    cmake_parse_arguments(test "" "SCRIPT" "" ${ARGN})
+    cmake_parse_arguments(test "" "SOURCE;SCRIPT" "" ${ARGN})
 
     set(command ${CHICKEN_INTERPRETER} -bnq
         -I ${CMAKE_CURRENT_SOURCE_DIR}
         -I ${CMAKE_CURRENT_BINARY_DIR})
 
-    if(test_SCRIPT)
-        set(args -s ${CMAKE_CURRENT_SOURCE_DIR}/${test_SCRIPT})
+    if(test_SOURCE)
+        set(test_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/${test_SOURCE})
     endif()
 
-    # NOTE: order of arguments matters
-    add_chicken_test(${name}-i ${command} ${test_UNPARSED_ARGUMENTS} ${args})
+    if(test_SCRIPT)
+        set(test_SCRIPT -s ${CMAKE_CURRENT_SOURCE_DIR}/${test_SCRIPT})
+    endif()
+
+    add_chicken_test(${name}-i ${command}
+        ${test_SOURCE} ${test_UNPARSED_ARGUMENTS} ${test_SCRIPT})
 endfunction()
 
 set(expected_FILES
@@ -242,11 +251,13 @@ add_compiled_test(dynamic-wind dwindtst.scm
 
 add_test(NAME dynamic-wind-expected COMMAND ${CMAKE_COMMAND} -E compare_files
     dynamic-wind.out dwindtst.expected)
-set_tests_properties(dynamic-wind-expected PROPERTIES DEPENDS dynamic-wind)
+set_tests_properties(dynamic-wind-expected PROPERTIES
+    DEPENDS dynamic-wind)
 
 add_test(NAME dynamic-wind-i-expected COMMAND ${CMAKE_COMMAND} -E compare_files
     dynamic-wind-i.out dwindtst.expected)
-set_tests_properties(dynamic-wind-i-expected PROPERTIES DEPENDS dynamic-wind-i)
+set_tests_properties(dynamic-wind-i-expected PROPERTIES
+    DEPENDS dynamic-wind-i)
 
 # lolevel tests
 
@@ -276,18 +287,9 @@ add_compiled_test(syntax2 syntax-tests-2.scm)
 
 # meta syntax tests
 
-add_custom_command(OUTPUT meta-syntax-test.scm COMMAND ${CMAKE_COMMAND}
-    -E copy ${CMAKE_CURRENT_SOURCE_DIR}/meta-syntax-test.scm meta-syntax-test.scm
-    VERBATIM)
-add_custom_target(prepare-meta-syntax-tests
-    DEPENDS meta-syntax-test.scm)
-add_dependencies(BUILD_TESTS prepare-meta-syntax-tests)
-set_property(TARGET prepare-meta-syntax-tests PROPERTY FOLDER "Tests")
+add_test_module(meta-syntax-test meta-syntax-test.scm)
 
-add_compiled_test(meta-syntax meta-syntax-test.scm
-    EMIT_IMPORTS meta-syntax-test)
-
-add_chicken_interpreted_test(meta-syntax meta-syntax-test.scm
+add_chicken_interpreted_test(meta-syntax SOURCE meta-syntax-test.scm
     -e "(import meta-syntax-test)"
     -e "(assert (equal? '((1)) (bar 1 2)))"
     -e "(assert (equal? '(list 1 2 3) (listify)))"
@@ -301,9 +303,6 @@ add_chicken_interpreted_test(meta-syntax-2
     -e "(assert (equal? '(list 1 2 3) (listify)))"
     -e "(import meta-syntax-test-usage)"
     -e "(assert (equal? '(1) (foo-user)))")
-
-set_tests_properties(meta-syntax-i meta-syntax-2-i
-    PROPERTIES DEPENDS meta-syntax)
 
 # reexport tests
 
@@ -399,7 +398,8 @@ add_chicken_interpreted_test(r4rs SCRIPT r4rstest.scm -i
 
 add_test(NAME r4rs-expected COMMAND ${CMAKE_COMMAND} -E compare_files
     r4rs-i.out r4rstest.out)
-set_tests_properties(r4rs-expected PROPERTIES DEPENDS r4rs)
+set_tests_properties(r4rs-expected PROPERTIES
+    DEPENDS r4rs)
 
 # r5rs pitfalls
 
