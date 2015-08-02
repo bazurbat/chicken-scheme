@@ -394,6 +394,7 @@ set_property(TARGET prepare-r4rs-tests PROPERTY FOLDER "Tests")
 
 add_chicken_interpreted_test(r4rs SCRIPT r4rstest.scm -i
     OUTPUT_FILE r4rs-i.out
+    -R data-structures
     -e "(set! ##sys#procedure->string (constantly \"#<procedure>\"))")
 
 add_test(NAME r4rs-expected COMMAND ${CMAKE_COMMAND} -E compare_files
