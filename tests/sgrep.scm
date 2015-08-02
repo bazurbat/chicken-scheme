@@ -1,7 +1,7 @@
 ;;;; sgrep.scm - grepping benchmark
 
 
-(use irregex extras utils posix)
+(use irregex extras utils posix ports)
 
 
 (define big-string
