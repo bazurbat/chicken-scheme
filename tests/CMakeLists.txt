@@ -483,33 +483,57 @@ add_chicken_interpreted_test(srfi-45 SCRIPT srfi-45-tests.scm)
 
 # posix tests
 
-add_custom_command(OUTPUT tmpdir
-    COMMAND ${CMAKE_COMMAND} -E make_directory tmpdir
+add_compiled_test(posix posix-tests.scm
+    ENVIRONMENT CHICKEN_INTERPRETER=${CHICKEN_INTERPRETER})
+
+set_property(TEST posix APPEND PROPERTY
+    LABELS posix)
+
+# find-files
+
+add_custom_command(OUTPUT test-find-files.scm
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_SOURCE_DIR}/test-find-files.scm
+        ${CMAKE_CURRENT_BINARY_DIR}/test-find-files.scm
     VERBATIM)
-add_custom_command(OUTPUT tmpdir/.dotfile
+add_custom_target(prepare-find-files-test
+    DEPENDS test-find-files.scm)
+add_dependencies(BUILD_TESTS prepare-find-files-test)
+set_property(TARGET prepare-find-files-test PROPERTY FOLDER "Tests")
+
+add_chicken_interpreted_test(find-files test-find-files.scm)
+
+set_property(TEST find-files-i APPEND PROPERTY
+    LABELS posix)
+
+# delete-directory
+
+add_custom_command(OUTPUT tmpdir tmpdir/.dotfile
+    COMMAND ${CMAKE_COMMAND} -E make_directory tmpdir
     COMMAND ${CMAKE_COMMAND} -E touch tmpdir/.dotfile
-    DEPENDS tmpdir VERBATIM)
+    VERBATIM)
 
 if(UNIX)
     add_custom_command(OUTPUT tmpdir/symlink
         COMMAND ${CMAKE_COMMAND} -E create_symlink /usr tmpdir/symlink
         DEPENDS tmpdir VERBATIM)
-    add_custom_target(prepare-posix-tests
+    add_custom_target(prepare-delete-directory-test
         DEPENDS tmpdir/.dotfile tmpdir/symlink)
 else()
-    add_custom_target(prepare-posix-tests
+    add_custom_target(prepare-delete-directory-test
         DEPENDS tmpdir/.dotfile)
 endif()
 
-set_target_properties(prepare-posix-tests PROPERTIES FOLDER "Tests")
-add_dependencies(BUILD_TESTS prepare-posix-tests)
+set_target_properties(prepare-delete-directory-test PROPERTIES FOLDER "Tests")
+add_dependencies(BUILD_TESTS prepare-delete-directory-test)
 
-add_compiled_test(posix posix-tests.scm
-    ENVIRONMENT CHICKEN_INTERPRETER=${CHICKEN_INTERPRETER})
-
-add_chicken_interpreted_test(posix
+add_chicken_interpreted_test(delete-directory
     -R posix -e "(delete-directory \"tmpdir\" #t)")
-set_tests_properties(posix-i PROPERTIES REQUIRED_FILES tmpdir/.dotfile)
+
+set_property(TEST delete-directory-i APPEND PROPERTY
+    LABELS posix)
+set_property(TEST delete-directory-i PROPERTY
+    REQUIRED_FILES tmpdir/.dotfile)
 
 # regular expression tests
 
