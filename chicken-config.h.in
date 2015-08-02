@@ -7,6 +7,7 @@
 #cmakedefine HAVE_DIRECT_H
 #cmakedefine HAVE_DIRENT_H
 #cmakedefine HAVE_DLFCN_H
+#cmakedefine HAVE_DL_H
 #cmakedefine HAVE_ERRNO_H
 #cmakedefine HAVE_GRP_H
 #cmakedefine HAVE_INTTYPES_H
@@ -22,12 +23,14 @@
 #cmakedefine HAVE_SYS_STAT_H
 #cmakedefine HAVE_SYS_TYPES_H
 #cmakedefine HAVE_UNISTD_H
+
 #cmakedefine NO_POSIX_POLL
 
 #cmakedefine HAVE_ALLOCA
 #cmakedefine HAVE_GETPROCADDRESS
 #cmakedefine HAVE_LOADLIBRARY
 #cmakedefine HAVE_MEMMOVE
+#cmakedefine HAVE_SETENV
 #cmakedefine HAVE_SIGACTION
 #cmakedefine HAVE_SIGPROCMASK
 #cmakedefine HAVE_SIGSETJMP
