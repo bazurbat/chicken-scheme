@@ -1,5 +1,4 @@
 (import scheme chicken)
-(use data-structures files posix extras)
 
 (define (remove pred ls)
   (cond ((null? ls) '())
@@ -113,7 +112,6 @@
       (write-string (string-intersperse (map ->string includes)))
       (write-string ")")(newline))
   (and (file-exists? out-file) (delete-file out-file))
-  (create-directory (pathname-directory out-file) #t)
   (with-output-to-file out-file write-imports)))
 
 (cond-expand
