@@ -137,7 +137,7 @@ add_chicken_interpreted_test(version SCRIPT version-tests.scm)
 
 # compiler tests
 
-# add_compiled_test(compiler compiler-tests.scm)
+add_compiled_test(compiler compiler-tests.scm)
 
 # compiler inlining tests
 
@@ -711,13 +711,13 @@ endfunction()
 add_benchmark_executable(null null.scm)
 add_chicken_benchmark(null -:Hd)
 
-add_chicken_test(compilation csc -o compiler${benchmark_SUFFIX} compiler.scm
+add_chicken_test(compilation csc -o compiler-benchmark${benchmark_SUFFIX} compiler.scm
     ${benchmark_OPTIONS}
     ENVIRONMENT CSC_OPTIONS=${CSC_OPTIONS})
 set_tests_properties(compilation PROPERTIES LABELS "benchmark")
 
-add_chicken_benchmark(compiler -:Hd)
-set_tests_properties(compiler PROPERTIES
+add_chicken_benchmark(compiler-benchmark -:Hd)
+set_tests_properties(compiler-benchmark PROPERTIES
     DEPENDS compilation)
 
 add_custom_command(OUTPUT slatexdir
