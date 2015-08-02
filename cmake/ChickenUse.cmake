@@ -42,7 +42,7 @@ endfunction()
 # Parses arguments to CHICKEN source wrapping functions. Internal.
 macro(_chicken_parse_arguments)
     cmake_parse_arguments(compile
-        "STATIC;SHARED;MODULE;EMBEDDED;EXTENSION;NO_RUNTIME"
+        "STATIC;SHARED;MODULE;IMPORT_MODULE;EMBEDDED;EXTENSION;NO_RUNTIME"
         "SUFFIX;ERROR_FILE"
         "SOURCES;C_SOURCES;EMIT_IMPORTS;OPTIONS;DEFINITIONS;DEPENDS"
         ${ARGN})
@@ -60,6 +60,8 @@ macro(_chicken_parse_arguments)
         set(compile_TYPE MODULE)
         # All modules are currently compiled as shared libraries.
         set(compile_SHARED TRUE)
+    elseif(compile_IMPORT_MODULE)
+        set(compile_TYPE MODULE)
     else()
         set(compile_TYPE SHARED)
     endif()
@@ -313,6 +315,10 @@ function(add_chicken_sources out_var)
     _chicken_parse_arguments(${ARGN})
 
     foreach(arg ${compile_SOURCES})
+        if(compile_IMPORT_MODULE)
+            set_property(SOURCE ${arg} PROPERTY
+                CHICKEN_IMPORT_LIBRARY TRUE)
+        endif()
         _chicken_command(out_file ${arg})
         _chicken_set_compile_definitions(${out_file})
         list(APPEND ${out_var} ${out_file})
@@ -401,7 +407,7 @@ function(add_chicken_library name)
         set_target_properties(${name} PROPERTIES FOLDER "Modules")
     endif()
 
-    if(compile_MODULE)
+    if(compile_MODULE OR compile_IMPORT_MODULE)
         set_target_properties(${name} PROPERTIES
             PREFIX "")
 
