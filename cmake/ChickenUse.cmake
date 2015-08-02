@@ -12,17 +12,13 @@ if(MSVC)
     unset(CHICKEN_DEPENDS)
 endif()
 
-# used internally for build-specific files
-set(CHICKEN_TMP_DIR ${CMAKE_BINARY_DIR}/_chicken)
+set(CHICKEN_IMPORT_DIR ${CMAKE_BINARY_DIR}/.import
+    CACHE PATH "Contains generated CHICKEN import libraries")
+mark_as_advanced(CHICKEN_IMPORT_DIR)
 
-# The generated import libraries are collected into these directories which are
-# also added as include path to every command. Useful when compiling multiple
-# modules in various project subdirectories to not force user to hunt them down
-# along with dependencies and add include paths manually.
-set(CHICKEN_IMPORT_LIBRARY_DIR ${CHICKEN_TMP_DIR}/import)
-
-# All compiled CHICKEN libraries are placed here.
-set(CHICKEN_LOCAL_REPOSITORY ${CHICKEN_TMP_DIR}/repository)
+set(CHICKEN_REPOSITORY ${CMAKE_BINARY_DIR}/.chicken
+    CACHE PATH "CHICKEN local repository")
+mark_as_advanced(CHICKEN_REPOSITORY)
 
 # Joins all supplied arguments into a single string separated by space. Also
 # strips leading and trailing spaces. There is built-in JOIN generator
@@ -78,9 +74,12 @@ function(_chicken_get_include_paths out_var source_file)
     if(NOT ${source_dir} STREQUAL ${CMAKE_CURRENT_BINARY_DIR})
         list(APPEND paths ${source_dir})
     endif()
+    if(NOT ${source_dir} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
+        list(APPEND paths ${CMAKE_CURRENT_SOURCE_DIR})
+    endif()
 
     # then, search collected import libraries
-    list(APPEND paths ${CHICKEN_IMPORT_LIBRARY_DIR})
+    list(APPEND paths ${CHICKEN_IMPORT_DIR})
 
     # some eggs install files there, but it may be empty when bootstrapping
     if(CHICKEN_DATA_DIR)
@@ -164,7 +163,7 @@ function(_chicken_extract_depends out_var dep_path)
     endif()
 
     foreach(i ${imports})
-        list(APPEND result ${CHICKEN_IMPORT_LIBRARY_DIR}/${i}.import.scm)
+        list(APPEND result ${CHICKEN_IMPORT_DIR}/${i}.import.scm)
     endforeach()
 
     foreach(i ${includes})
@@ -205,7 +204,7 @@ function(_chicken_command out_var in_file)
     set(imports "")
 
     foreach(emit ${compile_EMIT_IMPORTS})
-        set(_filename ${CHICKEN_IMPORT_LIBRARY_DIR}/${emit}.import.scm)
+        set(_filename ${CHICKEN_IMPORT_DIR}/${emit}.import.scm)
         list(APPEND outputs ${_filename})
         list(APPEND imports ${emit}.import.scm)
         set_property(SOURCE ${_filename} PROPERTY CHICKEN_IMPORT_LIBRARY YES)
@@ -297,7 +296,7 @@ function(_chicken_command out_var in_file)
         add_custom_command(OUTPUT ${outputs}
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                     ${CMAKE_CURRENT_BINARY_DIR}/${filename}
-                    ${CHICKEN_IMPORT_LIBRARY_DIR}/${filename}
+                    ${CHICKEN_IMPORT_DIR}/${filename}
             VERBATIM APPEND)
     endforeach()
 
@@ -395,7 +394,7 @@ function(add_chicken_library name)
     wrap_chicken_target(${name} ${compile_TYPE})
 
     set_property(TARGET ${name} PROPERTY
-        LIBRARY_OUTPUT_DIRECTORY ${CHICKEN_LOCAL_REPOSITORY})
+        LIBRARY_OUTPUT_DIRECTORY ${CHICKEN_REPOSITORY})
     if(compile_STATIC OR compile_SHARED)
         set_target_properties(${name} PROPERTIES FOLDER "Libraries")
     elseif(compile_MODULE)
@@ -425,7 +424,7 @@ function(add_chicken_module name)
     if(CHICKEN_BUILD_IMPORTS)
         foreach(m ${compile_EMIT_IMPORTS})
             add_chicken_library(${m}.import MODULE
-                SOURCES ${CHICKEN_IMPORT_LIBRARY_DIR}/${m}.import.scm)
+                SOURCES ${CHICKEN_IMPORT_DIR}/${m}.import.scm)
         endforeach()
     endif()
 endfunction()

@@ -1,15 +1,12 @@
 project(chicken-tests C)
 
-set(CHICKEN_COMPILER $<TARGET_FILE:chicken-compiler>)
+set(CHICKEN_COMPILER    $<TARGET_FILE:chicken-compiler>)
 set(CHICKEN_INTERPRETER $<TARGET_FILE:csi>)
-set(CHICKEN_DEPENDS "")
-set(CHICKEN_LIBRARIES libchicken ${CHICKEN_EXTRA_LIBRARIES})
-set(CHICKEN_REPOSITORY ${CHICKEN_LOCAL_REPOSITORY})
 
 set(CHICKEN_OPTIONS -ignore-repository
     -types ${CHICKEN_TYPES_DB}
     -include-path ${chicken_SOURCE_DIR})
-set(CHICKEN_DATA_DIR "")
+
 list(APPEND CHICKEN_INCLUDE_DIRS ${chicken_SOURCE_DIR})
 
 set(CHICKEN_TRIM ${CMAKE_HOME_DIRECTORY}/cmake/ChickenTrim.cmake)
@@ -118,13 +115,13 @@ foreach(file ${expected_FILES})
         DEPENDS ${file} VERBATIM)
 endforeach()
 
-add_custom_command(OUTPUT ${CHICKEN_LOCAL_REPOSITORY}/types.db
+add_custom_command(OUTPUT ${CHICKEN_REPOSITORY}/types.db
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CHICKEN_TYPES_DB} ${CHICKEN_LOCAL_REPOSITORY}
+        ${CHICKEN_TYPES_DB} ${CHICKEN_REPOSITORY}
         DEPENDS ${CHICKEN_TYPES_DB} VERBATIM)
 
 add_custom_target(prepare-tests
-    DEPENDS ${expected_FILES} ${CHICKEN_LOCAL_REPOSITORY}/types.db)
+    DEPENDS ${expected_FILES} ${CHICKEN_REPOSITORY}/types.db)
 set_property(TARGET prepare-tests PROPERTY FOLDER "Tests")
 
 add_dependencies(BUILD_TESTS prepare-tests)
@@ -193,7 +190,7 @@ add_compiled_test(specialization-test-1 specialization-test-1.scm
 
 add_compiled_test(specialization-test-2 specialization-test-2.scm
     OPTIONS -types foo.types -specialize -debug ox
-    DEPENDS ${CHICKEN_IMPORT_LIBRARY_DIR}/foo.import.scm)
+    DEPENDS ${CHICKEN_IMPORT_DIR}/foo.import.scm)
 
 # specialization benchmark
 
@@ -535,7 +532,7 @@ foreach(s 100000 120000 200000 250000 300000 350000 400000 450000 500000)
     add_chicken_test(compiler-nursery-stress-${s} chicken-compiler
         -ignore-repository ${chicken_SOURCE_DIR}/utils.scm -:s${s}
         -output-file tmp.c -include-path ${chicken_SOURCE_DIR}
-        -include-path ${CHICKEN_IMPORT_LIBRARY_DIR})
+        -include-path ${CHICKEN_IMPORT_DIR})
 endforeach()
 
 # symbol-GC tests

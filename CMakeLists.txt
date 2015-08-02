@@ -119,11 +119,11 @@ function(add_chicken_primitive_modules)
 
     foreach(module ${modules})
         set(filename ${module}.import.scm)
-        set(output ${CHICKEN_IMPORT_LIBRARY_DIR}/${filename})
+        set(output ${CHICKEN_IMPORT_DIR}/${filename})
         add_custom_command(OUTPUT ${output}
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                    ${CMAKE_CURRENT_SOURCE_DIR}/${filename}
-                    ${CHICKEN_IMPORT_LIBRARY_DIR}
+                        ${CMAKE_CURRENT_SOURCE_DIR}/${filename}
+                        ${CHICKEN_IMPORT_DIR}/${filename}
             VERBATIM)
         list(APPEND depends ${output})
     endforeach()
@@ -239,7 +239,7 @@ endfunction()
 function(add_stage name out_compiler)
     set(suffix ".${name}")
 
-    set(CHICKEN_IMPORT_LIBRARY_DIR ${CHICKEN_IMPORT_LIBRARY_DIR}${suffix})
+    set(CHICKEN_IMPORT_DIR ${CHICKEN_IMPORT_DIR}${suffix})
 
     add_chicken_primitive_modules(${suffix})
 
@@ -275,7 +275,7 @@ if(CHICKEN_BOOTSTRAP AND NOT CMAKE_CROSSCOMPILING)
     add_stage(stage2 CHICKEN_COMPILER)
 endif()
 
-set(CHICKEN_IMPORT_LIBRARY_DIR ${CHICKEN_TMP_DIR}/import)
+unset(CHICKEN_IMPORT_DIR)
 
 add_chicken_primitive_modules()
 
@@ -295,23 +295,23 @@ endif()
 
 foreach(module ${runtime_GENERIC_MODULES})
     add_chicken_library(${module}.import IMPORT_MODULE
-        SOURCES ${CHICKEN_IMPORT_LIBRARY_DIR}/${module}.import.scm
+        SOURCES ${CHICKEN_IMPORT_DIR}/${module}.import.scm
         OPTIONS ${IMPORT_LIBRARY_OPTIONS})
 endforeach()
 
 foreach(module ${runtime_CHICKEN_MODULES})
     add_chicken_library(chicken.${module}.import IMPORT_MODULE
-        SOURCES ${CHICKEN_IMPORT_LIBRARY_DIR}/chicken.${module}.import.scm
+        SOURCES ${CHICKEN_IMPORT_DIR}/chicken.${module}.import.scm
         OPTIONS ${IMPORT_LIBRARY_OPTIONS})
 endforeach()
 
 add_chicken_library(chicken.posix.import IMPORT_MODULE
-    SOURCES ${CHICKEN_IMPORT_LIBRARY_DIR}/chicken.posix.import.scm
+    SOURCES ${CHICKEN_IMPORT_DIR}/chicken.posix.import.scm
     OPTIONS ${IMPORT_LIBRARY_OPTIONS})
 
 foreach(module ${compiler_MODULES})
     add_chicken_library(chicken.compiler.${module}.import IMPORT_MODULE
-        SOURCES ${CHICKEN_IMPORT_LIBRARY_DIR}/chicken.compiler.${module}.import.scm
+        SOURCES ${CHICKEN_IMPORT_DIR}/chicken.compiler.${module}.import.scm
         OPTIONS ${IMPORT_LIBRARY_OPTIONS})
 endforeach()
 
