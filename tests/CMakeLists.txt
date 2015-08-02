@@ -684,26 +684,33 @@ endif(NOT MSVC)
 
 ### benchmarks
 
-function(chicken_add_benchmark name)
-    set(_name benchmark-${name})
-    set(_options -optimize-level 5 -debug-level 0 -no-warnings
-                 -disable-interrupts -block)
-    cmake_parse_arguments(benchmark "" "SOURCE;SUFFIX" "OPTIONS" ${ARGN})
-    add_chicken_executable(${_name}
-        SUFFIX -benchmark${benchmark_SUFFIX}
-        SOURCES ${benchmark_SOURCE}
-        OPTIONS ${_options} ${benchmark_OPTIONS})
-    add_dependencies(BUILD_TESTS ${_name})
-    add_test(NAME ${_name} COMMAND ${_name} ${benchmark_UNPARSED_ARGUMENTS})
-    set_tests_properties(${_name} PROPERTIES LABELS "benchmark")
-    set_target_properties(${_name} PROPERTIES FOLDER "Tests")
+set(benchmark_SUFFIX ".benchmark")
+set(benchmark_OPTIONS -optimize-level 5 -debug-level 0 -no-warnings
+                      -disable-interrupts -block)
+
+function(add_benchmark_executable name)
+    cmake_parse_arguments(add "" "SUFFIX" "OPTIONS" ${ARGN})
+    add_test_executable(${name}${benchmark_SUFFIX} ${add_UNPARSED_ARGUMENTS}
+        SUFFIX ${benchmark_SUFFIX}${add_SUFFIX}
+        OPTIONS ${benchmark_OPTIONS} ${add_OPTIONS})
 endfunction()
 
-chicken_add_benchmark(null -:Hd
-    SOURCE null.scm)
+function(add_chicken_benchmark name)
+    add_chicken_test(${name} ${name}${benchmark_SUFFIX} ${ARGN})
+    set_tests_properties(${name} PROPERTIES LABELS "benchmark")
+endfunction()
 
-chicken_add_benchmark(compiler -:Hd
-    SOURCE compiler.scm)
+add_benchmark_executable(null null.scm)
+add_chicken_benchmark(null -:Hd)
+
+add_chicken_test(compilation csc -o compiler${benchmark_SUFFIX} compiler.scm
+    ${benchmark_OPTIONS}
+    ENVIRONMENT CSC_OPTIONS=${CSC_OPTIONS})
+set_tests_properties(compilation PROPERTIES LABELS "benchmark")
+
+add_chicken_benchmark(compiler -:Hd)
+set_tests_properties(compiler PROPERTIES
+    DEPENDS compilation)
 
 add_custom_command(OUTPUT slatexdir
     COMMAND ${CMAKE_COMMAND} -E make_directory slatexdir
@@ -719,23 +726,25 @@ add_custom_target(prepare-slatex-benchmark
 set_target_properties(prepare-slatex-benchmark PROPERTIES FOLDER "Tests")
 add_dependencies(BUILD_TESTS prepare-slatex-benchmark)
 
-chicken_add_benchmark(slatex
-    SOURCE slatex.scm)
+add_benchmark_executable(slatex slatex.scm)
+add_chicken_benchmark(slatex)
 
-chicken_add_benchmark(sgrep compiler.scm
-    SOURCE sgrep.scm)
+add_benchmark_executable(sgrep sgrep.scm)
+add_chicken_benchmark(sgrep compiler.scm)
 
-chicken_add_benchmark(fft-boxed 2000 11
-    SOURCE fft.scm)
+add_benchmark_executable(fft-boxed fft.scm)
+add_chicken_benchmark(fft-boxed 2000 11)
 
-chicken_add_benchmark(fft-unboxed 2000 11
-    SOURCE fft.scm SUFFIX 2
+add_benchmark_executable(fft-unboxed fft.scm
+    SUFFIX .unboxed
     OPTIONS -feature unboxed)
+add_chicken_benchmark(fft-unboxed 2000 11)
 
-chicken_add_benchmark(gobble 1000000000
-    SOURCE gobble.scm)
+add_benchmark_executable(gobble gobble.scm)
+add_chicken_benchmark(gobble 1000000000)
 
 add_chicken_interpreted_test(benchmark-irregex test-irregex.scm)
+
 set_tests_properties(benchmark-irregex-i PROPERTIES
     WORKING_DIRECTORY ${chicken-tests_SOURCE_DIR}
     LABELS "benchmark")
