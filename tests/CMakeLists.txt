@@ -21,6 +21,14 @@ if(WIN32)
     set_property(TARGET copy_libchicken PROPERTY FOLDER "Tests")
 endif()
 
+function(add_test_target name)
+    cmake_parse_arguments(target "" "" "DEPENDS" ${ARGN})
+    add_custom_target(${name}
+        DEPENDS ${target_DEPENDS})
+    add_dependencies(BUILD_TESTS ${name})
+    set_property(TARGET ${name} PROPERTY FOLDER "Tests")
+endfunction()
+
 function(add_test_executable name)
     add_chicken_executable(${ARGV})
     add_dependencies(BUILD_TESTS ${name})
@@ -120,11 +128,8 @@ add_custom_command(OUTPUT ${CHICKEN_REPOSITORY}/types.db
         ${CHICKEN_TYPES_DB} ${CHICKEN_REPOSITORY}
         DEPENDS ${CHICKEN_TYPES_DB} VERBATIM)
 
-add_custom_target(prepare-tests
+add_test_target(prepare-tests
     DEPENDS ${expected_FILES} ${CHICKEN_REPOSITORY}/types.db)
-set_property(TARGET prepare-tests PROPERTY FOLDER "Tests")
-
-add_dependencies(BUILD_TESTS prepare-tests)
 
 # version tests
 
@@ -151,9 +156,8 @@ add_chicken_sources(scrutiny_SOURCES scrutiny-tests-2.scm
     OPTIONS -analyze-only -scrutinize -verbose
     ERROR_FILE scrutiny-2.out)
 
-add_custom_target(scrutiny-tests-build
+add_test_target(scrutiny-tests-build
     DEPENDS ${scrutiny_SOURCES})
-set_property(TARGET scrutiny-tests-build PROPERTY FOLDER "Tests")
 
 foreach(file scrutiny.out scrutiny-2.out)
     add_custom_command(OUTPUT ${file}.trim
@@ -165,11 +169,9 @@ foreach(file scrutiny.out scrutiny-2.out)
         DEPENDS ${file} VERBATIM)
 endforeach()
 
-add_custom_target(scrutiny-tests-prepare
+add_test_target(scrutiny-tests-prepare
     DEPENDS scrutiny.out.trim scrutiny-2.out.trim)
-add_dependencies(BUILD_TESTS scrutiny-tests-prepare)
 add_dependencies(scrutiny-tests-prepare prepare-tests)
-set_target_properties(scrutiny-tests-prepare PROPERTIES FOLDER "Tests")
 
 add_test(NAME scrutiny COMMAND ${CMAKE_COMMAND} -E compare_files
     scrutiny.expected scrutiny.out.trim)
@@ -376,11 +378,8 @@ add_chicken_interpreted_test(loopy SCRIPT loopy-test.scm)
 
 add_custom_command(OUTPUT r4rstest.scm COMMAND ${CMAKE_COMMAND} -E copy
     ${CMAKE_CURRENT_SOURCE_DIR}/r4rstest.scm r4rstest.scm)
-add_custom_target(prepare-r4rs-tests
+add_test_target(prepare-r4rs-tests
     DEPENDS r4rstest.scm)
-add_dependencies(BUILD_TESTS prepare-r4rs-tests)
-
-set_property(TARGET prepare-r4rs-tests PROPERTY FOLDER "Tests")
 
 add_chicken_interpreted_test(r4rs SCRIPT r4rstest.scm -i
     OUTPUT_FILE r4rs-i.out
@@ -427,9 +426,8 @@ add_custom_command(OUTPUT ec.scm ec-tests.scm
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/ec.scm ec.scm
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/ec-tests.scm ec-tests.scm
     VERBATIM)
-add_custom_target(prepare-ec-tests
+add_test_target(prepare-ec-tests
     DEPENDS ec.scm ec-tests.scm)
-add_dependencies(BUILD_TESTS prepare-ec-tests)
 
 add_test_module(ec-mod ec.scm EMIT_IMPORTS ec)
 
@@ -445,11 +443,8 @@ add_chicken_interpreted_test(ec-2 $<TARGET_FILE:ec-mod> ec-tests.scm)
 add_custom_command(OUTPUT compiler.scm COMMAND ${CMAKE_COMMAND} -E copy
     ${CMAKE_CURRENT_SOURCE_DIR}/compiler.scm compiler.scm
     VERBATIM)
-add_custom_target(prepare-port-tests
+add_test_target(prepare-port-tests
     DEPENDS compiler.scm)
-add_dependencies(BUILD_TESTS prepare-port-tests)
-
-set_property(TARGET prepare-port-tests PROPERTY FOLDER "Tests")
 
 add_chicken_interpreted_test(port SCRIPT port-tests.scm)
 
@@ -496,10 +491,8 @@ add_custom_command(OUTPUT test-find-files.scm
         ${CMAKE_CURRENT_SOURCE_DIR}/test-find-files.scm
         ${CMAKE_CURRENT_BINARY_DIR}/test-find-files.scm
     VERBATIM)
-add_custom_target(prepare-find-files-test
+add_test_target(prepare-find-files-test
     DEPENDS test-find-files.scm)
-add_dependencies(BUILD_TESTS prepare-find-files-test)
-set_property(TARGET prepare-find-files-test PROPERTY FOLDER "Tests")
 
 add_chicken_interpreted_test(find-files test-find-files.scm)
 
@@ -517,15 +510,12 @@ if(UNIX)
     add_custom_command(OUTPUT tmpdir/symlink
         COMMAND ${CMAKE_COMMAND} -E create_symlink /usr tmpdir/symlink
         DEPENDS tmpdir VERBATIM)
-    add_custom_target(prepare-delete-directory-test
+    add_test_target(prepare-delete-directory-test
         DEPENDS tmpdir/.dotfile tmpdir/symlink)
 else()
-    add_custom_target(prepare-delete-directory-test
+    add_test_target(prepare-delete-directory-test
         DEPENDS tmpdir/.dotfile)
 endif()
-
-set_target_properties(prepare-delete-directory-test PROPERTIES FOLDER "Tests")
-add_dependencies(BUILD_TESTS prepare-delete-directory-test)
 
 add_chicken_interpreted_test(delete-directory
     -R posix -e "(delete-directory \"tmpdir\" #t)")
@@ -540,11 +530,8 @@ set_property(TEST delete-directory-i PROPERTY
 add_custom_command(OUTPUT re-tests.txt COMMAND ${CMAKE_COMMAND} -E copy
     ${CMAKE_CURRENT_SOURCE_DIR}/re-tests.txt re-tests.txt
     VERBATIM)
-add_custom_target(prepare-regex-tests
+add_test_target(prepare-regex-tests
     DEPENDS re-tests.txt)
-add_dependencies(BUILD_TESTS prepare-regex-tests)
-
-set_property(TARGET prepare-regex-tests PROPERTY FOLDER "Tests")
 
 add_chicken_interpreted_test(irregex SCRIPT test-irregex.scm)
 
@@ -742,10 +729,8 @@ add_custom_command(OUTPUT slatexdir
         ${CMAKE_CURRENT_SOURCE_DIR}/slatex.sty
         ${CMAKE_CURRENT_BINARY_DIR}
     VERBATIM)
-add_custom_target(prepare-slatex-benchmark
+add_test_target(prepare-slatex-benchmark
     DEPENDS slatexdir)
-set_target_properties(prepare-slatex-benchmark PROPERTIES FOLDER "Tests")
-add_dependencies(BUILD_TESTS prepare-slatex-benchmark)
 
 add_benchmark_executable(slatex slatex.scm)
 add_chicken_benchmark(slatex)
