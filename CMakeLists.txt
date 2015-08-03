@@ -143,19 +143,16 @@ function(add_chicken_runtime name)
 
     set(c_sources chicken.h runtime.c ${CHICKEN_APPLY_HACK})
 
-    add_chicken_sources(sources
+    chicken_wrap_sources(sources
         SUFFIX ${runtime_SUFFIX}
         SOURCES ${scm_sources}
         OPTIONS ${options})
-    add_chicken_sources(sources srfi-69.scm
+    chicken_wrap_sources(sources srfi-69.scm
         SUFFIX ${runtime_SUFFIX}
         OPTIONS ${options} -extend private-namespace.scm)
 
     add_library(${name} ${type} ${sources} ${c_sources})
-    wrap_chicken_target(${name} ${type} NO_RUNTIME)
-
-    set_property(TARGET ${name} PROPERTY
-        DEFINE_SYMBOL C_BUILDING_LIBCHICKEN)
+    chicken_wrap_target(${name} ${type} NO_RUNTIME)
 
     set_target_properties(${name} PROPERTIES
         PREFIX "")
@@ -171,7 +168,7 @@ endfunction()
 
 function(add_chicken_compiler name)
     cmake_parse_arguments(compiler
-        "STATIC;SHARED" "SUFFIX;OUTPUT_NAME" "OPTIONS" ${ARGN})
+        "STATIC" "SUFFIX;OUTPUT_NAME" "OPTIONS" ${ARGN})
 
     if(compiler_STATIC)
         set(type STATIC)
@@ -196,13 +193,13 @@ function(add_chicken_compiler name)
         scrutinizer.scm
         support.scm)
 
-    add_chicken_sources(sources
+    chicken_wrap_sources(sources
         SUFFIX ${compiler_SUFFIX}
         SOURCES ${scm_sources}
         OPTIONS ${options} -extend private-namespace.scm)
 
     add_executable(${name} ${sources})
-    wrap_chicken_target(${name} ${type})
+    chicken_wrap_target(${name} ${type})
 
     set_target_properties(${name} PROPERTIES
         OUTPUT_NAME ${compiler_OUTPUT_NAME})
@@ -217,7 +214,7 @@ function(add_stage name out_compiler)
         SUFFIX ${suffix}
         OPTIONS ${LIBRARY_OPTIONS})
 
-    set(CHICKEN_STATIC_LIBRARIES libchicken${suffix} ${CHICKEN_EXTRA_LIBRARIES})
+    set(CHICKEN_STATIC_LIBRARY libchicken${suffix})
 
     add_chicken_compiler(chicken-compiler${suffix} STATIC
         SUFFIX ${suffix}
@@ -252,7 +249,7 @@ list(APPEND CHICKEN_OPTIONS -specialize -types ${CHICKEN_TYPES_DB})
 add_chicken_runtime(libchicken SHARED
     OPTIONS ${LIBRARY_OPTIONS})
 
-set(CHICKEN_LIBRARIES libchicken ${CHICKEN_EXTRA_LIBRARIES})
+set(CHICKEN_LIBRARY libchicken)
 
 add_chicken_compiler(chicken-compiler OUTPUT_NAME chicken
     OPTIONS ${PROGRAM_OPTIONS})
