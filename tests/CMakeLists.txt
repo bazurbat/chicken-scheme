@@ -149,10 +149,10 @@ add_compiled_test(compiler-inlining inlining-tests.scm
 add_compiled_test(typematch typematch-tests.scm
     OPTIONS -specialize -no-warnings)
 
-add_chicken_sources(scrutiny_SOURCES scrutiny-tests.scm
+chicken_wrap_sources(scrutiny_SOURCES scrutiny-tests.scm
     OPTIONS -analyze-only -scrutinize -verbose
     ERROR_FILE scrutiny.out)
-add_chicken_sources(scrutiny_SOURCES scrutiny-tests-2.scm
+chicken_wrap_sources(scrutiny_SOURCES scrutiny-tests-2.scm
     OPTIONS -analyze-only -scrutinize -verbose
     ERROR_FILE scrutiny-2.out)
 

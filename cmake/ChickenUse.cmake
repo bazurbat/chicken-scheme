@@ -38,7 +38,7 @@ endfunction()
 # Parses arguments to CHICKEN source wrapping functions. Internal.
 macro(_chicken_parse_arguments)
     cmake_parse_arguments(compile
-        "STATIC;SHARED;MODULE;IMPORT_MODULE;EMBEDDED;EXTENSION;NO_RUNTIME"
+        "STATIC;SHARED;MODULE;IMPORT_MODULE;EMBEDDED;EXTENSION"
         "SUFFIX;ERROR_FILE"
         "SOURCES;C_SOURCES;EMIT_IMPORTS;OPTIONS;DEFINITIONS;DEPENDS"
         ${ARGN})
@@ -303,9 +303,9 @@ function(_chicken_command out_var in_file)
     set(${out_var} ${out_path} PARENT_SCOPE)
 endfunction()
 
-# Used by other add_chicken... functions, can be used directly to pass file
-# specific options or build source lists incrementally.
-function(add_chicken_sources out_var)
+# Generates custom commands invoking CHICKEN compiler for the specified source
+# files. The resulting C source file names are added to the 'out_var'.
+function(chicken_wrap_sources out_var)
     _chicken_parse_arguments(${ARGN})
 
     foreach(arg ${compile_SOURCES})
@@ -323,36 +323,29 @@ function(add_chicken_sources out_var)
         list(APPEND ${out_var} ${src})
     endforeach()
 
-    # TODO: need some other way to show them in IDE but not in out_var
-    # list(APPEND ${out_var} ${compile_SOURCES})
     set(${out_var} ${${out_var}} PARENT_SCOPE)
 endfunction()
 
-function(wrap_chicken_target target)
-    _chicken_parse_arguments(${ARGN})
+function(chicken_wrap_target target)
+    cmake_parse_arguments(link "STATIC;SHARED;NO_RUNTIME" "" "" ${ARGN})
 
     target_compile_definitions(${target} PRIVATE ${CHICKEN_DEFINITIONS})
 
-    if(NOT compile_STATIC)
+    if(link_SHARED)
         target_compile_definitions(${target} PRIVATE PIC)
-    endif()
-
-    if(compile_NO_RUNTIME)
-        target_link_libraries(${target} ${CHICKEN_EXTRA_LIBRARIES})
-    else()
-        if(compile_STATIC)
-            target_link_libraries(${target} ${CHICKEN_STATIC_LIBRARIES})
-        else()
-            target_link_libraries(${target} ${CHICKEN_LIBRARIES})
-        endif()
     endif()
 
     target_compile_options(${target} PRIVATE ${CHICKEN_C_FLAGS})
 
-    if(UNIX)
-        target_compile_options(${target} PRIVATE
-            -Wno-unused-variable -Wno-unused-function)
+    if(NOT link_NO_RUNTIME)
+        if(link_STATIC)
+            target_link_libraries(${target} PRIVATE ${CHICKEN_STATIC_LIBRARY})
+        else()
+            target_link_libraries(${target} PRIVATE ${CHICKEN_LIBRARY})
+        endif()
     endif()
+
+    target_link_libraries(${target} PRIVATE ${CHICKEN_EXTRA_LIBRARIES})
 
     # This is necessary to resolve inline CPP include declarations because
     # generated files are not placed alongside the corresponding scm in case of
@@ -364,23 +357,23 @@ function(wrap_chicken_target target)
 
     target_include_directories(${target} PRIVATE
         ${CHICKEN_INCLUDE_DIRS})
+
+    set_property(TARGET ${target} PROPERTY
+        DEFINE_SYMBOL C_BUILDING_LIBCHICKEN)
 endfunction()
 
 # Convenience wrapper around add_executable.
 function(add_chicken_executable name)
-    cmake_parse_arguments(type "STATIC;SHARED" "" "" ${ARGN})
+    cmake_parse_arguments(type "STATIC" "" "" ${ARGN})
 
     if(type_STATIC)
         set(type STATIC)
-    else()
-        set(type SHARED)
     endif()
 
-    set(sources)
-    add_chicken_sources(sources ${type_UNPARSED_ARGUMENTS})
-
+    set(sources "")
+    chicken_wrap_sources(sources ${type} ${type_UNPARSED_ARGUMENTS})
     add_executable(${name} ${sources})
-    wrap_chicken_target(${name} ${type})
+    chicken_wrap_target(${name} ${type})
 endfunction()
 
 # Convenience wrapper around add_library.
@@ -388,10 +381,10 @@ function(add_chicken_library name)
     _chicken_parse_arguments(${ARGN})
 
     set(sources "")
-    add_chicken_sources(sources ${compile_TYPE} ${ARGN})
+    chicken_wrap_sources(sources ${compile_TYPE} ${ARGN})
 
     add_library(${name} ${compile_TYPE} ${sources})
-    wrap_chicken_target(${name} ${compile_TYPE})
+    chicken_wrap_target(${name} ${compile_TYPE})
 
     set_property(TARGET ${name} PROPERTY
         LIBRARY_OUTPUT_DIRECTORY ${CHICKEN_REPOSITORY})
