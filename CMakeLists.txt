@@ -68,6 +68,7 @@ set(CHICKEN_OPTIONS -optimize-level 2 -inline -ignore-repository -feature chicke
 set(LIBRARY_OPTIONS -explicit-use -no-trace)
 set(PROGRAM_OPTIONS -no-lambda-info)
 set(IMPORT_LIBRARY_OPTIONS -no-trace)
+set(COMPILER_OPTIONS "")
 
 if(DEFINED DEBUGBUILD)
     list(APPEND CHICKEN_OPTIONS -feature debugbuild -verbose)
@@ -175,13 +176,13 @@ function(add_chicken_runtime name)
 
     chicken_wrap_sources(sources
         SUFFIX ${runtime_SUFFIX}
-        SOURCES ${runtime_POSIX_MODULE}.scm
-        EMIT_IMPORTS chicken.posix
+        SOURCES ${scm_sources}
         OPTIONS ${options})
 
     chicken_wrap_sources(sources
         SUFFIX ${runtime_SUFFIX}
-        SOURCES ${scm_sources}
+        SOURCES ${runtime_POSIX_MODULE}.scm
+        EMIT_IMPORTS chicken.posix
         OPTIONS ${options})
 
     add_library(${name} ${type} ${sources} ${c_sources})
@@ -214,6 +215,9 @@ function(add_chicken_compiler name)
     set(options ${compiler_OPTIONS})
     set(sources "")
 
+    set(scm_sources
+        chicken.scm)
+
     foreach(module ${compiler_MODULES})
         chicken_wrap_sources(sources ${type}
             SUFFIX ${compiler_SUFFIX}
@@ -222,9 +226,10 @@ function(add_chicken_compiler name)
             OPTIONS ${options})
     endforeach()
 
-    chicken_wrap_sources(sources chicken.scm
+    chicken_wrap_sources(sources
         SUFFIX ${compiler_SUFFIX}
-        OPTIONS ${options})
+        SOURCES ${scm_sources}
+        OPTIONS ${options} ${COMPILER_OPTIONS})
 
     add_executable(${name} ${sources})
     chicken_wrap_target(${name} ${type})
@@ -296,15 +301,11 @@ foreach(module ${runtime_GENERIC_MODULES})
         OPTIONS ${IMPORT_LIBRARY_OPTIONS})
 endforeach()
 
-foreach(module ${runtime_CHICKEN_MODULES})
+foreach(module ${runtime_CHICKEN_MODULES} posix)
     add_chicken_library(chicken.${module}.import IMPORT_MODULE
         SOURCES ${CHICKEN_IMPORT_DIR}/chicken.${module}.import.scm
         OPTIONS ${IMPORT_LIBRARY_OPTIONS})
 endforeach()
-
-add_chicken_library(chicken.posix.import IMPORT_MODULE
-    SOURCES ${CHICKEN_IMPORT_DIR}/chicken.posix.import.scm
-    OPTIONS ${IMPORT_LIBRARY_OPTIONS})
 
 foreach(module ${compiler_MODULES})
     add_chicken_library(chicken.compiler.${module}.import IMPORT_MODULE
@@ -341,7 +342,7 @@ set(CHICKEN_DEPENDS "")
 
 add_chicken_executable(csi
     SOURCES csi.scm
-    OPTIONS ${PROGRAM_OPTIONS})
+    OPTIONS ${PROGRAM_OPTIONS} ${COMPILER_OPTIONS})
 
 install(TARGETS csi
     EXPORT chicken-targets
