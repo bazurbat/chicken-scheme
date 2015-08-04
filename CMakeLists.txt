@@ -37,6 +37,11 @@ set(CHICKEN_TARGET_FEATURES "" CACHE STRING
     "Target features")
 mark_as_advanced(CHICKEN_TARGET_NAME CHICKEN_TARGET_FEATURES)
 
+enable_testing()
+add_custom_target(BUILD_TESTS)
+
+find_package(Chicken REQUIRED)
+
 if(WIN32)
     # Windows tries to load shared libraries from the same directory where
     # the executable is placed. To bootstrap properly we need this to use the
@@ -46,16 +51,13 @@ if(WIN32)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
     set(CMAKE_PDB_OUTPUT_DIRECTORY     ${PROJECT_BINARY_DIR})
 elseif(XCODE_VERSION)
-    # Xcode assumes this, have not found a way to change it from CMake
+    # Generated Xcode projects assume this by default
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/build)
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/build)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/build)
+    set(CHICKEN_REPOSITORY             ${PROJECT_BINARY_DIR}/build)
 endif()
 
-enable_testing()
-add_custom_target(BUILD_TESTS)
-
-find_package(Chicken REQUIRED)
 
 set(CHICKEN_RUN      ${CMAKE_SOURCE_DIR}/cmake/ChickenRun.cmake)
 set(CHICKEN_TYPES_DB ${CMAKE_SOURCE_DIR}/types.db)
