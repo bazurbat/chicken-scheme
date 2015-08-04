@@ -388,11 +388,6 @@ function(add_chicken_library name)
 
     set_property(TARGET ${name} PROPERTY
         LIBRARY_OUTPUT_DIRECTORY ${CHICKEN_REPOSITORY})
-    if(compile_STATIC OR compile_SHARED)
-        set_target_properties(${name} PROPERTIES FOLDER "Libraries")
-    elseif(compile_MODULE)
-        set_target_properties(${name} PROPERTIES FOLDER "Modules")
-    endif()
 
     if(compile_MODULE OR compile_IMPORT_MODULE)
         set_target_properties(${name} PROPERTIES
