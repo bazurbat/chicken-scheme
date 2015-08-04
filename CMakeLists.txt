@@ -68,6 +68,7 @@ set(CHICKEN_OPTIONS -optimize-level 2 -inline -ignore-repository -feature chicke
 set(LIBRARY_OPTIONS -explicit-use -no-trace)
 set(PROGRAM_OPTIONS -no-lambda-info)
 set(IMPORT_LIBRARY_OPTIONS -no-trace)
+set(COMPILER_OPTIONS -extend private-namespace.scm)
 
 if(DEFINED DEBUGBUILD)
     list(APPEND CHICKEN_OPTIONS -feature debugbuild -verbose)
@@ -75,6 +76,21 @@ else()
     list(APPEND CHICKEN_OPTIONS -no-warnings)
     list(APPEND PROGRAM_OPTIONS -no-trace)
 endif()
+
+set(runtime_GENERIC_MODULES
+    )
+
+set(runtime_CHICKEN_MODULES
+    )
+
+if(WIN32)
+    set(runtime_POSIX_MODULE posixwin)
+else()
+    set(runtime_POSIX_MODULE posixunix)
+endif()
+
+set(compiler_MODULES
+    )
 
 set(chicken_MODULES
     chicken
@@ -96,6 +112,29 @@ set(chicken_MODULES
     tcp
     utils)
 
+function(add_chicken_primitive_modules)
+    set(modules chicken chicken.foreign)
+    set(depends "")
+
+    if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/chicken.foreign.import.scm)
+        return()
+    endif()
+
+    foreach(module ${modules})
+        set(filename ${module}.import.scm)
+        set(output ${CHICKEN_IMPORT_DIR}/${filename})
+        add_custom_command(OUTPUT ${output}
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                        ${CMAKE_CURRENT_SOURCE_DIR}/${filename}
+                        ${CHICKEN_IMPORT_DIR}/${filename}
+            VERBATIM)
+        list(APPEND depends ${output})
+    endforeach()
+
+    add_custom_target(deploy-primitive-modules${ARGV0} ALL
+        DEPENDS ${depends})
+endfunction()
+
 function(add_chicken_runtime name)
     cmake_parse_arguments(runtime "STATIC;SHARED" "SUFFIX" "OPTIONS" ${ARGN})
 
@@ -109,14 +148,8 @@ function(add_chicken_runtime name)
     set(options ${runtime_OPTIONS})
     set(sources "")
 
-    if(WIN32)
-        set(posix posixwin)
-    else()
-        set(posix posixunix)
-    endif()
-
     set(scm_sources
-        ${posix}.scm
+        ${runtime_POSIX_MODULE}.scm
         build-version.scm
         chicken-ffi-syntax.scm
         chicken-syntax.scm
@@ -143,13 +176,31 @@ function(add_chicken_runtime name)
 
     set(c_sources chicken.h runtime.c ${CHICKEN_APPLY_HACK})
 
+    foreach(module ${runtime_GENERIC_MODULES})
+        chicken_wrap_sources(sources
+            SUFFIX ${runtime_SUFFIX}
+            SOURCES ${module}.scm
+            EMIT_IMPORTS ${module}
+            OPTIONS ${options})
+    endforeach()
+
+    foreach(module ${runtime_CHICKEN_MODULES})
+        chicken_wrap_sources(sources
+            SUFFIX ${runtime_SUFFIX}
+            SOURCES ${module}.scm
+            EMIT_IMPORTS chicken.${module}
+            OPTIONS ${options})
+    endforeach()
+
     chicken_wrap_sources(sources
         SUFFIX ${runtime_SUFFIX}
         SOURCES ${scm_sources}
         OPTIONS ${options})
-    chicken_wrap_sources(sources srfi-69.scm
+
+    chicken_wrap_sources(sources
         SUFFIX ${runtime_SUFFIX}
-        OPTIONS ${options} -extend private-namespace.scm)
+        SOURCES srfi-69.scm
+        OPTIONS ${options} ${COMPILER_OPTIONS})
 
     add_library(${name} ${type} ${sources} ${c_sources})
     chicken_wrap_target(${name} ${type} NO_RUNTIME)
@@ -193,10 +244,18 @@ function(add_chicken_compiler name)
         scrutinizer.scm
         support.scm)
 
+    foreach(module ${compiler_MODULES})
+        chicken_wrap_sources(sources ${type}
+            SUFFIX ${compiler_SUFFIX}
+            SOURCES ${module}.scm
+            EMIT_IMPORTS chicken.compiler.${module}
+            OPTIONS ${options})
+    endforeach()
+
     chicken_wrap_sources(sources
         SUFFIX ${compiler_SUFFIX}
         SOURCES ${scm_sources}
-        OPTIONS ${options} -extend private-namespace.scm)
+        OPTIONS ${options} ${COMPILER_OPTIONS})
 
     add_executable(${name} ${sources})
     chicken_wrap_target(${name} ${type})
@@ -209,6 +268,8 @@ function(add_stage name out_compiler)
     set(suffix ".${name}")
 
     set(CHICKEN_IMPORT_DIR ${CHICKEN_IMPORT_DIR}${suffix})
+
+    add_chicken_primitive_modules(${suffix})
 
     add_chicken_runtime(libchicken${suffix} STATIC
         SUFFIX ${suffix}
@@ -244,6 +305,8 @@ endif()
 
 unset(CHICKEN_IMPORT_DIR)
 
+add_chicken_primitive_modules()
+
 list(APPEND CHICKEN_OPTIONS -specialize -types ${CHICKEN_TYPES_DB})
 
 add_chicken_runtime(libchicken SHARED
@@ -257,6 +320,24 @@ add_chicken_compiler(chicken-compiler OUTPUT_NAME chicken
 if(NOT CMAKE_CROSSCOMPILING)
     set(CHICKEN_COMPILER chicken-compiler)
 endif()
+
+foreach(module ${runtime_GENERIC_MODULES})
+    add_chicken_library(${module}.import IMPORT_MODULE
+        SOURCES ${CHICKEN_IMPORT_DIR}/${module}.import.scm
+        OPTIONS ${IMPORT_LIBRARY_OPTIONS})
+endforeach()
+
+foreach(module ${runtime_CHICKEN_MODULES})
+    add_chicken_library(chicken.${module}.import IMPORT_MODULE
+        SOURCES ${CHICKEN_IMPORT_DIR}/chicken.${module}.import.scm
+        OPTIONS ${IMPORT_LIBRARY_OPTIONS})
+endforeach()
+
+foreach(module ${compiler_MODULES})
+    add_chicken_library(chicken.compiler.${module}.import IMPORT_MODULE
+        SOURCES ${CHICKEN_IMPORT_DIR}/chicken.compiler.${module}.import.scm
+        OPTIONS ${IMPORT_LIBRARY_OPTIONS})
+endforeach()
 
 foreach(module ${chicken_MODULES})
     add_chicken_library(${module}.import IMPORT_MODULE
@@ -287,7 +368,7 @@ set(CHICKEN_DEPENDS "")
 
 add_chicken_executable(csi
     SOURCES csi.scm
-    OPTIONS ${PROGRAM_OPTIONS} -extend private-namespace.scm)
+    OPTIONS ${PROGRAM_OPTIONS} ${COMPILER_OPTIONS})
 
 install(TARGETS csi
     EXPORT chicken-targets
