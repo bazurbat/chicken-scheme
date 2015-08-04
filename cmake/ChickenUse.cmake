@@ -315,7 +315,7 @@ function(chicken_wrap_sources out_var)
         endif()
         _chicken_command(out_file ${arg})
         _chicken_set_compile_definitions(${out_file})
-        list(APPEND ${out_var} ${out_file})
+        list(APPEND ${out_var} ${arg} ${out_file})
     endforeach()
 
     foreach(src ${compile_C_SOURCES})
