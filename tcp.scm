@@ -1,6 +1,6 @@
 ;;;; tcp.scm - Networking stuff
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2015, The CHICKEN Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -27,7 +27,7 @@
 
 (declare
   (unit tcp)
-  (uses extras scheduler)
+  (uses ports scheduler)
   (disable-interrupts) ; Avoid race conditions around errno/WSAGetLastError
   (export tcp-close tcp-listen tcp-connect tcp-accept tcp-accept-ready? ##sys#tcp-port->fileno tcp-listener? tcp-addresses
 	  tcp-abandon-port tcp-listener-port tcp-listener-fileno tcp-port-numbers tcp-buffer-size
@@ -188,7 +188,7 @@ EOF
     "int len = sizeof(struct sockaddr_in);"
     "if(getsockname(s, (struct sockaddr *)&sa, (socklen_t *)&len) != 0) C_return(NULL);"
     "ptr = (unsigned char *)&sa.sin_addr;"
-    "snprintf(addr_buffer, sizeof(addr_buffer), \"%d.%d.%d.%d\", ptr[ 0 ], ptr[ 1 ], ptr[ 2 ], ptr[ 3 ]);"
+    "C_snprintf(addr_buffer, sizeof(addr_buffer), \"%d.%d.%d.%d\", ptr[ 0 ], ptr[ 1 ], ptr[ 2 ], ptr[ 3 ]);"
     "C_return(addr_buffer);") )
 
 (define ##net#getsockport
@@ -212,7 +212,7 @@ EOF
     "unsigned int len = sizeof(struct sockaddr_in);"
     "if(getpeername(s, (struct sockaddr *)&sa, ((socklen_t *)&len)) != 0) C_return(NULL);"
     "ptr = (unsigned char *)&sa.sin_addr;"
-    "snprintf(addr_buffer, sizeof(addr_buffer), \"%d.%d.%d.%d\", ptr[ 0 ], ptr[ 1 ], ptr[ 2 ], ptr[ 3 ]);"
+    "C_snprintf(addr_buffer, sizeof(addr_buffer), \"%d.%d.%d.%d\", ptr[ 0 ], ptr[ 1 ], ptr[ 2 ], ptr[ 3 ]);"
     "C_return(addr_buffer);") )
 
 (define ##net#startup
@@ -468,8 +468,8 @@ EOF
 	       (lambda (p)		; read-buffered
 		 (if (fx>= bufindex buflen)
 		     ""
-		     (let ((str (##sys#substring buf bufpos buflen)))
-		       (set! bufpos buflen)
+		     (let ((str (##sys#substring buf bufindex buflen)))
+		       (set! bufindex buflen)
 		       str)))
 	       ) )
 	     (output

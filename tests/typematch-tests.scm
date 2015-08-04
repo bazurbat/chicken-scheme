@@ -1,7 +1,7 @@
 ;;;; typematch-tests.scm
 
 
-(use lolevel data-structures)
+(use srfi-1 lolevel data-structures)
 
 
 (define-syntax check
@@ -49,9 +49,11 @@
 (define-syntax mx
   (syntax-rules ()
     ((_ t x) 
-     (compiler-typecase 
-      x
-      (t 'ok)))))
+     (begin
+       (print 'x " = " 't)
+       (compiler-typecase
+	x
+	(t 'ok))))))
 
 (define-syntax mn
   (er-macro-transformer
@@ -263,6 +265,35 @@
 (mx fixnum (##sys#vector-ref '#(1 2 3.4) 0))
 (mx (vector fixnum float) (vector 1 2.3))
 (mx (list fixnum float) (list 1 2.3))
+(mx (list fixnum float) (list-copy (list 1 2.3)))
+(mx (pair fixnum float) (list-copy (cons 1 2.3)))
+(mx fixnum (list-copy 1))
+(mx fixnum (list-ref (list 1 2.3) 0))
+(mx fixnum (list-ref (cons 1 2.3) 0))
+(mx float (list-ref (list 1 2.3) 1))
+(mx (list fixnum float) (list-tail (list 1 2.3) 0))
+(mx (pair fixnum float) (list-tail (cons 1 2.3) 0))
+(mx (list float) (list-tail (list 1 2.3) 1))
+(mx float (list-tail (cons 1 2.3) 1))
+(mx null  (list-tail (list 1 2.3) 2))
+(mx (list fixnum float) (drop (list 1 2.3) 0))
+(mx (pair fixnum float) (drop (cons 1 2.3) 0))
+(mx (list float) (drop (list 1 2.3) 1))
+(mx float (drop (cons 1 2.3) 1))
+(mx null (drop (list 1 2.3) 2))
+(mx null (take (list 1 2.3) 0))
+(mx null (take (cons 1 2.3) 0))
+(mx (list fixnum) (take (list 1 2.3) 1))
+(mx (list fixnum) (take (cons 1 2.3) 1))
+(mx (list fixnum float) (take (list 1 2.3) 2))
+(mx (list * *) (make-list 2))
+(mx (list string string) (make-list 2 "a"))
+(mx (vector * *) (make-vector 2))
+(mx (vector string string) (make-vector 2 "a"))
+(mx null (reverse '()))
+(mx list (reverse (the list (list 1 "2"))))
+(mx (list string fixnum) (reverse (list 1 "2")))
+(mx (list fixnum string) (reverse (cons "1" (cons 2 '()))))
 
 (: f1 (forall (a) ((list-of a) -> a)))
 (define (f1 x) (car x))

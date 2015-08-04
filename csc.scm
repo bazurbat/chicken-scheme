@@ -1,6 +1,6 @@
 ;;;; csc.scm - Driver program for the CHICKEN compiler - felix -*- Scheme -*-
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2015, The CHICKEN Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -119,10 +119,11 @@
 (define windows-shell WINDOWS_SHELL)
 (define generate-manifest #f)
 
-(define libchicken
+(define libchicken (string-append "lib" INSTALL_LIB_NAME))
+(define dynamic-libchicken
   (if cygwin
       (string-append "cyg" INSTALL_LIB_NAME "-0")
-      (string-append "lib" INSTALL_LIB_NAME)))
+      libchicken))
 
 (define default-library
   (string-append libchicken "." library-extension))
@@ -343,7 +344,7 @@ Usage: #{csc} FILENAME | OPTION ...
                                     (prefix, suffix or none)
        -no-parentheses-synonyms    disables list delimiter synonyms
        -no-symbol-escape           disables support for escaped symbols
-       -r5rs-syntax                disables the Chicken extensions to
+       -r5rs-syntax                disables the CHICKEN extensions to
                                     R5RS syntax
     -compile-syntax                macros are made available at run-time
     -j -emit-import-library MODULE write compile-time module information into
@@ -977,7 +978,7 @@ EOF
 (define (copy-libraries targetdir)
   (let ((lib (make-pathname
 	      (target-lib-path) 
-	      libchicken
+	      dynamic-libchicken
 	      (cond (osx "dylib")
 		    ((or mingw cygwin) "dll")
 		    (else (string-append

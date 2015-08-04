@@ -1,6 +1,6 @@
 ;;;; irregex.scm - container for irregex-core.scm
 ;
-; Copyright (c) 2010-2014, The Chicken Team
+; Copyright (c) 2010-2015, The CHICKEN Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -88,6 +88,10 @@
 ;; Due to usual-integrations, find is the one from library.scm,
 ;; so find-tail is unused (it's only used in the "find" definition)
 (declare (unused find-tail))
+
+;; This is to silence an "always true" warning that we can't fix
+;; because we don't want to needlessly change irregex-core.
+(declare (type (*allow-utf8-mode?* boolean)))
 
 (define-syntax build-cache
   (er-macro-transformer 

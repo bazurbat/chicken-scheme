@@ -136,6 +136,30 @@
  (lambda () (force (delay (values))))
  (lambda mv (test '() #f mv)))
 
+
+(SECTION 5 3)
+
+(test '(1 2)
+      (lambda ()
+        (define-values (a b) (values 1 2))
+        (list a b)))
+
+(test '(1 (2))
+      (lambda ()
+        (define-values (a . b) (values 1 2))
+        (list a b)))
+
+(test '((1 2))
+      (lambda ()
+        (define-values a (values 1 2))
+        (list a)))
+
+(test 'ok ; Just tests that no error is thrown.
+      (lambda ()
+        (define-values () (values))
+        'ok))
+
+
 (SECTION 6 6)
 
 
@@ -192,7 +216,7 @@
 ;; Edge case
 (test "" read-escaped-string (string-append "    " (string #\newline) "    "))
 
-;; NOT YET (is ambiguous with existing \xNN syntax in Chicken)
+;; NOT YET (is ambiguous with existing \xNN syntax in CHICKEN)
 #;(test #\tab escaped-char "x9;")
 #;(test #\tab escaped-char "x09;")
 

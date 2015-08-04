@@ -284,16 +284,6 @@ Time complexity: O (|V| + |E|)
 If a cycle is detected during the sorting process, an exception of the
 condition kinds {{(exn runtime cycle)}} is thrown.
 
-=== Random numbers
-
-
-==== random-seed
-
-<procedure>(random-seed [SEED])</procedure>
-
-Seeds the random number generator with {{SEED}} (an exact integer) or 
-{{(current-seconds)}} if {{SEED}} is not given.
-
 
 === Strings
 
@@ -405,7 +395,7 @@ as the matching character in {{FROM}} is substituted.
 
 Substitutes elements of {{STRING}} according to {{SMAP}}.
 {{SMAP}} should be an association-list where each element of the list
-is a pair of the form {{(MATCH \. REPLACEMENT)}}. Every occurrence of
+is a pair of the form {{(MATCH . REPLACEMENT)}}. Every occurrence of
 the string {{MATCH}} in {{STRING}} will be replaced by the string
 {{REPLACEMENT}}:
 

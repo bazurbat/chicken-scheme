@@ -1,6 +1,6 @@
 ;;;; support.scm - Miscellaneous support code for the CHICKEN compiler
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2015, The CHICKEN Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -545,7 +545,7 @@
 		       'let 
 		       (map (lambda (v) 
 			      ;; for temporaries introduced by specialization
-			      (if (eq? '#:tmp v) (gensym) v)) ; OBSOLETE
+			      (if (eq? '#:tmp v) (error "SHOULD NOT HAPPEN") v)) ; OBSOLETE
 			    (unzip1 bs))
 		       (append (map (lambda (b) (walk (cadr b))) (cadr x))
 			       (list (walk body)) ) ) ) ) )
@@ -1113,6 +1113,18 @@
 			     (if ,tmp
 				 (slot-ref ,param 'this)
 				 '#f) ) ) ]
+		       [(scheme-pointer)
+			(let ([tmp (gensym)])
+			  `(let ([,tmp ,param])
+			     (if ,tmp
+				 ,(if unsafe
+				      tmp
+				      `(##sys#foreign-block-argument ,tmp) )
+				 '#f) ) ) ]
+		       [(nonnull-scheme-pointer)
+			(if unsafe
+			    param
+			    `(##sys#foreign-block-argument ,param) ) ]
 		       [(nonnull-instance)
 			`(slot-ref ,param 'this) ]
 		       [(const) (repeat (cadr t))]
@@ -1203,7 +1215,9 @@
 		    (next (if (vector? t2) (vector-ref t2 0) t2)) ) ]
 	      [(pair? t)
 	       (case (car t)
-		 [(ref nonnull-pointer pointer c-pointer nonnull-c-pointer function) (words->bytes 1)]
+		 [(ref nonnull-pointer pointer c-pointer nonnull-c-pointer function
+		       scheme-pointer nonnull-scheme-pointer)
+		  (words->bytes 1)]
 		 [else (err t)] ) ]
 	      [else (err t)] ) ) ) )
    (lambda () (quit "foreign type `~S' refers to itself" type)) ) )
@@ -1648,7 +1662,7 @@ Usage: chicken FILENAME OPTION ...
                                   (prefix, suffix or none)
     -no-parentheses-synonyms     disables list delimiter synonyms
     -no-symbol-escape            disables support for escaped symbols
-    -r5rs-syntax                 disables the Chicken extensions to
+    -r5rs-syntax                 disables the CHICKEN extensions to
                                   R5RS syntax
     -compile-syntax              macros are made available at run-time
     -emit-import-library MODULE  write compile-time module information into

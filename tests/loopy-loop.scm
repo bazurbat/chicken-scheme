@@ -479,7 +479,7 @@
       . rest))
     ))
 
-;; Chicken-specific implementation using internal knowledge of the
+;; CHICKEN-specific implementation using internal knowledge of the
 ;; vector+alist representation.  The ##sys#slot form will cause most
 ;; other implementations to choke, so comment this out if needed.
 

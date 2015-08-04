@@ -49,7 +49,7 @@ Is the {{OBJECT}} a {{hash-table}}?
 
 <procedure>(hash-table-size HASH-TABLE)</procedure>
 
-The {{HASH-TABLE}} size.
+Returns the number of associations in {{HASH-TABLE}}.
 
 
 ==== hash-table-equivalence-function

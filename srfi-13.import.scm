@@ -1,6 +1,6 @@
 ;;;; srfi-13.import.scm - import library for "srfi-13" module
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2015, The CHICKEN Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -29,6 +29,7 @@
  '(check-substring-spec
    kmp-step
    make-kmp-restart-vector
+   reverse-list->string
    string->list
    string-any
    string-append/shared

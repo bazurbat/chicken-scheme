@@ -1,6 +1,6 @@
 ;;;; eval.scm - Interpreter for CHICKEN
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2015, The CHICKEN Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -265,7 +265,7 @@
 				((##sys#symbol-has-toplevel-binding? var)
 				 (lambda v (##sys#slot var 0)))
 				(else
-				 (lambda v (##core#inline "C_retrieve" var))))))
+				 (lambda v (##core#inline "C_fast_retrieve" var))))))
                       (else
                        (case i
                          ((0) (lambda (v) 
@@ -373,13 +373,13 @@
 						    ((symbol? (cdr a))))
 					   (##sys#notice "assignment to imported value binding" var)))
 				       (let ((var
-					      (if (not (assq x se))
+					      (if (not (assq x se)) ;XXX this looks wrong
 						  (and (not static)
 						       (##sys#alias-global-hook j #t cntr))
 						  (or (##sys#get j '##core#primitive) j))))
 					 (if (not var) ; static
 					     (lambda (v)
-					       (##sys#error 'eval "environment is not mutable" evalenv var))
+					       (##sys#error 'eval "environment is not mutable" evalenv var)) ;XXX var?
 					     (lambda (v)
 					       (##sys#setslot var 0 (##core#app val v))) ) ) ]
 				      [(zero? i) (lambda (v) (##sys#setslot (##sys#slot v 0) j (##core#app val v)))]
@@ -966,8 +966,6 @@
     (##sys#signal-hook #:type-error 'load "bad argument type - not a port or string" x) )
   (set! ##sys#load 
     (lambda (input evaluator pf #!optional timer printer)
-      (when (string? input) 
-	(set! input (##sys#expand-home-path input)) )
       (let* ((fname 
 	      (cond [(port? input) #f]
 		    [(not (string? input)) (badfile input)]

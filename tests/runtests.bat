@@ -20,6 +20,10 @@ set interpret=..\csi -n -include-path %TEST_DIR%/..
 
 del /f /q *.exe *.so *.o *.import.* ..\foo.import.*
 
+echo ======================================== version tests ...
+%interpret% -s version-tests.scm
+if errorlevel 1 exit /b 1
+
 echo ======================================== compiler tests ...
 %compile% compiler-tests.scm
 if errorlevel 1 exit /b 1
@@ -245,6 +249,11 @@ if errorlevel 1 exit /b 1
 if errorlevel 1 exit /b 1
 a.out
 if errorlevel 1 exit /b 1
+%compile% -s use-square-functor.scm -J
+if errorlevel 1 exit /b 1
+%interpret% -nqe "(import sf1)" -e "(import sf2)"
+if errorlevel 1 exit /b 1
+del /f /q sf1.import.* sf2.import.* lst.import.* mod.import.*
 
 echo ======================================== compiler syntax tests ...
 %compile% compiler-syntax-tests.scm

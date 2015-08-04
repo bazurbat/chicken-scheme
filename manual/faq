@@ -3,7 +3,7 @@
 
 == FAQ
 
-This is the list of Frequently Asked Questions about Chicken Scheme.
+This is the list of Frequently Asked Questions about CHICKEN Scheme.
 If you have a question not answered here, feel free to post to the chicken-users mailing list;
 if you consider your question general enough, feel free to add it to this list.
 
@@ -18,7 +18,7 @@ for the existence of CHICKEN are:
 
 * CHICKEN is portable because it generates C code that runs on a large number of platforms.
 
-* CHICKEN is extendable, since its code generation scheme and runtime system/garbage collector fits neatly into a C environment.
+* CHICKEN is extensible, since its code generation scheme and runtime system/garbage collector fits neatly into a C environment.
 
 * CHICKEN is free and can be freely distributed, including its source code.
 
@@ -66,7 +66,7 @@ parameter {{case-sensitivity}} to {{#t}}.
 
 ==== Why doesn't CHICKEN support the full numeric tower by default?
 
-The short answer is to use the [[http://wiki.call-cc.org/egg/numbers|numbers]] egg:
+The short answer is to use the [[/egg/numbers|numbers]] egg:
 
 <enscript highlight=scheme>
 % chicken-install numbers
@@ -94,7 +94,7 @@ require mandatory locking of every object that could be potentially
 shared between two threads. The garbage-collection algorithm would
 then become much more complex and inefficient, since the location of
 every object has to be accessed via a thread synchronization
-protocol. Such a design would make native threads in Chicken
+protocol. Such a design would make native threads in CHICKEN
 essentially equivalent to Unix processes and shared memory.
 
 For a different approach to concurrency, please see the
@@ -102,7 +102,7 @@ For a different approach to concurrency, please see the
 
 ==== Does CHICKEN support Unicode strings?
 
-The system does not directly support Unicode, but there is an extension for UTF-8 strings: [[http://wiki.call-cc.org/egg/utf8|utf8]].
+The system does not directly support Unicode, but there is an extension for UTF-8 strings: [[/egg/utf8|utf8]].
 
 === Why are `dynamic-wind' thunks not executed when a SRFI-18 thread signals an error?
 
@@ -336,14 +336,14 @@ When you try to {{use}} a built-in unit such as {{srfi-18}}, you may get the fol
 
 Another symptom is that {{(require 'srfi-18)}} will silently fail.
 
-This typically happens because the Chicken libraries have been installed in a non-standard location, such as your home directory.  The workaround is to explicitly tell the dynamic linker where to look for your libraries:
+This typically happens because the CHICKEN libraries have been installed in a non-standard location, such as your home directory.  The workaround is to explicitly tell the dynamic linker where to look for your libraries:
 
  export DYLD_LIBRARY_PATH=~/scheme/chicken/lib:$DYLD_LIBRARY_PATH ;; Mac
  export LD_LIBRARY_PATH=~/scheme/chicken/lib:$LD_LIBRARY_PATH    ;; Linux
 
 ==== How can I increase the size of the trace shown when runtime errors are detected?
 
-When a runtime error is detected, Chicken will print the last entries from the trace of functions called
+When a runtime error is detected, CHICKEN will print the last entries from the trace of functions called
 (unless your executable was compiled with the {{-no-trace}} option.
 By default, only 16 entries will be shown.
 To increase this number pass the {{-:aN}} parameter to your executable.
@@ -604,7 +604,6 @@ The following extended bindings are handled specially:
 {{make-record-instance}}
 {{not-pair?}}
 {{null-list?}}
-{{null-pointer?}}
 {{number-of-slots}}
 {{o}}
 {{pointer+}}
@@ -720,9 +719,9 @@ Compile the program that uses the module:
 
 ==== Why is my program which uses regular expressions so slow?
 
-The regular expression engine has recently be replaced by [[http://wiki.call-cc.org/users/alex shinn|alex shinn]]'s excellent
+The regular expression engine has recently been replaced by [[http://wiki.call-cc.org/users/alex shinn|alex shinn]]'s excellent
 {{irregex}} library, which is fully implemented in Scheme. Precompiling regular
-expressions to internal form is somewhat slower than with the old PCRE-based
+expressions to internal forms is somewhat slower than with the old PCRE-based
 regex engine. It is advisable to use {{irregex}} to precompile regular expressions
 outside of time-critical loops and use them where performance matters.
 
@@ -731,8 +730,8 @@ outside of time-critical loops and use them where performance matters.
 
 ==== Why does a loop that doesn't {{cons}} still trigger garbage collections?
 
-Under CHICKENs implementation policy, tail recursion is achieved simply by avoiding
-to return from a function call. Since the programs are CPS converted, a continuous 
+Under CHICKEN's implementation policy, tail recursion is achieved simply by avoiding
+returns from function calls. Since the programs are CPS converted, a continuous
 sequence of nested procedure calls is performed. At some stage the stack-space has
 to run out and the current procedure and its parameters (including the current
 continuation) are stored somewhere in the runtime system. Now a minor garbage collection
@@ -777,8 +776,11 @@ and wrap calls to {{set-finalizer!}} in it.
 
 ==== Does CSI support history and autocompletion?
 
-CSI doesn't support it natively but it can be activated with one of the [[http://wiki.call-cc.org/egg/readline|readline]], [[http://wiki.call-cc.org/egg/linenoise|linenoise]] or [[http://wiki.call-cc.org/egg/parley|parley]] eggs. Out of these three, the parley egg is recommended.
-After installing parley, add the following to your {{~/.csirc}} or equivalent file:
+CSI doesn't support it natively but it can be activated with one of the
+[[http://wiki.call-cc.org/egg/readline|readline]], [[http://wiki.call-cc.org/egg/linenoise|linenoise]] or
+[[http://wiki.call-cc.org/egg/parley|parley]] eggs. Out of these three, the parley egg is
+recommended. After installing parley, add the following to your
+{{~/.csirc}} or equivalent file:
 
 <enscript highlight=scheme>
 (use parley)
@@ -813,7 +815,7 @@ add:
 contained in the three tools {{chicken-install}}, {{chicken-uninstall}} and {{chicken-status}}.
 See the [[Extensions]] chapter for more information.
 
-==== How can I install Chicken eggs to a non-default location?
+==== How can I install CHICKEN eggs to a non-default location?
 
 You can just set the {{CHICKEN_REPOSITORY}} environment variable.
 It should contain the path where you want eggs to be installed:

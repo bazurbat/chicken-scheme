@@ -1,6 +1,6 @@
 /* runtime.c - Runtime code for compiler generated executables
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2015, The CHICKEN Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -64,7 +64,7 @@
 #endif
 
 /* TODO: Include sys/select.h? Windows doesn't seem to have it... */
-#ifdef HAVE_POSIX_POLL
+#ifndef NO_POSIX_POLL
 #  include <poll.h>
 #endif
 
@@ -441,6 +441,7 @@ static C_TLS int
 static volatile C_TLS int serious_signal_occurred = 0;
 static C_TLS unsigned int
   mutation_count,
+  tracked_mutation_count,
   stack_size;
 static C_TLS int chicken_is_initialized;
 #ifdef HAVE_SIGSETJMP
@@ -511,11 +512,8 @@ static C_ccall void call_cc_wrapper(C_word c, C_word closure, C_word k, C_word r
 static C_ccall void call_cc_values_wrapper(C_word c, C_word closure, C_word k, ...) C_noret;
 static void gc_2(void *dummy) C_noret;
 static void allocate_vector_2(void *dummy) C_noret;
-static void get_argv_2(void *dummy) C_noret; /* OBSOLETE */
-static void get_argument_2(void *dummy) C_noret; /* OBSOLETE */
 static void make_structure_2(void *dummy) C_noret;
 static void generic_trampoline(void *dummy) C_noret;
-static void get_environment_variable_2(void *dummy) C_noret; /* OBSOLETE */
 static void handle_interrupt(void *trampoline, void *proc) C_noret;
 static void callback_trampoline(void *dummy) C_noret;
 static C_ccall void callback_return_continuation(C_word c, C_word self, C_word r) C_noret;
@@ -642,7 +640,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
   if(chicken_is_initialized) return 1;
   else chicken_is_initialized = 1;
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__) && defined(DEBUGBUILD)
   debug_mode = 2;
 #endif
 
@@ -751,7 +749,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
 #endif
   }
 
-  mutation_count = gc_count_1 = gc_count_1_total = gc_count_2 = 0;
+  tracked_mutation_count = mutation_count = gc_count_1 = gc_count_1_total = gc_count_2 = 0;
   lf_list = NULL;
   C_register_lf2(NULL, 0, create_initial_ptable());
   C_restart_address = toplevel;
@@ -784,8 +782,9 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
 
 static C_PTABLE_ENTRY *create_initial_ptable()
 {
-  /* IMPORTANT: hardcoded table size - this must match the number of C_pte calls! */
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 58);
+  /* IMPORTANT: hardcoded table size -
+     this must match the number of C_pte calls + 1 (NULL terminator)! */
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 56);
   int i = 0;
 
   if(pt == NULL)
@@ -804,7 +803,6 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_get_symbol_table_info);
   C_pte(C_get_memory_info);
   C_pte(C_decode_seconds);
-  C_pte(C_get_environment_variable); /* OBSOLETE */
   C_pte(C_stop_timer);
   C_pte(C_dload);
   C_pte(C_set_dlopen_flags);
@@ -848,7 +846,6 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_copy_closure);
   C_pte(C_dump_heap_state);
   C_pte(C_filter_heap_objects);
-  C_pte(C_get_argument); /* OBSOLETE */
 
   /* IMPORTANT: did you remember the hardcoded pte table size? */
   pt[ i ].id = NULL;
@@ -997,33 +994,6 @@ C_regparm C_word C_find_symbol(C_word str, C_SYMBOL_TABLE *stable)
 
   if(C_truep(s = lookup(key, len, sptr, stable))) return s;
   else return C_SCHEME_FALSE;
-}
-
-/* OBSOLETE */
-C_regparm C_word C_enumerate_symbols(C_SYMBOL_TABLE *stable, C_word pos)
-{
-  int i;
-  C_word 
-    sym,
-    bucket = C_u_i_car(pos);
-
-  if(!C_truep(bucket)) return C_SCHEME_FALSE; /* end already reached */
-  else i = C_unfix(bucket);
-
-  bucket = C_u_i_cdr(pos); 
-
-  while(bucket == C_SCHEME_END_OF_LIST) {
-    if(++i >= stable->size) {
-      C_set_block_item(pos, 0, C_SCHEME_FALSE);	/* no more buckets */
-      return C_SCHEME_FALSE;
-    }
-    else bucket = stable->table[ i ];
-  }
-
-  sym = C_block_item(bucket, 0);
-  C_set_block_item(pos, 0, C_fix(i));
-  C_mutate2(&C_u_i_cdr(pos), C_block_item(bucket, 1));
-  return sym;
 }
 
 
@@ -1783,6 +1753,21 @@ void barf(int code, char *loc, ...)
     c = 0;
     break;
 
+  case C_FLOATING_POINT_EXCEPTION_ERROR:
+    msg = C_text("floating point exception");
+    c = 0;
+    break;
+
+  case C_ILLEGAL_INSTRUCTION_ERROR:
+    msg = C_text("illegal instruction");
+    c = 0;
+    break;
+
+  case C_BUS_ERROR:
+    msg = C_text("bus error");
+    c = 0;
+    break;
+
   default: panic(C_text("illegal internal error code"));
   }
   
@@ -2002,25 +1987,6 @@ void C_ccall callback_return_continuation(C_word c, C_word self, C_word r)
   C_set_block_item(self, 1, C_SCHEME_TRUE);
   C_save(r);
   C_reclaim(NULL, NULL);
-}
-
-
-/* Zap symbol names: (OBSOLETE) */
-
-void C_zap_strings(C_word str)
-{
-  int i;
-  
-  for(i = 0; i < symbol_table->size; ++i) {
-    C_word bucket, sym;
-
-    for(bucket = symbol_table->table[ i ];
-        bucket != C_SCHEME_END_OF_LIST;
-        bucket = C_block_item(bucket,1)) {
-      sym = C_block_item(bucket,0);
-      C_set_block_item(sym, 1, str);
-    }
-  }
 }
 
 
@@ -2713,6 +2679,14 @@ C_mutate_slot(C_word *slot, C_word val)
 {
   unsigned int mssize, newmssize, bytes;
 
+  ++mutation_count;
+  /* Mutation stack exists to track mutations pointing from elsewhere
+   * into nursery.  Stuff pointing anywhere else can be skipped, as
+   * well as mutations on nursery objects.
+   */
+  if(!C_in_stackp(val) || C_in_stackp((C_word)slot))
+    return *slot = val;
+
 #ifdef C_GC_HOOKS
   if(C_gc_mutation_hook != NULL && C_gc_mutation_hook(slot, val)) return val;
 #endif
@@ -2737,15 +2711,8 @@ C_mutate_slot(C_word *slot, C_word val)
   }
 
   *(mutation_stack_top++) = slot;
-  ++mutation_count;
+  ++tracked_mutation_count;
   return *slot = val;
-}
-
-
-C_regparm C_word C_fcall
-C_mutate(C_word *slot, C_word val) /* OBSOLETE */
-{
-  return C_mutate2(slot, val);
 }
 
 
@@ -2830,6 +2797,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
     if(gc_mode == GC_REALLOC) {
       C_rereclaim2(percentage(heap_size, C_heap_growth), 0);
       gc_mode = GC_MAJOR;
+      count = (C_uword)tospace_top - (C_uword)tospace_start;
       goto i_like_spaghetti;
     }
 
@@ -2845,11 +2813,13 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 
     /* Mark literal frames: */
     for(lfn = lf_list; lfn != NULL; lfn = lfn->next)
-      for(i = 0; i < lfn->count; mark(&lfn->lf[ i++ ]));
+      for(i = 0; i < lfn->count; ++i)
+        mark(&lfn->lf[i]);
 
     /* Mark symbol tables: */
     for(stp = symbol_table_list; stp != NULL; stp = stp->next)
-      for(i = 0; i < stp->size; mark(&stp->table[ i++ ]));
+      for(i = 0; i < stp->size; ++i)
+        mark(&stp->table[i]);
 
     /* Mark collectibles: */
     for(msp = collectibles; msp < collectibles_top; ++msp)
@@ -2864,14 +2834,16 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
   }
   else {
     /* Mark mutated slots: */
-    for(msp = mutation_stack_bottom; msp < mutation_stack_top; mark(*(msp++)));
+    for(msp = mutation_stack_bottom; msp < mutation_stack_top; ++msp)
+      mark(*msp);
   }
 
   /* Clear the mutated slot stack: */
   mutation_stack_top = mutation_stack_bottom;
 
   /* Mark live values: */
-  for(p = C_temporary_stack; p < C_temporary_stack_bottom; mark(p++));
+  for(p = C_temporary_stack; p < C_temporary_stack_bottom; ++p)
+    mark(p);
 
   /* Mark trace-buffer: */
   for(tinfo = trace_buffer; tinfo < trace_buffer_limit; ++tinfo) {
@@ -3347,11 +3319,13 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
 
   /* Mark literal frames: */
   for(lfn = lf_list; lfn != NULL; lfn = lfn->next)
-    for(i = 0; i < lfn->count; remark(&lfn->lf[ i++ ]));
+    for(i = 0; i < lfn->count; ++i)
+      remark(&lfn->lf[i]);
 
   /* Mark symbol table: */
   for(stp = symbol_table_list; stp != NULL; stp = stp->next)
-    for(i = 0; i < stp->size; remark(&stp->table[ i++ ]));
+    for(i = 0; i < stp->size; ++i)
+      remark(&stp->table[i]);
 
   /* Mark collectibles: */
   for(msp = collectibles; msp < collectibles_top; ++msp)
@@ -3366,7 +3340,8 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
   mutation_stack_top = mutation_stack_bottom;
 
   /* Mark live values: */
-  for(p = C_temporary_stack; p < C_temporary_stack_bottom; remark(p++));
+  for(p = C_temporary_stack; p < C_temporary_stack_bottom; ++p)
+    remark(p);
 
   /* Mark locative table: */
   for(i = 0; i < locative_table_count; ++i)
@@ -3703,7 +3678,7 @@ void handle_interrupt(void *trampoline, void *proc)
 
   c = C_cpu_milliseconds() - interrupt_time;
   last_interrupt_latency = c;
-  C_timer_interrupt_counter = C_initial_timer_interrupt_period;	/* just in case */
+  C_timer_interrupt_counter = C_initial_timer_interrupt_period;
   /* <- no continuation is passed: "##sys#interrupt-hook" may not return! */
   C_do_apply(2, x, C_SCHEME_UNDEFINED); 
 }
@@ -3715,13 +3690,8 @@ C_unbound_variable(C_word sym)
   barf(C_UNBOUND_VARIABLE_ERROR, NULL, sym);
 }
 
-
-C_regparm C_word C_fcall C_retrieve(C_word sym) /* OBSOLETE */
-{
-  return C_fast_retrieve(sym);
-}
-
-
+/* XXX: This needs to be given a better name.
+   C_retrieve used to exist but it just called C_fast_retrieve */
 C_regparm C_word C_fcall C_retrieve2(C_word val, char *name)
 {
   C_word *p;
@@ -3743,33 +3713,6 @@ void C_ccall
 C_invalid_procedure(int c, C_word self, ...)
 {
   barf(C_NOT_A_CLOSURE_ERROR, NULL, self);  
-}
-
-
-static C_word resolve_procedure(C_word closure, C_char *where) /* OBSOLETE */
-{
-  if(C_immediatep(closure) || C_header_bits(closure) != C_CLOSURE_TYPE) {
-    barf(C_NOT_A_CLOSURE_ERROR, where, closure);
-  }
-
-  return closure;
-}
-
-
-C_regparm void *C_fcall C_retrieve_proc(C_word closure) /* OBSOLETE */
-{
-  return C_fast_retrieve_proc(closure);
-}
-
-
-C_regparm void *C_fcall C_retrieve_symbol_proc(C_word sym) /* OBSOLETE */
-{
-  C_word val = C_block_item(sym, 0);
-
-  if(val == C_SCHEME_UNBOUND)
-    barf(C_UNBOUND_VARIABLE_ERROR, NULL, sym);
-
-  return C_fast_retrieve_proc(val);
 }
 
 
@@ -4080,6 +4023,7 @@ C_regparm C_word C_fcall C_set_gc_report(C_word flag)
 
 C_regparm C_word C_fcall C_start_timer(void)
 {
+  tracked_mutation_count = 0;
   mutation_count = 0;
   gc_count_1_total = 0;
   gc_count_2 = 0;
@@ -4093,13 +4037,14 @@ void C_ccall C_stop_timer(C_word c, C_word closure, C_word k)
 {
   double t0 = C_cpu_milliseconds() - timer_start_ms;
   C_word 
-    ab[ WORDS_PER_FLONUM * 2 + 6 ], /* 2 flonums, 1 vector of 5 elements */
+    ab[ WORDS_PER_FLONUM * 2 + 7 ], /* 2 flonums, 1 vector of 6 elements */
     *a = ab,
     elapsed = C_flonum(&a, t0 / 1000.0),
     gc_time = C_flonum(&a, gc_ms / 1000.0),
     info;
 
-  info = C_vector(&a, 5, elapsed, gc_time, C_fix(mutation_count), C_fix(gc_count_1_total), 
+  info = C_vector(&a, 6, elapsed, gc_time, C_fix(mutation_count),
+                  C_fix(tracked_mutation_count), C_fix(gc_count_1_total),
 		  C_fix(gc_count_2));
   C_kontinue(k, info);
 }
@@ -4122,15 +4067,6 @@ C_regparm C_word C_fcall C_set_print_precision(C_word n)
 C_regparm C_word C_fcall C_get_print_precision(void)
 {
   return C_fix(flonum_print_precision);
-}
-
-
-C_regparm C_word C_fcall C_display_flonum(C_word port, C_word n)
-{
-  C_FILEPTR fp = C_port_file(port);
-
-  C_fprintf(fp, C_text("%.*g"), flonum_print_precision, C_flonum_magnitude(n));
-  return C_SCHEME_UNDEFINED;
 }
 
 
@@ -4211,12 +4147,7 @@ C_regparm C_word C_fcall C_execute_shell_command(C_word string)
  */
 C_regparm int C_fcall C_check_fd_ready(int fd)
 {
-#ifdef HAVE_POSIX_POLL
-  struct pollfd ps;
-  ps.fd = fd;
-  ps.events = POLLIN;
-  return poll(&ps, 1, 0);
-#else
+#ifdef NO_POSIX_POLL
   fd_set in;
   struct timeval tm;
   int rv;
@@ -4226,6 +4157,11 @@ C_regparm int C_fcall C_check_fd_ready(int fd)
   rv = select(fd + 1, &in, NULL, NULL, &tm);
   if(rv > 0) { rv = FD_ISSET(fd, &in) ? 1 : 0; }
   return rv;
+#else
+  struct pollfd ps;
+  ps.fd = fd;
+  ps.events = POLLIN;
+  return poll(&ps, 1, 0);
 #endif
 }
 
@@ -5852,16 +5788,6 @@ C_regparm C_word C_fcall C_i_foreign_block_argumentp(C_word x)
 }
 
 
-/* OBSOLETE */
-C_regparm C_word C_fcall C_i_foreign_number_vector_argumentp(C_word t, C_word x)
-{
-  if(C_immediatep(x) || C_header_bits(x) != C_STRUCTURE_TYPE || C_block_item(x, 0) != t)
-    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_VECTOR_ERROR, NULL, x, t);
-
-  return x;
-}
-
-
 C_regparm C_word C_fcall C_i_foreign_struct_wrapper_argumentp(C_word t, C_word x)
 {
   if(C_immediatep(x) || C_header_bits(x) != C_STRUCTURE_TYPE || C_block_item(x, 0) != t)
@@ -6034,7 +5960,7 @@ void C_ccall C_apply(C_word c, C_word closure, C_word k, C_word fn, ...)
 {
   va_list v;
   int i, n = c - 3;
-  C_word x, skip, fn2;
+  C_word x, skip;
 #ifdef C_HACKED_APPLY
   C_word *buf = C_temporary_stack_limit;
   void *proc;
@@ -6042,7 +5968,9 @@ void C_ccall C_apply(C_word c, C_word closure, C_word k, C_word fn, ...)
 
   if(c < 4) C_bad_min_argc(c, 4);
 
-  fn2 = resolve_procedure(fn, "apply");
+  if(C_immediatep(fn) || C_header_bits(fn) != C_CLOSURE_TYPE) {
+    barf(C_NOT_A_CLOSURE_ERROR, "apply", fn);
+  }
 
   va_start(v, fn);
 
@@ -6087,13 +6015,13 @@ void C_ccall C_apply(C_word c, C_word closure, C_word k, C_word fn, ...)
   buf = (void *)C_align16((C_uword)buf);
 # endif
   buf[ 0 ] = n + 2;
-  buf[ 1 ] = fn2;
+  buf[ 1 ] = fn;
   buf[ 2 ] = k;
   C_memcpy(&buf[ 3 ], C_temporary_stack_limit, n * sizeof(C_word));
-  proc = (void *)C_block_item(fn2, 0);
+  proc = (void *)C_block_item(fn, 0);
   C_do_apply_hack(proc, buf, n + 3);
 #else
-  C_do_apply(n, fn2, k);
+  C_do_apply(n, fn, k);
 #endif
 }
 
@@ -6231,7 +6159,7 @@ void C_ccall call_cc_values_wrapper(C_word c, C_word closure, C_word k, ...)
 /* I */
 void C_ccall C_continuation_graft(C_word c, C_word self, C_word k, C_word kk, C_word proc)
 {
-  ((C_proc2)C_retrieve_proc(proc))(2, proc, C_block_item(kk, 1));
+  ((C_proc2)C_fast_retrieve_proc(proc))(2, proc, C_block_item(kk, 1));
 }
 
 
@@ -7870,79 +7798,6 @@ C_fixnum_to_string(C_word c, C_word self, C_word k, C_word num)
 }
 
 
-/* OBSOLETE */
-void C_ccall C_get_argv(C_word c, C_word closure, C_word k)
-{
-  int i, cells;
-
-  if(c != 2) C_bad_argc(c, 2);
-
-  i = C_main_argc;
-  cells = 0;
-
-  while(i--)
-    cells += 7 + C_align(C_strlen(C_main_argv[ i ]));
-
-  C_save(k);
-  C_save(C_fix(cells));
-
-  if(!C_demand(cells)) C_reclaim((void *)get_argv_2, NULL);
-
-  get_argv_2(NULL);
-}
-
-
-/* OBSOLETE */
-void get_argv_2(void *dummy)
-{
-  int cells = C_unfix(C_restore),
-      i = C_main_argc;
-  C_word k = C_restore, 
-         *a = C_alloc(cells),
-         list, str;
-  
-  for(list = C_SCHEME_END_OF_LIST; i--; list = C_a_pair(&a, str, list))
-    str = C_string2(&a, C_main_argv[ i ]);
-
-  C_kontinue(k, list);
-}
-
-
-/* OBSOLETE */
-void C_ccall C_get_argument(C_word c, C_word closure, C_word k, C_word index)
-{
-  int i = C_unfix(index);
-  int cells;
-
-  if(i >= C_main_argc)
-    C_kontinue(k, C_SCHEME_FALSE);
-
-  cells = C_SIZEOF_STRING(C_strlen(C_main_argv[ i ]));
-  C_save(k);
-  C_save(C_fix(cells));
-  C_save(index);
-
-  if(!C_demand(cells)) C_reclaim((void *)get_argument_2, NULL);
-
-  get_argument_2(NULL);
-}
-
-
-/* OBSOLETE */
-void get_argument_2(void *dummy)
-{
-  int i = C_unfix(C_restore);
-  int cells = C_unfix(C_restore);
-  C_word
-    k = C_restore, 
-    *a = C_alloc(cells),
-    str;
-  
-  str = C_string2(&a, C_main_argv[ i ]);
-  C_kontinue(k, str);
-}
-
-
 void C_ccall C_make_structure(C_word c, C_word closure, C_word k, C_word type, ...)
 {
   va_list v;
@@ -8040,54 +7895,6 @@ void C_ccall C_return_to_host(C_word c, C_word closure, C_word k)
   return_to_host = 1;
   C_save(k);
   C_reclaim((void *)generic_trampoline, NULL);
-}
-
-
-#define C_do_getenv(v) C_getenv(v) /* OBSOLETE */
-#define C_free_envbuf() {} /* OBSOLETE */
-
-
-/* OBSOLETE */
-void C_ccall C_get_environment_variable(C_word c, C_word closure, C_word k, C_word name)
-{
-  int len;
-
-  if(c != 3) C_bad_argc(c, 3);
-
-  if(C_immediatep(name) || C_header_bits(name) != C_STRING_TYPE)
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, "get-environment-variable", name);
-  
-  if((len = C_header_size(name)) >= STRING_BUFFER_SIZE)
-    C_kontinue(k, C_SCHEME_FALSE);
-
-  strncpy(buffer, C_c_string(name), len);
-  buffer[ len ] = '\0';
-  if (len != strlen(buffer))
-    barf(C_ASCIIZ_REPRESENTATION_ERROR, "get-environment-variable", name);
-
-  if((save_string = C_do_getenv(buffer)) == NULL)
-    C_kontinue(k, C_SCHEME_FALSE);
-
-  C_save(k);
-  
-  len = C_strlen(save_string);
-  if(!C_demand(1 + C_bytestowords(len + 1)))
-    C_reclaim((void *)get_environment_variable_2, NULL);
-
-  get_environment_variable_2(NULL);
-}
-
-
-/* OBSOLETE */
-void get_environment_variable_2(void *dummy)
-{
-  int len = C_strlen(save_string);
-  C_word k = C_restore,
-         *a = C_alloc(1 + C_bytestowords(len + 1)),
-         str = C_string(&a, len, save_string);
-  
-  C_free_envbuf();
-  C_kontinue(k, str);
 }
 
 

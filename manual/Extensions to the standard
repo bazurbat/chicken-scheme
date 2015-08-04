@@ -25,9 +25,9 @@ Numerous non-standard macros are provided. See
 Extended DSSSL style lambda lists are supported. DSSSL parameter lists are defined by the following grammar:
 
  <parameter-list> ==> <required-parameter>*
-                      [(#!optional <optional-parameter>*)]
-                      [(#!rest <rest-parameter>)]
-                      [(#!key <keyword-parameter>*)]
+                      [#!optional <optional-parameter>*]
+                      [#!rest <rest-parameter>]
+                      [#!key <keyword-parameter>*]
  <required-parameter> ==> <ident>
  <optional-parameter> ==> <ident>
                           | (<ident> <initializer>)
@@ -68,17 +68,6 @@ is supported, as CHICKEN implements [[http://srfi.schemers.org/srfi-17/srfi-17.h
 === {{cond}}
 
 The {{cond}} form supports [[http://srfi.schemers.org/srfi-61|SRFI-61]].
-
-=== Binding values in {{letrec}}
-
-It is allowed for initialization values of bindings in a {{letrec}}
-construct to refer to previous variables in the same set of bindings, so
-
- (letrec ((foo 123)
-          (bar foo) )
-   bar)
-
-is allowed and returns {{123}}.
 
 === {{begin}}
 
@@ -185,12 +174,6 @@ defaults to the value of {{(interaction-environment)}}.
 an optional 2nd parameter: if not {{#f}} (which is the default),
 toplevel bindings to standard procedures are mutable and new toplevel
 bindings may be introduced.
-
-=== Pathnames expansion
-
-The ''tilde'' character ({{~}}) is automatically expanded in pathnames.
-Additionally, if a pathname starts with {{$VARIABLE...}}, then the prefix is replaced
-by the value of the given environment variable.
 
 === Optional arguments for port-related procedures
 

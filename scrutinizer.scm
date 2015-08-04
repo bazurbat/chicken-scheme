@@ -1,6 +1,6 @@
 ;;;; scrutinizer.scm - The CHICKEN Scheme compiler (local flow analysis)
 ;
-; Copyright (c) 2009-2014, The Chicken Team
+; Copyright (c) 2009-2015, The CHICKEN Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -30,7 +30,7 @@
 	procedure-type? named? procedure-result-types procedure-argument-types
 	noreturn-type? rest-type procedure-name d-depth
 	noreturn-procedure-type? trail trail-restore walked-result 
-	typename multiples procedure-arguments procedure-results
+	multiples procedure-arguments procedure-results typeset-min
 	smash-component-types! generate-type-checks! over-all-instantiations
 	compatible-types? type<=? match-types resolve match-argument-types))
 
@@ -110,6 +110,7 @@
 (define-constant +fragment-max-length+ 6)
 (define-constant +fragment-max-depth+ 4)
 (define-constant +maximal-union-type-length+ 20)
+(define-constant +maximal-complex-object-constructor-result-type-length+ 256)
 
 
 (define specialization-statistics '())
@@ -165,13 +166,13 @@
 		((eq? a 'deprecated)
 		 (report
 		  loc
-		  (sprintf "use of deprecated library procedure `~a'" id) )
+		  (sprintf "use of deprecated `~a'" id))
 		 '(*))
 		((and (pair? a) (eq? (car a) 'deprecated))
 		 (report
 		  loc
 		  (sprintf 
-		      "use of deprecated library procedure `~a' - consider using `~a' instead"
+		      "use of deprecated `~a' - consider `~a'"
 		    id (cadr a)))
 		 '(*))
 		(else (list a)))))
@@ -208,7 +209,7 @@
 	       ((or) (every always-true1 (cdr t)))
 	       ((forall) (always-true1 (third t)))
 	       (else #t)))
-	    ((memq t '(* boolean true false undefined noreturn)) #f)
+	    ((memq t '(* boolean false undefined noreturn)) #f)
 	    (else #t)))
 
     (define (always-true t loc x)
@@ -274,7 +275,7 @@
     (define (fragment x)
       (let ((x (build-expression-tree x)))
 	(let walk ((x x) (d 0))
-	  (cond ((atom? x) x)
+	  (cond ((atom? x) (##sys#strip-syntax x))
 		((>= d +fragment-max-depth+) '...)
 		((list? x)
 		 (let* ((len (length x))
@@ -282,7 +283,7 @@
 				(append (take x +fragment-max-length+) '(...))
 				x)))
 		   (map (cute walk <> (add1 d)) xs)))
-		(else x)))))
+		(else (##sys#strip-syntax x))))))
 
     (define (pp-fragment x)
       (string-chomp
@@ -462,7 +463,8 @@
 			    (and-let* ((t2 (rec (third t))))
 			      `(forall ,(second t) ,t2)))
 			   ((or) 
-			    `(or ,@(remove (cut match-types <> pt typeenv #t) (cdr t))))
+			    (let ((ts (filter (cut match-types <> pt typeenv) (cdr t))))
+			      (and (pair? ts) `(or ,@ts))))
 			   (else #f))))))
 	(simplify-type tnew)))
 
@@ -492,48 +494,49 @@
 			   (c (second subs))
 			   (a (third subs))
 			   (nor0 noreturn))
-		      (when (and (always-true rt loc n) specialize)
-			(set! dropped-branches (add1 dropped-branches))
-			(copy-node!
-			 (build-node-graph
-			  `(let ((,(gensym) ,tst)) ,c))
-			 n))
-		      (let* ((r1 (walk c e loc dest tail (cons (car tags) flow) #f))
-			     (nor1 noreturn))
-			(set! noreturn #f)
-			(let* ((r2 (walk a e loc dest tail (cons (cdr tags) flow) #f))
-			       (nor2 noreturn))
-			  (set! noreturn (or nor-1 nor0 (and nor1 nor2)))
-			  ;; when only one branch is noreturn, add blist entries for
-			  ;; all in other branch:
-			  (when (or (and nor1 (not nor2))
-				    (and nor2 (not nor1)))
-			    (let ((yestag (if nor1 (cdr tags) (car tags))))
-			      (for-each
-			       (lambda (ble)
-				 (when (eq? (cdar ble) yestag)
-				   (d "adding blist entry ~a for single returning conditional branch"
-				      ble)
-				   (add-to-blist (caar ble) (car flow) (cdr ble))))
-			       blist)))
-			  (cond ((and (not (eq? '* r1)) (not (eq? '* r2)))
-				 ;;(dd " branches: ~s:~s / ~s:~s" nor1 r1 nor2 r2)
-				 (cond ((and (not nor1) (not nor2)
-					     (not (= (length r1) (length r2))))
-					(report 
-					 loc
-					 (sprintf
-					     "branches in conditional expression differ in the number of results:~%~%~a"
-					   (pp-fragment n)))
-					'*)
-				       (nor1 r2)
-				       (nor2 r1)
-				       (else
-					(dd "merge branch results: ~s + ~s" r1 r2)
-					(map (lambda (t1 t2)
-					       (simplify-type `(or ,t1 ,t2)))
-					     r1 r2))))
-				(else '*)))))))
+		      (cond
+			((and (always-true rt loc n) specialize)
+			 ;; drop branch and re-walk updated node
+			 (set! dropped-branches (add1 dropped-branches))
+			 (copy-node! (build-node-graph `(let ((,(gensym) ,tst)) ,c)) n)
+			 (walk n e loc dest tail flow ctags))
+			(else
+			 (let* ((r1 (walk c e loc dest tail (cons (car tags) flow) #f))
+				(nor1 noreturn))
+			   (set! noreturn #f)
+			   (let* ((r2 (walk a e loc dest tail (cons (cdr tags) flow) #f))
+				 (nor2 noreturn))
+			     (set! noreturn (or nor-1 nor0 (and nor1 nor2)))
+			     ;; when only one branch is noreturn, add blist entries for
+			     ;; all in other branch:
+			     (when (or (and nor1 (not nor2))
+				      (and nor2 (not nor1)))
+			       (let ((yestag (if nor1 (cdr tags) (car tags))))
+				(for-each
+				 (lambda (ble)
+				   (when (eq? (cdar ble) yestag)
+				     (d "adding blist entry ~a for single returning conditional branch"
+					ble)
+				     (add-to-blist (caar ble) (car flow) (cdr ble))))
+				 blist)))
+			     (cond ((and (not (eq? '* r1)) (not (eq? '* r2)))
+				   ;;(dd " branches: ~s:~s / ~s:~s" nor1 r1 nor2 r2)
+				   (cond ((and (not nor1) (not nor2)
+					       (not (= (length r1) (length r2))))
+					  (report
+					   loc
+					   (sprintf
+					       "branches in conditional expression differ in the number of results:~%~%~a"
+					     (pp-fragment n)))
+					  '*)
+					 (nor1 r2)
+					 (nor2 r1)
+					 (else
+					  (dd "merge branch results: ~s + ~s" r1 r2)
+					  (map (lambda (t1 t2)
+						 (simplify-type `(or ,t1 ,t2)))
+					       r1 r2))))
+				  (else '*)))))))))
 		 ((let)
 		  ;; before CPS-conversion, `let'-nodes may have multiple bindings
 		  (let loop ((vars params) (body subs) (e2 '()))
@@ -743,14 +746,19 @@
 						pn var pt (car ctags))
 					     (add-to-blist 
 					      var (car ctags)
-					      (if (and a (type<=? (cdr a) pt)) (cdr a) pt))
+					      (cond ((not a) pt)
+						    ((typeset-min pt (cdr a)))
+						    ((reduce-typeset
+						      (cdr a) pt
+						      (type-typeenv `(or ,(cdr a) ,pt))))
+						    (else pt)))
 					     ;; if the variable type is an "or"-type, we can
 					     ;; can remove all elements that match the predicate
 					     ;; type
 					     (when a
 					       ;;XXX hack, again:
 					       (let* ((tenv2 (type-typeenv `(or ,(cdr a) ,pt)))
-						      (at (reduce-typeset (cdr a) pt tenv2)))
+						      (at (reduce-typeset (cdr a) `(not ,pt) tenv2)))
 						 (when at
 						   (d "  predicate `~a' indicates `~a' is ~a in flow ~a"
 						      pn var at (cdr ctags))
@@ -763,7 +771,10 @@
 								    t
 								    argr)))
 							     ((get db var 'assigned) '*)
-							     ((type<=? (cdr a) argr) (cdr a))
+							     ((typeset-min (cdr a) argr))
+							     ((reduce-typeset
+							       (cdr a) argr
+							       (type-typeenv `(or ,(cdr a) ,argr))))
 							     (else argr))))
 					       (d "  assuming: ~a -> ~a (flow: ~a)" 
 						  var ar (car flow))
@@ -893,79 +904,6 @@
 	  ((forall)
 	   (loop (third t)
 		 (cute set-car! (cddr t) <>))))))))
-
-
-;;; Converting type into string
-
-(define (typename t)
-  (define (argument-string args)
-    (let* ((len (length (delete '#!optional args eq?)))
-	   (m (multiples len)))
-      ;;XXX not quite right for rest/optional arguments
-      (cond ((memq '#!rest args)
-	     (sprintf "~a or more arguments" len))
-	    ((zero? len) "zero arguments")
-	    (else
-	     (sprintf 
-		 "~a argument~a of type~a ~a"
-	       len m m
-	       (string-intersperse (map typename args) ", "))))))
-  (define (result-string results)
-    (if (eq? '* results) 
-	"an unknown number of values"
-	(let* ((len (length results))
-	       (m (multiples len)))
-	  (if (zero? len)
-	      "zero values"
-	      (sprintf 
-		  "~a value~a of type~a ~a"
-		len m m
-		(string-intersperse (map typename results) ", "))))))
-  (case t
-    ((*) "anything")
-    ((char) "character")
-    (else
-     (cond ((symbol? t) (symbol->string t))
-	   ((pair? t)
-	    (case (car t)
-	      ((procedure) 
-	       (if (or (string? (cadr t)) (symbol? (cadr t)))
-		   (->string (cadr t))
-		   (sprintf "a procedure with ~a returning ~a"
-		     (argument-string (cadr t))
-		     (result-string (cddr t)))))
-	      ((or)
-	       (string-intersperse
-		(map typename (cdr t))
-		" OR "))
-	      ((struct)
-	       (sprintf "a structure of type ~a" (cadr t)))
-	      ((forall) 
-	       (sprintf "~a (for all ~a)"
-		 (typename (third t))
-		 (string-intersperse
-		  (map (lambda (tv)
-			 (if (symbol? tv)
-			     (symbol->string tv)
-			     (sprintf "~a being ~a" (first tv) (typename (second tv)))))
-		       (second t))
-		  " ")))
-	      ((not)
-	       (sprintf "NOT ~a" (typename (second t))))
-	      ((pair)
-	       (sprintf "a pair wth car ~a and cdr ~a"
-		 (typename (second t))
-		 (typename (third t))))
-	      ((vector-of)
-	       (sprintf "a vector with element type ~a" (typename (second t))))
-	      ((list-of)
-	       (sprintf "a list with element type ~a" (typename (second t))))
-	      ((vector list)
-	       (sprintf "a ~a with the element types ~a"
-		 (car t)
-		 (map typename (cdr t))))
-	      (else (bomb "typename: invalid type" t))))
-	   (else (bomb "typename: invalid type" t))))))
 
 
 ;;; Type-matching
@@ -1389,7 +1327,7 @@
 		  (cdr e)))
 	       (else t)))))
     (let ((t2 (simplify t)))
-      (when (pair? typeenv)
+      (when (pair? used)
 	(set! t2 
 	  `(forall ,(filter-map
 		     (lambda (e)
@@ -1449,8 +1387,13 @@
   (or (type<=? t1 t2)
       (type<=? t2 t1)))
 
+(define (typeset-min t1 t2)
+  (cond ((type<=? t1 t2) t1)
+	((type<=? t2 t1) t2)
+	(else #f)))
 
 (define (type<=? t1 t2)
+  ;; NOTE various corner cases require t1 and t2 to have been simplified.
   (let* ((typeenv (append-map type-typeenv (list t1 t2)))
 	 (trail0 trail)
 	 (r (let test ((t1 t1) (t2 t2))
@@ -1466,13 +1409,16 @@
 		     (lambda (e) 
 		       (cond ((second e) (test t1 (second e)))
 			     (else
-			      (set-cdr! e t1)
+			      (set-car! (cdr e) t1)
 			      (or (not (third e))
 				  (test t1 (third e)))))))
-		    ((memq t2 '(* undefined)))
+		    ((memq t2 '(* undefined)) #t)
+		    ((memq t1 '(* undefined)) #f)
 		    ((eq? 'pair t1) (test '(pair * *) t2))
 		    ((eq? 'vector t1) (test '(vector-of *) t2))
 		    ((eq? 'list t1) (test '(list-of *) t2))
+		    ((eq? 'boolean t1) (test '(or true false) t2))
+		    ((eq? 'number t1) (test '(or fixnum float) t2))
 		    ((and (eq? 'null t1)
 			  (pair? t2) 
 			  (eq? (car t2) 'list-of)))
@@ -1480,6 +1426,23 @@
 		     (test (third t1) t2))
 		    ((and (pair? t2) (eq? 'forall (car t2)))
 		     (test t1 (third t2)))
+		    ((and (pair? t1) (eq? 'or (first t1)))
+		     (over-all-instantiations
+		      (cdr t1)
+		      typeenv
+		      #t
+		      (lambda (t) (test t t2))))
+		    ((and (pair? t2) (eq? 'or (first t2)))
+		     (over-all-instantiations
+		      (cdr t2)
+		      typeenv
+		      #f
+		      (lambda (t) (test t1 t))))
+		    ((and (pair? t1) (eq? 'not (first t1)))
+		     (and (pair? t2) (eq? 'not (first t2))
+			  (test (second t2) (second t1))))
+		    ((and (pair? t2) (eq? 'not (first t2)))
+		     (not (test t1 (second t2)))) ; sic
 		    (else
 		     (case t2
 		       ((procedure) (and (pair? t1) (eq? 'procedure (car t1))))
@@ -1491,12 +1454,6 @@
 		       (else
 			(cond ((not (pair? t1)) #f)
 			      ((not (pair? t2)) #f)
-			      ((eq? 'or (car t2))
-			       (over-all-instantiations
-				(cdr t2)
-				typeenv
-				#t
-				(lambda (t) (test t1 t))))
 			      ((and (eq? 'vector (car t1)) (eq? 'vector-of (car t2)))
 			       (every (cute test <> (second t2)) (cdr t1)))
 			      ((and (eq? 'vector-of (car t1)) (eq? 'vector (car t2)))
@@ -1517,12 +1474,6 @@
 			      ((not (eq? (car t1) (car t2))) #f)
 			      (else
 			       (case (car t1)
-				 ((or) 
-				  (over-all-instantiations
-				   (cdr t1)
-				   typeenv
-				   #t
-				   (lambda (t) (test t t2))))
 				 ((vector-of list-of) (test (second t1) (second t2)))
 				 ((pair) (every test (cdr t1) (cdr t2)))
 				 ((list vector)
@@ -1787,9 +1738,11 @@
 	      ((pair list vector vector-of list-of) 
 	       (cons (car t) (map (cut resolve <> done) (cdr t))))
 	      ((procedure)
-	       (let* ((argtypes (procedure-arguments t))
+	       (let* ((name (procedure-name t))
+		      (argtypes (procedure-arguments t))
 		      (rtypes (procedure-results t)))
 		 `(procedure
+		   ,@(if name (list name) '())
 		   ,(let loop ((args argtypes))
 		      (cond ((null? args) '())
 			    ((eq? '#!rest (car args))
@@ -2173,7 +2126,8 @@
 
 ;;; Canonicalize complex pair/list type for matching with "list-of"
 ;
-; - returns #f if not possibly matchable with "list-of"
+; Returns an equivalent (list ...) form, or the original argument if no
+; canonicalization could be done.
 
 (define (canonicalize-list-type t)
   (cond ((not (pair? t)) t)
@@ -2231,42 +2185,70 @@
   (define-special-case vector-ref vector-ref-result-type)
   (define-special-case ##sys#vector-ref vector-ref-result-type))
 
-(let ()
-  (define (list-ref-result-type node args rtypes)
-    (or (and-let* ((subs (node-subexpressions node))
-                   ((= (length subs) 3))
-                   (arg1 (walked-result (second args)))
-                   ((pair? arg1))
-                   ((eq? 'list (car arg1)))
-                   (index (third subs))
-                   ((eq? 'quote (node-class index)))
-                   (val (first (node-parameters index)))
-                   ((fixnum? val))
-                   ((>= val 0))  ;XXX could warn on failure (but needs location)
-                   ((< val (length (cdr arg1)))))
-          (list (list-ref (cdr arg1) val)))
-	rtypes))
-  (define-special-case list-ref list-ref-result-type)
-  (define-special-case ##sys#list-ref list-ref-result-type))
 
-(define-special-case list-tail
-  (lambda (node args rtypes)
-    (or (and-let* ((subs (node-subexpressions node))
-                   ((= (length subs) 3))
-                   (arg1 (walked-result (second args)))
-                   ((pair? arg1))
-                   ((eq? 'list (car arg1)))
-                   (index (third subs))
-                   ((eq? 'quote (node-class index)))
-                   (val (first (node-parameters index)))
-                   ((fixnum? val))
-                   ((>= val 0))
-                   ((< val (length (cdr arg1)))))   ;XXX could warn on failure (but needs location)
-          (let ((rest (list-tail (cdr arg1) val)))
-            (list (if (null? rest)
-                      'null
-                      `(list ,@rest)))))
-	rtypes)))
+;;; List-related special cases
+;
+; Preserve known element types for:
+;
+;   list-ref, list-tail, drop, take
+
+(let ()
+
+  (define (list-or-null a)
+    (if (null? a) 'null `(list ,@a)))
+
+  ;; Split a list or pair type form at index i, calling k with the two
+  ;; sections of the type or returning #f if it doesn't match that far.
+  (define (split-list-type l i k)
+    (cond ((not (pair? l))
+	   (and (fx= i 0) (eq? l 'null) (k l l)))
+	  ((eq? (first l) 'list)
+	   (and (fx< i (length l))
+		(receive (left right) (split-at (cdr l) i)
+		  (k (list-or-null left)
+		     (list-or-null right)))))
+	  ((eq? (first l) 'pair)
+	   (let lp ((a '()) (l l) (i i))
+	     (cond ((fx= i 0)
+		    (k (list-or-null (reverse a)) l))
+		   ((and (pair? l)
+			 (eq? (first l) 'pair))
+		    (lp (cons (second l) a)
+                        (third l)
+                        (sub1 i)))
+		   (else #f))))
+	  (else #f)))
+
+  (define (list+index-call-result-type-special-case k)
+    (lambda (node args rtypes)
+      (or (and-let* ((subs (node-subexpressions node))
+		     ((= (length subs) 3))
+		     (arg1 (walked-result (second args)))
+		     (index (third subs))
+		     ((eq? 'quote (node-class index)))
+		     (val (first (node-parameters index)))
+		     ((fixnum? val))
+		     ((>= val 0)))
+	    (split-list-type arg1 val k))
+	  rtypes)))
+
+  (define-special-case list-ref
+    (list+index-call-result-type-special-case
+     (lambda (_ result-type)
+       (and (pair? result-type)
+	    (list (cadr result-type))))))
+
+  (define-special-case list-tail
+    (list+index-call-result-type-special-case
+     (lambda (_ result-type) (list result-type))))
+
+  (define-special-case take
+    (list+index-call-result-type-special-case
+     (lambda (result-type _) (list result-type))))
+
+  (define-special-case drop
+    (list+index-call-result-type-special-case
+     (lambda (_ result-type) (list result-type)))))
 
 (define-special-case list
   (lambda (node args rtypes)
@@ -2287,6 +2269,43 @@
 (define-special-case ##sys#vector
   (lambda (node args rtypes)
     `((vector ,@(map walked-result (cdr args))))))
+
+(define-special-case reverse
+  (lambda (node args rtypes)
+    (or (and-let* ((subs (node-subexpressions node))
+		   ((= (length subs) 2))
+		   (arg1 (walked-result (second args)))
+		   ((pair? arg1))
+		   ((eq? (car arg1) 'list)))
+	  `((list ,@(reverse (cdr arg1)))))
+	rtypes)))
+
+;;; Special cases for make-list/make-vector with a known size
+;
+; e.g. (make-list 3 #\a) => (list char char char)
+
+(let ()
+
+  (define (complex-object-constructor-result-type-special-case type)
+    (lambda (node args rtypes)
+      (or (and-let* ((subs (node-subexpressions node))
+		     (fill (case (length subs)
+			     ((2) '*)
+			     ((3) (walked-result (third args)))
+			     (else #f)))
+		     (sub2 (second subs))
+		     ((eq? 'quote (node-class sub2)))
+		     (size (first (node-parameters sub2)))
+		     ((fixnum? size))
+		     ((<= 0 size +maximal-complex-object-constructor-result-type-length+)))
+	    `((,type ,@(make-list size fill))))
+	  rtypes)))
+
+  (define-special-case make-list
+    (complex-object-constructor-result-type-special-case 'list))
+
+  (define-special-case make-vector
+    (complex-object-constructor-result-type-special-case 'vector)))
 
 
 ;;; perform check over all typevar instantiations
@@ -2332,7 +2351,8 @@
 
     (ddd " over-all-instantiations: ~s exact=~a" tlist exact)
     ;; process all tlist elements
-    (let loop ((ts tlist) (ok #f))
+    (let loop ((ts (delete-duplicates tlist equal?))
+	       (ok #f))
       (cond ((null? ts)
 	     (cond ((or ok (null? tlist))
 		    (for-each 

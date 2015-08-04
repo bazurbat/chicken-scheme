@@ -1,6 +1,6 @@
 ;;;; csi.scm - Interpreter stub for CHICKEN
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2015, The CHICKEN Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -26,7 +26,6 @@
 
 
 (declare
-  (uses chicken-syntax)	; OBSOLETE (but left to allow older chicken's to bootstrap)
   (uses ports extras)
   (usual-integrations)
   (disable-interrupts)
@@ -44,21 +43,16 @@ EOF
 
 (include "banner")
 
-(private csi 
-  print-usage print-banner
-  run hexdump
-  parse-option-string chop-separator lookup-script-file
-  report describe dump hexdump bytevector-data get-config
-  tty-input?
-  history-list history-count history-add history-ref history-clear history-show)
-
 (declare
   (always-bound
     ##sys#windows-platform)
-  (hide parse-option-string bytevector-data member* canonicalize-args 
+  (hide parse-option-string bytevector-data member* canonicalize-args
 	describer-table dirseparator? circular-list? improper-pairs?
 	show-frameinfo selected-frame select-frame copy-from-frame
-	findall command-table default-editor csi-eval) )
+	findall command-table default-editor csi-eval print-usage
+	print-banner run hexdump chop-separator lookup-script-file report
+	describe dump tty-input? history-list history-count
+	history-add history-ref history-clear history-show) )
 
 
 ;;; Parameters:
@@ -116,7 +110,7 @@ EOF
                                    (prefix, suffix or none)
         -no-parentheses-synonyms  disables list delimiter synonyms
         -no-symbol-escape         disables support for escaped symbols
-        -r5rs-syntax              disables the Chicken extensions to
+        -r5rs-syntax              disables the CHICKEN extensions to
                                    R5RS syntax
     -s  -script PATHNAME          use interpreter for shell scripts
         -ss PATHNAME              shell script with `main' procedure
@@ -1077,7 +1071,7 @@ EOF
 	(unless quiet (display "Disabled support for escaped symbols\n"))
 	(symbol-escape #f) )
       (when (member* '("-r5rs-syntax") args)
-	(unless quiet (display "Disabled the Chicken extensions to R5RS syntax\n"))
+	(unless quiet (display "Disabled the CHICKEN extensions to R5RS syntax\n"))
 	(case-sensitive #f)
 	(keyword-style #:none)
 	(parentheses-synonyms #f)

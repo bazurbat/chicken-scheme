@@ -1,6 +1,6 @@
 ;;;; optimizer.scm - The CHICKEN Scheme compiler (optimizations)
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2015, The CHICKEN Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -917,7 +917,15 @@
     (##sys#hash-table-set! substitution-table name (append old (list class-and-args))) ) )
 
 (define (simplify-named-call db params name cont class classargs callargs)
-  (define (test sym prop) (get db sym prop))
+
+  (define (argc-ok? argc)
+    (or (not argc)
+	(and (fixnum? argc)
+	     (fx= argc (length callargs)))
+	(and (pair? argc)
+	     (argc-ok? (car argc))
+	     (argc-ok? (cdr argc)))))
+
   (define (defarg x)
     (cond ((symbol? x) (varnode x))
 	  ((and (pair? x) (eq? 'quote (car x))) (qnode (cadr x)))
@@ -1096,11 +1104,13 @@
 					   cont callargs) ) ) ) ) ) ) )
 
     ;; (<op> ...) -> ((##core#proc <primitiveop>) ...)
-    ((13) ; classargs = (<primitiveop> <safe>)
+    ((13) ; classargs = (<argc> <primitiveop> <safe>)
+     ;; - <argc> may be #f for any number of args, or a pair specifying a range
      (and inline-substitutions-enabled
 	  (intrinsic? name)
-	  (or (second classargs) unsafe)
-	  (let ((pname (first classargs)))
+	  (or (third classargs) unsafe)
+	  (argc-ok? (first classargs))
+	  (let ((pname (second classargs)))
 	    (make-node '##core#call (if (pair? params) (cons #t (cdr params)) params)
 		       (cons* (make-node '##core#proc (list pname #t) '())
 			      cont callargs) ) ) ) )
@@ -1137,8 +1147,9 @@
     ;; (<alloc-op> ...) -> (##core#inline_allocate (<aiop> <words>) ...)
     ((16) ; classargs = (<argc> <aiop> <safe> <words> [<counted>])
      ;; - <argc> may be #f, saying that any number of arguments is allowed,
-     ;; - <words> may be a list of one element (the number of words), meaning that
-     ;;   the words are to be multiplied with the number of arguments.
+     ;; - <words> may be a list of two elements (the base number of words and
+     ;;   the number of words per element), meaning that the words are to be
+     ;;   multiplied with the number of arguments.
      ;; - <words> may also be #t, meaning that the number of words is the same as the
      ;;   number of arguments plus 1.
      ;; - if <counted> is given and true and <argc> is between 1-8, append "<count>"
@@ -1160,9 +1171,10 @@
 		    (list (if (and counted (positive? rargc) (<= rargc 8))
 			      (conc (second classargs) rargc)
 			      (second classargs) )
-			  (cond [(eq? #t w) (add1 rargc)]
-				[(pair? w) (* rargc (car w))]
-				[else w] ) )
+			  (cond ((eq? #t w) (add1 rargc))
+				((pair? w) (+ (car w)
+					      (* rargc (cadr w))))
+				(else w) ) )
 		    callargs) ) ) ) ) )
 
     ;; (<op> ...) -> (##core#inline <iop>/<unsafe-iop> ...)

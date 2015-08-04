@@ -1,6 +1,6 @@
 ;;;; library.scm - R5RS library for the CHICKEN compiler
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2015, The CHICKEN Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -154,7 +154,7 @@ EOF
 (define (##sys#quit-hook result) ((##sys#exit-handler) 0))
 (define (quit #!optional result) (##sys#quit-hook result))
 
-(define (##sys#error . args)
+(define (error . args)
   (if (pair? args)
       (apply ##sys#signal-hook #:error args)
       (##sys#signal-hook #:error #f)))
@@ -162,11 +162,11 @@ EOF
 (define ##sys#warnings-enabled #t)
 (define ##sys#notices-enabled (##sys#fudge 13))
 
-(define (##sys#warn msg . args)
+(define (warning msg . args)
   (when ##sys#warnings-enabled
     (apply ##sys#signal-hook #:warning msg args) ) )
 
-(define (##sys#notice msg . args)
+(define (notice msg . args)
   (when (and ##sys#notices-enabled
 	     ##sys#warnings-enabled)
     (apply ##sys#signal-hook #:notice msg args) ) )
@@ -176,8 +176,9 @@ EOF
       (set! ##sys#warnings-enabled (car bool))
       ##sys#warnings-enabled) )
 
-(define error ##sys#error)
-(define warning ##sys#warn)
+(define ##sys#error error)
+(define ##sys#warn warning)
+(define ##sys#notice notice)
 
 (define-foreign-variable main_argc int "C_main_argc")
 (define-foreign-variable main_argv c-pointer "C_main_argv")
@@ -192,8 +193,7 @@ EOF
 (define ##sys#make-structure (##core#primitive "C_make_structure"))
 (define ##sys#ensure-heap-reserve (##core#primitive "C_ensure_heap_reserve"))
 (define (##sys#fudge index) (##core#inline "C_fudge" index))
-(define ##sys#call-host (##core#primitive "C_return_to_host"))
-(define return-to-host ##sys#call-host)
+(define return-to-host (##core#primitive "C_return_to_host"))
 (define ##sys#symbol-table-info (##core#primitive "C_get_symbol_table_info"))
 (define ##sys#memory-info (##core#primitive "C_get_memory_info"))
 (define (current-milliseconds) (##core#inline_allocate ("C_a_i_current_milliseconds" 4) #f))
@@ -210,8 +210,8 @@ EOF
 (define (##sys#message str) (##core#inline "C_message" str))
 (define (##sys#byte x i) (##core#inline "C_subbyte" x i))
 (define (##sys#setbyte x i n) (##core#inline "C_setbyte" x i n))
-(define (##sys#void . _) (##core#undefined))
-(define void ##sys#void)
+(define (void . _) (##core#undefined))
+(define ##sys#void void)
 (define ##sys#undefined-value (##core#undefined))
 (define (##sys#halt msg) (##core#inline "C_halt" msg))
 (define (##sys#flo2fix n) (##core#inline "C_quickflonumtruncate" n))
@@ -299,12 +299,12 @@ EOF
       (##core#inline "C_i_check_char" x) ) )
 
 (define (##sys#check-boolean x . loc)
-  (If (pair? loc)
+  (if (pair? loc)
       (##core#inline "C_i_check_boolean_2" x (car loc))
       (##core#inline "C_i_check_boolean" x) ) )
 
 (define (##sys#check-locative x . loc)
-  (If (pair? loc)
+  (if (pair? loc)
       (##core#inline "C_i_check_locative_2" x (car loc))
       (##core#inline "C_i_check_locative" x) ) )
 
@@ -330,7 +330,7 @@ EOF
       (##core#inline "C_i_check_closure_2" x (car loc))
       (##core#inline "C_i_check_closure" x) ) )
 
-(define (##sys#force obj)
+(define (force obj)
   (if (##sys#structure? obj 'promise)
       (let lp ((promise obj)
 	       (forward #f))
@@ -354,7 +354,7 @@ EOF
 		 (lp val forward)))))
       obj))
 
-(define force ##sys#force)
+(define ##sys#force force)
 
 (define (system cmd)
   (##sys#check-string cmd 'system)
@@ -502,7 +502,7 @@ EOF
 	 (##sys#check-char c 'make-string)
 	 c ) ) ) )
 
-(define ##sys#string->list 
+(define string->list
   (lambda (s)
     (##sys#check-string s 'string->list)
     (let ((len (##core#inline "C_block_size" s)))
@@ -512,9 +512,9 @@ EOF
 	    (cons (##core#inline "C_subchar" s i)
 		  (loop (fx+ i 1)) ) ) ) ) ) )
 
-(define string->list ##sys#string->list)
+(define ##sys#string->list string->list)
 
-(define (##sys#list->string lst0)
+(define (list->string lst0)
   (if (not (list? lst0))
       (##sys#error-not-a-proper-list lst0 'list->string)
       (let* ([len (length lst0)]
@@ -526,11 +526,11 @@ EOF
 	    (##sys#check-char c 'list->string)
 	    (##core#inline "C_setsubchar" s i c) ) ) ) ))
 
-(define list->string ##sys#list->string)
+(define ##sys#list->string list->string)
 
 ;;; By Sven Hartrumpf:
 
-(define (##sys#reverse-list->string l)
+(define (reverse-list->string l)
   (if (list? l)
       (let* ((n (length l))
 	     (s (##sys#make-string n)))
@@ -543,7 +543,7 @@ EOF
 	s )
       (##sys#error-not-a-proper-list l 'reverse-list->string) ) )
 
-(define reverse-list->string ##sys#reverse-list->string)
+(define ##sys#reverse-list->string reverse-list->string)
 
 (define (string-fill! s c)
   (##sys#check-string s 'string-fill!)
@@ -904,19 +904,19 @@ EOF
 (define sub1 (lambda (n) (- n 1)))
 
 (define quotient (##core#primitive "C_quotient"))
-(define (##sys#number? x) (##core#inline "C_i_numberp" x))
-(define number? ##sys#number?)
+(define (number? x) (##core#inline "C_i_numberp" x))
+(define ##sys#number? number?)
 (define complex? number?)
 (define real? number?)
 (define (rational? n) (##core#inline "C_i_rationalp" n))
 (define ##sys#flonum-fraction (##core#primitive "C_flonum_fraction"))
 (define ##sys#fprat (##core#primitive "C_flonum_rat"))
-(define (##sys#integer? x) (##core#inline "C_i_integerp" x))
-(define integer? ##sys#integer?)
-(define (##sys#exact? x) (##core#inline "C_i_exactp" x))
-(define (##sys#inexact? x) (##core#inline "C_i_inexactp" x))
-(define exact? ##sys#exact?)
-(define inexact? ##sys#inexact?)
+(define (integer? x) (##core#inline "C_i_integerp" x))
+(define ##sys#integer? integer?)
+(define (exact? x) (##core#inline "C_i_exactp" x))
+(define (inexact? x) (##core#inline "C_i_inexactp" x))
+(define ##sys#exact? exact?)
+(define ##sys#inexact? inexact?)
 (define expt (##core#primitive "C_expt"))
 (define (##sys#fits-in-int? n) (##core#inline "C_fits_in_int_p" n))
 (define (##sys#fits-in-unsigned-int? n) (##core#inline "C_fits_in_unsigned_int_p" n))
@@ -966,11 +966,11 @@ EOF
 	(else (if (##sys#exact? n) 0 0.0) ) ) )
 
 ;; hooks for numbers
-(define (##sys#exact->inexact n) (##core#inline_allocate ("C_a_i_exact_to_inexact" 4) n))
-(define (##sys#inexact->exact n) (##core#inline "C_i_inexact_to_exact" n))
+(define (exact->inexact n) (##core#inline_allocate ("C_a_i_exact_to_inexact" 4) n))
+(define (inexact->exact n) (##core#inline "C_i_inexact_to_exact" n))
 
-(define exact->inexact ##sys#exact->inexact)
-(define inexact->exact ##sys#inexact->exact)
+(define ##sys#exact->inexact exact->inexact)
+(define ##sys#inexact->exact inexact->exact)
 
 (define (floor x)
   (##sys#check-number x 'floor)
@@ -995,8 +995,6 @@ EOF
   (if (##core#inline "C_fixnump" x) 
       x
       (##core#inline_allocate ("C_a_i_flonum_round_proper" 4) x)))
-
-(define ##sys#round round)		; this is obsolete and is used by the "numbers" egg (gmp version)
 
 (define remainder 
   (lambda (x y) (- x (* (quotient x y) y))) )
@@ -1099,7 +1097,7 @@ EOF
 		  (##sys#lcm head n2)
 		  (##sys#slot next 1)) #f) ) ) ) ) ) )
 
-(define (##sys#string->number str #!optional (radix 10) exactness)
+(define (string->number str #!optional (radix 10) exactness)
   (let ((num (##core#inline_allocate ("C_a_i_string_to_number" 4) str radix)))
     (case exactness
       ((i) (##core#inline_allocate ("C_a_i_exact_to_inexact" 4) num))
@@ -1109,10 +1107,10 @@ EOF
                 (##core#inline "C_i_inexact_to_exact" num)))
       (else num))))
 
-(define string->number ##sys#string->number)
-(define ##sys#number->string (##core#primitive "C_number_to_string"))
+(define ##sys#string->number string->number)
+(define number->string (##core#primitive "C_number_to_string"))
 (define ##sys#fixnum->string (##core#primitive "C_fixnum_to_string"))
-(define number->string ##sys#number->string)
+(define ##sys#number->string number->string)
 
 (define (flonum-print-precision #!optional prec)
   (let ([prev (##core#inline "C_get_print_precision")])
@@ -1284,7 +1282,7 @@ EOF
 	  (##sys#symbol->string kw)
 	  (##sys#signal-hook #:type-error 'keyword->string "bad argument type - not a keyword" kw) ) ) ) )
 
-(define ##sys#get-keyword
+(define get-keyword
   (let ((tag (list 'tag)))
     (lambda (key args #!optional thunk)
       (##sys#check-list args 'get-keyword)
@@ -1293,7 +1291,7 @@ EOF
 	    (and thunk (thunk))
 	    r)))))
 
-(define get-keyword ##sys#get-keyword)
+(define ##sys#get-keyword get-keyword)
 
 
 ;;; Blob:
@@ -1344,7 +1342,7 @@ EOF
 (define (vector-ref v i) (##core#inline "C_i_vector_ref" v i))
 (define (vector-set! v i x) (##core#inline "C_i_vector_set" v i x))
 
-(define (##sys#make-vector size . fill)
+(define (make-vector size . fill)
   (##sys#check-exact size 'make-vector)
   (when (fx< size 0) (##sys#error 'make-vector "size is negative" size))
   (##sys#allocate-vector
@@ -1354,7 +1352,7 @@ EOF
        (car fill) )
    #f) )
 
-(define make-vector ##sys#make-vector)
+(define ##sys#make-vector make-vector)
 
 (define (list->vector lst0)
   (if (not (list? lst0))
@@ -1579,8 +1577,8 @@ EOF
 (define ##sys#call-with-cthulhu (##core#primitive "C_call_with_cthulhu"))
 (define (##sys#direct-return dk x) (##core#inline "C_direct_return" dk x))
 (define values (##core#primitive "C_values"))
-(define ##sys#call-with-values (##core#primitive "C_call_with_values"))
-(define call-with-values ##sys#call-with-values)
+(define call-with-values (##core#primitive "C_call_with_values"))
+(define ##sys#call-with-values call-with-values)
 
 (define (##sys#for-each p lst0)
   (let loop ((lst lst0))
@@ -1908,18 +1906,6 @@ EOF
       (##core#inline "C_i_check_port_2" x 0 #t (car loc))
       (##core#inline "C_i_check_port" x 0 #t) ) )
 
-(define (##sys#check-port-mode port mode . loc) ; OBSOLETE
-  (unless (eq? mode (##sys#slot port 1))
-    (##sys#signal-hook
-     #:type-error (and (pair? loc) (car loc))
-     (if mode "port is not an input port" "port is not an output-port") port) ) )
-
-(define (##sys#check-port* p loc)	; OBSOLETE
-  (##sys#check-port p)
-  (when (##sys#slot p 8)
-    (##sys#signal-hook #:file-error loc "port already closed" p) )
-  p )
-
 (define (current-input-port . arg)
   (when (pair? arg)
     (let ([p (car arg)])
@@ -1962,63 +1948,32 @@ EOF
 		name) )
 	  name) ) ) )
 
-(define (##sys#pathname-resolution name thunk . _)
-  (thunk (##sys#expand-home-path name)) )
-
-;; DEPRECATED: implicit $VAR- and ~-expansion will be removed in
-;; future versions.  See ticket #1001
-(define ##sys#expand-home-path
-  (lambda (path)
-    (let ((len (##sys#size path)))
-      (if (fx> len 0)
-	  (case (##core#inline "C_subchar" path 0)
-	    ((#\~) 
-	     (let ((rest (##sys#substring path 1 len)))
-	       (##sys#string-append (or (get-environment-variable "HOME") "") rest) ) )
-	    ((#\$) 
-	     (let loop ((i 1))
-	       (if (fx>= i len)
-		   path
-		   (let ((c (##core#inline "C_subchar" path i)))
-		     (if (or (eq? c #\/) (eq? c #\\))
-			 (##sys#string-append
-			  (or (get-environment-variable (##sys#substring path 1 i)) "")
-			  (##sys#substring path i len))
-			 (loop (fx+ i 1)) ) ) ) ) )
-	    (else path) )
-	  "") ) ) )
-
 (define open-input-file)
 (define open-output-file)
 (define close-input-port)
 (define close-output-port)
 
 (let ()
- 
   (define (open name inp modes loc)
     (##sys#check-string name loc)
-    (##sys#pathname-resolution
-     name
-     (lambda (name)
-       (let ([fmode (if inp "r" "w")]
-	     [bmode ""] )
-	 (do ([modes modes (##sys#slot modes 1)])
-	     ((null? modes))
-	   (let ([o (##sys#slot modes 0)])
-	     (case o
-	       [(#:binary) (set! bmode "b")]
-	       [(#:text) (set! bmode "")]
-	       [(#:append) 
-		(if inp
-		    (##sys#error loc "cannot use append mode with input file")
-		    (set! fmode "a") ) ]
-	       [else (##sys#error loc "invalid file option" o)] ) ) )
-	 (let ([port (##sys#make-port inp ##sys#stream-port-class name 'stream)])
-	   (unless (##sys#open-file-port port name (##sys#string-append fmode bmode))
-	     (##sys#update-errno)
-	     (##sys#signal-hook #:file-error loc (##sys#string-append "cannot open file - " strerror) name) )
-	   port) ) )
-     #:open (not inp) modes) )
+    (let ([fmode (if inp "r" "w")]
+          [bmode ""] )
+      (do ([modes modes (##sys#slot modes 1)])
+        ((null? modes))
+        (let ([o (##sys#slot modes 0)])
+          (case o
+            [(#:binary) (set! bmode "b")]
+            [(#:text) (set! bmode "")]
+            [(#:append)
+             (if inp
+               (##sys#error loc "cannot use append mode with input file")
+               (set! fmode "a") ) ]
+            [else (##sys#error loc "invalid file option" o)] ) ) )
+      (let ([port (##sys#make-port inp ##sys#stream-port-class name 'stream)])
+        (unless (##sys#open-file-port port name (##sys#string-append fmode bmode))
+          (##sys#update-errno)
+          (##sys#signal-hook #:file-error loc (##sys#string-append "cannot open file - " strerror) name) )
+        port) ) )
 
   (define (close port loc)
     (##sys#check-port port loc)
@@ -2088,25 +2043,17 @@ EOF
 
 (define (file-exists? name)
   (##sys#check-string name 'file-exists?)
-  (##sys#pathname-resolution
-    name
-    (lambda (name)
-      (and (##sys#file-exists? 
-	    (##sys#platform-fixup-pathname name) 
-	    #f #f 'file-exists?) 
-	   name) )
-    #:exists?) )
+  (and (##sys#file-exists?
+        (##sys#platform-fixup-pathname name)
+        #f #f 'file-exists?)
+       name) )
 
 (define (directory-exists? name)
   (##sys#check-string name 'directory-exists?)
-  (##sys#pathname-resolution
-   name
-   (lambda (name)
-     (and (##sys#file-exists?
-	   (##sys#platform-fixup-pathname name)
-	   #f #t 'directory-exists?)
-	  name) )
-   #:exists?) )
+  (and (##sys#file-exists?
+        (##sys#platform-fixup-pathname name)
+        #f #t 'directory-exists?)
+       name) )
 
 (define (##sys#flush-output port)
   ((##sys#slot (##sys#slot port 2) 5) port) ; flush-output
@@ -2137,33 +2084,22 @@ EOF
 
 (define (delete-file filename)
   (##sys#check-string filename 'delete-file)
-  (##sys#pathname-resolution
-   filename
-   (lambda (filename)
-     (unless (eq? 0 (##core#inline "C_delete_file" (##sys#make-c-string filename 'delete-file)))
-       (##sys#update-errno)
-       (##sys#signal-hook
-	#:file-error 'delete-file
-	(##sys#string-append "cannot delete file - " strerror) filename) )
-     filename)
-   #:delete) )
+  (unless (eq? 0 (##core#inline "C_delete_file" (##sys#make-c-string filename 'delete-file)))
+    (##sys#update-errno)
+    (##sys#signal-hook
+     #:file-error 'delete-file
+     (##sys#string-append "cannot delete file - " strerror) filename) )
+  filename)
 
 (define (rename-file old new)
   (##sys#check-string old 'rename-file)
   (##sys#check-string new 'rename-file)
-  (##sys#pathname-resolution
-   old
-   (lambda (old)
-     (##sys#pathname-resolution
-      new
-      (lambda (new)
-	(unless (eq? 0 (##core#inline "C_rename_file" (##sys#make-c-string old 'rename-file) (##sys#make-c-string new)))
-	  (##sys#update-errno)
-	  (##sys#signal-hook
-	   #:file-error 'rename-file
-	   (##sys#string-append "cannot rename file - " strerror) old new) )
-	new)))
-   #:rename new) )
+  (unless (eq? 0 (##core#inline "C_rename_file" (##sys#make-c-string old 'rename-file) (##sys#make-c-string new)))
+    (##sys#update-errno)
+    (##sys#signal-hook
+     #:file-error 'rename-file
+     (##sys#string-append "cannot rename file - " strerror) old new) )
+  new)
 
 
 ;;; Decorate procedure with arbitrary data
@@ -2234,7 +2170,7 @@ EOF
 (define-inline (setter? x) 
   (and (pair? x) (eq? setter-tag (##sys#slot x 0))) )
 
-(define ##sys#setter
+(define setter
   (##sys#decorate-lambda 
    (lambda (proc)
      (or (and-let* (((procedure? proc))
@@ -2259,7 +2195,7 @@ EOF
 	     (error "can't set setter of non-procedure" get) ) ) ) )
      proc) ) )
 
-(define setter ##sys#setter)
+(define ##sys#setter setter)
 
 (define (getter-with-setter get set #!optional info)
   (##sys#check-closure get 'getter-with-setter)
@@ -3857,20 +3793,20 @@ EOF
 
 (define (features) ##sys#features)
 
-(define (##sys#feature? . ids)
+(define (feature? . ids)
   (let loop ([ids ids])
     (or (null? ids)
 	(and (memq (##sys#->feature-id (##sys#slot ids 0)) ##sys#features)
 	     (loop (##sys#slot ids 1)) ) ) ) )
 
-(define feature? ##sys#feature?)
+(define ##sys#feature? feature?)
 
 
 ;;; Access backtrace:
 
 (define-constant +trace-buffer-entry-slot-count+ 4)
 
-(define ##sys#get-call-chain
+(define get-call-chain
   (let ((extract
 	 (foreign-lambda* nonnull-c-string ((scheme-object x)) "C_return((C_char *)x);")))
     (lambda (#!optional (start 0) (thread ##sys#current-thread))
@@ -3929,7 +3865,7 @@ EOF
     (##sys#really-print-call-chain port ct header)
     ct))
 
-(define get-call-chain ##sys#get-call-chain)
+(define ##sys#get-call-chain get-call-chain)
 
 
 ;;; Interrupt handling:
@@ -4085,7 +4021,7 @@ EOF
 	       '(exn . call-chain) (##sys#get-call-chain)
 	       '(exn . location) loc) ) ) ) ] ) )
 
-(define (##sys#abort x)
+(define (abort x)
   (##sys#current-exception-handler x)
   (##sys#abort
    (##sys#make-structure
@@ -4095,11 +4031,11 @@ EOF
 	  '(exn . arguments) '()
 	  '(exn . location) #f) ) ) )
 
-(define (##sys#signal x)
+(define (signal x)
   (##sys#current-exception-handler x) )
 
-(define abort ##sys#abort)
-(define signal ##sys#signal)
+(define ##sys#abort abort)
+(define ##sys#signal signal)
 
 (define ##sys#last-exception #f)	; used in csi for ,exn command
 
@@ -4433,9 +4369,6 @@ EOF
    from to
    offset1 offset2 bytes) )
 
-;; OBSOLETE
-(define ##sys#zap-strings (foreign-lambda void "C_zap_strings" scheme-object))
-
 (define (##sys#block-pointer x)
   (let ([ptr (##sys#make-pointer)])
     (##core#inline "C_pointer_to_block" ptr x)
@@ -4452,7 +4385,6 @@ EOF
 (define (##sys#foreign-struct-wrapper-argument t x) 
   (##core#inline "C_i_foreign_struct_wrapper_argumentp" t x))
 
-(define ##sys#foreign-number-vector-argument ##sys#foreign-struct-wrapper-argument) ;OBSOLETE
 (define (##sys#foreign-string-argument x) (##core#inline "C_i_foreign_string_argumentp" x))
 (define (##sys#foreign-symbol-argument x) (##core#inline "C_i_foreign_symbol_argumentp" x))
 (define (##sys#foreign-pointer-argument x) (##core#inline "C_i_foreign_pointer_argumentp" x))
@@ -4831,7 +4763,6 @@ EOF
 (define ##sys#list? list?)
 (define ##sys#null? null?)
 (define ##sys#map-n map)
-(define ##sys#list-ref list-ref)
 
 
 ;;; Promises:
@@ -5007,11 +4938,11 @@ EOF
 
 ;;; Property lists
 
-(define (##sys#put! sym prop val)
+(define (put! sym prop val)
   (##sys#check-symbol sym 'put!)
   (##core#inline_allocate ("C_a_i_putprop" 8) sym prop val) )
 
-(define put! ##sys#put!)
+(define ##sys#put! put!)
 
 (define (##sys#get sym prop #!optional default)
   (##sys#check-symbol sym 'get)
@@ -5079,13 +5010,16 @@ EOF
       (pstr ", ")
       (pnum gctime)
       (pstr "s GC time (major)")))
-  (let ((mut (##sys#slot info 2)))
+  (let ((mut (##sys#slot info 2))
+	(umut (##sys#slot info 3)))
     (when (fx> mut 0)
       (pstr ", ")
       (pnum mut)
-      (pstr " mutations")))
-  (let ((minor (##sys#slot info 3))
-	(major (##sys#slot info 4)))
+      (pchr #\/)
+      (pnum umut)
+      (pstr " mutations (total/tracked)")))
+  (let ((minor (##sys#slot info 4))
+	(major (##sys#slot info 5)))
     (when (or (fx> minor 0) (fx> major 0))
       (pstr ", ")
       (pnum major)

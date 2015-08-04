@@ -155,7 +155,7 @@ perform arbitrary operations as long as they can be invoked
 as {{(READ FROM)}} and {{(WRITE X TO)}}, respectively.
 {{copy-port}} returns an undefined value.
 
-{{copy-port}} was introduced in Chicken 4.6.0.
+{{copy-port}} was introduced in CHICKEN 4.6.0.
 
 === Funky ports
 

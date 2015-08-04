@@ -1,6 +1,6 @@
 ;;;; files.scm - File and pathname operations
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2015, The CHICKEN Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -363,19 +363,15 @@ EOF
       (let ((sep (if (eq? platform 'windows) #\\ #\/)))
 	(##sys#check-string path 'normalize-pathname)
 	(let ((len (##sys#size path))
-	      (abspath #f)
+	      (type #f)
 	      (drive #f))
 	  (let loop ((i 0) (prev 0) (parts '()))
 	    (cond ((fx>= i len)
 		   (when (fx> i prev)
 		     (set! parts (addpart (##sys#substring path prev i) parts)))
 		   (if (null? parts)
-		       (let ((r (if abspath
-				    (##sys#string-append (string sep) ".")
-				    (##sys#string-append "." (string sep)) )))
-			 (if drive
-			     (##sys#string-append drive r)
-			     r))
+		       (let ((r (if (eq? type 'abs) (string sep) ".")))
+			 (if drive (##sys#string-append drive r) r))
 		       (let ((out (open-output-string))
 			     (parts (##sys#fast-reverse parts)))
 			 (display (car parts) out)
@@ -385,17 +381,15 @@ EOF
 			    (display p out) )
 			  (cdr parts))
 			 (when (fx= i prev) (##sys#write-char-0 sep out))
-			 (let* ((r1 (get-output-string out))
-				(r (##sys#expand-home-path r1)))
-			   (when (string=? r1 r)
-			     (when abspath 
-			       (set! r (##sys#string-append (string sep) r)))
-			     (when drive
-			       (set! r (##sys#string-append drive r))))
+			 (let ((r (get-output-string out)))
+			   (when (eq? type 'abs)
+			     (set! r (##sys#string-append (string sep) r)))
+			   (when drive
+			     (set! r (##sys#string-append drive r)))
 			   r))))
 		  ((*char-pds? (string-ref path i))
-		   (when (and (null? parts) (fx= i prev))
-		     (set! abspath #t))
+		   (when (not type)
+		     (set! type (if (fx= i prev) 'abs 'rel)))
 		   (if (fx= i prev)
 		       (loop (fx+ i 1) (fx+ i 1) parts)
 		       (loop (fx+ i 1)

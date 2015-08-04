@@ -6,7 +6,7 @@ Homogeneous numeric vector datatypes.  Also see the [[http://srfi.schemers.org/s
 
 [[toc:]]
 
-== Chicken implementation
+== CHICKEN implementation
 
 * Procedures for blob conversion, subvectors and vector I/O are provided.
 * SRFI-17 setters for {{XXXvector-ref}} are defined.
@@ -75,7 +75,7 @@ not including {{TO}}.
 
 === Vector I/O
 
-<procedure>(read-u8vector LENGTH [PORT])</procedure>
+<procedure>(read-u8vector [LENGTH [PORT]])</procedure>
 
 Reads {{LENGTH}} bytes from the {{PORT}} and returns a fresh
 {{u8vector}} or less if end-of-file is encountered. {{PORT}} defaults to the
@@ -208,7 +208,7 @@ The type of the fill value must be compatible with the elements of the
 vector datatype.  It is an error if otherwise -- for example, if an
 inexact integer is passed to {{make-u8vector}}.
 
-On Chicken, these procedures have been extended to allow allocating
+On CHICKEN, these procedures have been extended to allow allocating
 the storage in non-garbage collected memory, as follows:
 
 The optional arguments {{NONGC}} and {{FINALIZE}} define whether the

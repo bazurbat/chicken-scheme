@@ -67,7 +67,7 @@ As an argument type, these expect a fixnum value, and as a return type
 they return a fixnum.  Values outside the ranges prescribed above are
 silently truncated; you should use e.g. {{integer}} if you need the full
 32-bit range.  Note: {{int32}} is not recognized as an argument type
-prior to Chicken 4.7.2.
+prior to CHICKEN 4.7.2.
 
 Notes for 64-bit architectures:
 
@@ -107,7 +107,7 @@ gaps in the sequence; the same goes for their negative counterparts.)
 On a 64-bit system the range is 62 bits plus the sign bit, the
 maximum range of a fixnum.  (Numbers between 2^62 and 2^64-1 have gaps.)
 
-{{unsigned-integer64}} is not valid as a return type until Chicken 4.6.4.
+{{unsigned-integer64}} is not valid as a return type until CHICKEN 4.6.4.
 
 <type>long</type><br>
 <type>unsigned-long</type>
@@ -239,7 +239,7 @@ e.g. via {{(address->pointer 0)}}.)
 <type>nonnull-pointer-vector</type>
 
 A vector of foreign pointer objects; see [[Unit lolevel#Pointer vectors|Pointer vectors]].
-Permitted only as an argument type, not as return type.  This type was introduced in Chicken 4.6.3.
+Permitted only as an argument type, not as return type.  This type was introduced in CHICKEN 4.6.3.
 
 A pointer vector contains a C array of void pointers, and the argument
 is passed as a {{void **}} pointer to these contents.  Just as for
@@ -266,7 +266,7 @@ The value {{#f}} is also allowed and is passed as a {{NULL}} pointer.
 
 An arbitrary, raw Scheme data object (immediate or non-immediate).  A
 {{scheme-object}} is passed or returned as a {{C_word}}, the
-internal Chicken type for objects.  Typically, this consists of an
+internal CHICKEN type for objects.  Typically, this consists of an
 object header and tag bits.  It is up to you to build or take apart
 such objects using the core library routines in {{chicken.h}} and
 {{runtime.c}}.  
@@ -274,11 +274,17 @@ such objects using the core library routines in {{chicken.h}} and
 More information on object structure can be found in [[Data representation]].
 
 <type>scheme-pointer</type><br>
-<type>nonnull-scheme-pointer</type>
+<type>(scheme-pointer TYPE)</type><br>
+<type>nonnull-scheme-pointer</type><br>
+<type>(nonnull-scheme-pointer TYPE)</type>
 
 An untyped pointer to the ''contents'' of a non-immediate Scheme
 object; for example, the raw byte contents of a string. Only allowed
 as an argument type, not a return type.  
+
+The optional element type {{TYPE}} may be used to specify what C
+type should be used in the generated code. This avoids the need
+to cast the argument.
 
 The value {{#f}} is also allowed and is passed as a {{NULL}} pointer.
 For the {{nonnull-}} variant, passing {{#f}} will raise an exception.
@@ -382,6 +388,7 @@ The foreign type {{TYPE}} with an additional {{const}} qualifier.
 <tr><td>{{symbol}}</td><td>{{char *}}</td></tr>
 <tr><td>{{void}}</td><td>{{void}}</td></tr>
 <tr><td>{{([nonnull-]c-pointer TYPE)}}</td><td>{{TYPE *}}</td></tr>
+<tr><td>{{([nonnull-]scheme-pointer TYPE)}}</td><td>{{TYPE *}}</td></tr>
 <tr><td>{{(enum NAME)}}</td><td>{{enum NAME}}</td></tr>
 <tr><td>{{(struct NAME)}}</td><td>{{struct NAME}}</td></tr>
 <tr><td>{{(ref TYPE)}}</td><td>{{TYPE &}}</td></tr>

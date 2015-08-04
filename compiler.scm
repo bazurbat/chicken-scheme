@@ -5,7 +5,7 @@
 ;
 ;
 ;--------------------------------------------------------------------------------------------
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2015, The CHICKEN Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -269,9 +269,10 @@
 (include "compiler-namespace")
 
 (define (d arg1 . more)
-  (if (null? more)
-      (pp arg1)
-      (apply print arg1 more)))
+  (when (##sys#fudge 13)		; debug mode?
+    (if (null? more)
+	(pp arg1)
+	(apply print arg1 more))))
 
 (define-syntax d (syntax-rules () ((_ . _) (void))))
 
@@ -1480,7 +1481,7 @@
 	      (for-each 
 	       (cut mark-variable <> '##compiler#pure #t) 
 	       (globalize-all syms))
-	      (quit "invalid arguments to `constant' declaration: ~S" spec)) ) )
+	      (quit "invalid arguments to `pure' declaration: ~S" spec))))
        ((emit-import-library)
 	(set! import-libraries
 	  (append

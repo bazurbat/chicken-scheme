@@ -1,6 +1,6 @@
 ;;;; expand.scm - The HI/LO expander
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2015, The CHICKEN Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -99,7 +99,7 @@
 		ua))
 	alias) ) )
 
-(define (##sys#strip-syntax exp)
+(define (strip-syntax exp)
  ;; if se is given, retain bound vars
  (let ((seen '()))
    (let walk ((x exp))
@@ -125,7 +125,7 @@
                 (##sys#setslot vec i (walk (##sys#slot x i))))))
            (else x)))))
 
-(define strip-syntax ##sys#strip-syntax)
+(define ##sys#strip-syntax strip-syntax)
 
 (define (##sys#extend-se se vars #!optional (aliases (map gensym vars)))
   (for-each
@@ -306,14 +306,14 @@
 
 ;;; User-level macroexpansion
 
-(define (##sys#expand exp #!optional (se (##sys#current-environment)) cs?)
+(define (expand exp #!optional (se (##sys#current-environment)) cs?)
   (let loop ((exp exp))
     (let-values (((exp2 m) (##sys#expand-0 exp se cs?)))
       (if m
 	  (loop exp2)
 	  exp2) ) ) )
 
-(define expand ##sys#expand)
+(define ##sys#expand expand)
 
 
 ;;; Extended (DSSSL-style) lambda lists
@@ -438,6 +438,26 @@
    "redefinition of currently used defining form" ; help me find something better
    form))
 
+;;; Expansion of multiple values assignments.
+;
+; Given a lambda list and a multi-valued expression, returns a form that
+; will `set!` each variable to its corresponding value in order.
+
+(define (##sys#expand-multiple-values-assignment formals expr)
+  (##sys#decompose-lambda-list
+   formals
+   (lambda (vars argc rest)
+     (let ((aliases    (if (symbol? formals) '() (map gensym formals)))
+	   (rest-alias (if (not rest) '() (gensym rest))))
+       `(##sys#call-with-values
+	 (##core#lambda () ,expr)
+	 (##core#lambda
+	  ,(append aliases rest-alias)
+	  ,@(map (lambda (v a) `(##core#set! ,v ,a)) vars aliases)
+	  ,@(cond
+	      ((null? formals) '((##core#undefined)))
+	      ((null? rest-alias) '())
+	      (else `((##core#set! ,rest ,rest-alias))))))))))
 
 ;;; Expansion of bodies (and internal definitions)
 ;
@@ -478,18 +498,14 @@
 		 (result 
 		  `(##core#let
 		    ,(##sys#map
-		      (lambda (v) (##sys#list v (##sys#list '##core#undefined))) 
-		      (apply ##sys#append vars mvars) )
+		      (lambda (v) (##sys#list v '(##core#undefined)))
+		      (foldl (lambda (l v) ; flatten multi-value formals
+			       (##sys#append l (##sys#decompose-lambda-list
+						v (lambda (a _ _) a))))
+			     vars
+			     mvars))
 		    ,@(map (lambda (v x) `(##core#set! ,v ,x)) vars (reverse vals))
-		    ,@(map (lambda (vs x)
-			     (let ([tmps (##sys#map gensym vs)])
-			       `(##sys#call-with-values
-				 (##core#lambda () ,x)
-				 (##core#lambda 
-				  ,tmps 
-				  ,@(map (lambda (v t)
-					   `(##core#set! ,v ,t)) 
-					 vs tmps) ) ) ) ) 
+		    ,@(map ##sys#expand-multiple-values-assignment
 			   (reverse mvars)
 			   (reverse mvals) )
 		    ,@body) ) )
@@ -565,7 +581,7 @@
 		     (fini/syntax vars vals mvars mvals body) )
 		    ((comp 'define-values head)
 		     ;;XXX check for any of the variables being `define-values'
-		     (##sys#check-syntax 'define-values x '(_ #(_ 0) _) #f se)
+		     (##sys#check-syntax 'define-values x '(_ lambda-list _) #f se)
 		     (loop rest vars vals (cons (cadr x) mvars) (cons (caddr x) mvals)))
 		    ((comp '##core#begin head)
 		     (loop (##sys#append (cdr x) rest) vars vals mvars mvals) )
@@ -619,9 +635,11 @@
 (define ##sys#syntax-error-culprit #f)
 (define ##sys#syntax-context '())
 
-(define (##sys#syntax-error-hook . args)
+(define (syntax-error . args)
   (apply ##sys#signal-hook #:syntax-error
 	 (##sys#strip-syntax args)))
+
+(define ##sys#syntax-error-hook syntax-error)
 
 (define ##sys#syntax-error/context
   (lambda (msg arg)
@@ -671,8 +689,6 @@
 					 (loop (cdr lst)))))))))
 			   (else (loop (cdr cx))))))))
 	  (##sys#syntax-error-hook (get-output-string out))))))
-
-(define syntax-error ##sys#syntax-error-hook)
 
 (define (##sys#syntax-rules-mismatch input)
   (##sys#syntax-error-hook "no rule matches form" input))
@@ -896,19 +912,14 @@
 	   ;; unhygienically this way.
 	   (mirror-rename (handler (rename form) rename compare)) ) ) )))
 
-(define (##sys#er-transformer handler) (make-er/ir-transformer handler #t))
-(define (##sys#ir-transformer handler) (make-er/ir-transformer handler #f))
+(define (er-macro-transformer handler) (make-er/ir-transformer handler #t))
+(define (ir-macro-transformer handler) (make-er/ir-transformer handler #f))
 
-(define er-macro-transformer ##sys#er-transformer)
-(define ir-macro-transformer ##sys#ir-transformer)
+(define ##sys#er-transformer er-macro-transformer)
+(define ##sys#ir-transformer ir-macro-transformer)
 
 
 ;;; Macro definitions:
-
-(define (##sys#mark-primitive prims)
-  (for-each
-   (lambda (a) (putp (cdr a) '##core#primitive (car a)))
-   prims))
 
 (##sys#extend-macro-environment
  'import '() 
@@ -1163,9 +1174,12 @@
                          (and (pair? (car clause))
                               (c (r 'quote) (caar clause))))
 		     (expand rclauses (strip-syntax (car clause)))
-		     (if (null? (cdr clause))
-			 (car clause)
-			 `(##core#begin ,@(cdr clause))))
+		     (cond ((and (fx= (length clause) 3)
+				 (c %=> (cadr clause)))
+			    `(,(caddr clause) ,(car clause)))
+			   ((null? (cdr clause))
+			    (car clause))
+			   (else `(##core#begin ,@(cdr clause)))))
 		    ((null? (cdr clause)) 
 		     `(,%or ,(car clause) ,(expand rclauses #f)))
 		    ((and (fx= (length clause) 3)
@@ -1459,7 +1473,7 @@
 			     '(##core#undefined))))
 		     (else
 		      (##sys#check-syntax 
-		       'module x '(_ symbol _ (symbol . #(_ 1))))
+		       'module x '(_ symbol _ (symbol . #(_ 0))))
 		      (##sys#instantiate-functor
 		       name
 		       (car app)	; functor name

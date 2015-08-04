@@ -1,6 +1,6 @@
 ;;;; posix-common.scm - common code for UNIX and Windows versions of the posix unit
 ;
-; Copyright (c) 2010-2014, The Chicken Team
+; Copyright (c) 2010-2015, The CHICKEN Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -95,6 +95,11 @@ static char C_time_string [TIME_STRING_MAXLENGTH + 1];
 #define C_closedir(h)       (closedir((DIR *)C_block_item(h, 0)), C_SCHEME_UNDEFINED)
 #define C_readdir(h,e)      C_set_block_item(e, 0, (C_word) readdir((DIR *)C_block_item(h, 0)))
 #define C_foundfile(e,b,l)    (C_strlcpy(C_c_string(b), ((struct dirent *) C_block_item(e, 0))->d_name, l), C_fix(strlen(((struct dirent *) C_block_item(e, 0))->d_name)))
+
+/* It is assumed that 'int' is-a 'long' */
+#define C_ftell(p)          C_fix(ftell(C_port_file(p)))
+#define C_fseek(p, n, w)    C_mk_nbool(fseek(C_port_file(p), C_num_to_int(n), C_unfix(w)))
+#define C_lseek(fd, o, w)     C_fix(lseek(C_unfix(fd), C_unfix(o), C_unfix(w)))
 
 #ifdef HAVE_SETENV
 # define C_unsetenv(s)      (unsetenv((char *)C_data_pointer(s)), C_SCHEME_TRUE)
@@ -219,7 +224,7 @@ EOF
                  ((string? file)
                   (let ((path (##sys#make-c-string
 			       (##sys#platform-fixup-pathname
-				(##sys#expand-home-path file))
+                                file)
 			       loc)))
 		    (if link
 			(##core#inline "C_lstat" path)
@@ -248,7 +253,7 @@ EOF
    (lambda (f t)
      (##sys#check-number t 'set-file-modification-time)
      (let ((r ((foreign-lambda int "set_file_mtime" c-string scheme-object)
-	       (##sys#expand-home-path f) t)))
+	       f t)))
        (when (fx< r 0)
 	 (posix-error 
 	  #:file-error 'set-file-modification-time
@@ -293,6 +298,48 @@ EOF
 
 (define (directory? file)
   (eq? 'directory (file-type file #f #f)))
+
+
+;;; File position access:
+
+(define-foreign-variable _seek_set int "SEEK_SET")
+(define-foreign-variable _seek_cur int "SEEK_CUR")
+(define-foreign-variable _seek_end int "SEEK_END")
+
+(define seek/set _seek_set)
+(define seek/end _seek_end)
+(define seek/cur _seek_cur)
+
+(define set-file-position!
+  (lambda (port pos . whence)
+    (let ((whence (if (pair? whence) (car whence) _seek_set)))
+      (##sys#check-exact pos 'set-file-position!)
+      (##sys#check-exact whence 'set-file-position!)
+      (unless (cond ((port? port)
+		     (and (eq? (##sys#slot port 7) 'stream)
+			  (##core#inline "C_fseek" port pos whence) ) )
+		    ((fixnum? port)
+		     (##core#inline "C_lseek" port pos whence))
+		    (else
+		     (##sys#signal-hook #:type-error 'set-file-position! "invalid file" port)) )
+	(posix-error #:file-error 'set-file-position! "cannot set file position" port pos) ) ) ) )
+
+(define file-position
+  (getter-with-setter
+   (lambda (port)
+     (let ((pos (cond ((port? port)
+		       (if (eq? (##sys#slot port 7) 'stream)
+			   (##core#inline "C_ftell" port)
+			   -1) )
+		      ((fixnum? port)
+		       (##core#inline "C_lseek" port 0 _seek_cur) )
+		      (else
+		       (##sys#signal-hook #:type-error 'file-position "invalid file" port)) ) ) )
+       (when (< pos 0)
+	 (posix-error #:file-error 'file-position "cannot retrieve file position of port" port) )
+       pos) )
+   set-file-position!		; doesn't accept WHENCE
+   "(file-position port)"))
 
 
 ;;; Using file-descriptors:
@@ -382,21 +429,38 @@ EOF
 	(unless (fx= 0 (##core#inline "C_rmdir" sname))
 	  (posix-error #:file-error 'delete-directory "cannot delete directory" dir) )))
     (##sys#check-string name 'delete-directory)
-    (let ((name (##sys#expand-home-path name)))
-      (if recursive
-	  (let ((files (find-files ; relies on `find-files' to list dir-contents before dir
-			name 
-			dotfiles: #t
-			follow-symlinks: #f)))
-	    (for-each
-	     (lambda (f)
-	       ((cond ((symbolic-link? f) delete-file)
-		      ((directory? f) rmdir)
-		      (else delete-file))
-		f))
-	     files)
-	    (rmdir name))
-	  (rmdir name)))))
+    (if recursive
+      (let ((files (find-files ; relies on `find-files' to list dir-contents before dir
+                     name
+                     dotfiles: #t
+                     follow-symlinks: #f)))
+        (for-each
+          (lambda (f)
+            ((cond ((symbolic-link? f) delete-file)
+                   ((directory? f) rmdir)
+                   (else delete-file))
+             f))
+          files)
+        (rmdir name))
+      (rmdir name))))
+
+(define-inline (*create-directory loc name)
+  (unless (fx= 0 (##core#inline "C_mkdir" (##sys#make-c-string name loc)))
+    (posix-error #:file-error loc "cannot create directory" name)) )
+
+(define create-directory
+  (lambda (name #!optional parents?)
+    (##sys#check-string name 'create-directory)
+    (unless (or (fx= 0 (##sys#size name))
+                (file-exists? name))
+      (if parents?
+        (let loop ((dir (let-values (((dir file ext) (decompose-pathname name)))
+                          (if file (make-pathname dir file ext) dir))))
+          (when (and dir (not (directory? dir)))
+            (loop (pathname-directory dir))
+            (*create-directory 'create-directory dir)) )
+        (*create-directory 'create-directory name) ) )
+    name))
 
 (define directory
   (lambda (#!optional (spec (current-directory)) show-dotfiles?)
@@ -406,7 +470,7 @@ EOF
 	  [entry (##sys#make-pointer)] )
       (##core#inline 
        "C_opendir"
-       (##sys#make-c-string (##sys#expand-home-path spec) 'directory) handle)
+       (##sys#make-c-string spec 'directory) handle)
       (if (##sys#null-pointer? handle)
 	  (posix-error #:file-error 'directory "cannot open directory" spec)
 	  (let loop ()
@@ -425,7 +489,6 @@ EOF
 			       (not show-dotfiles?) ) )
 		      (loop)
 		      (cons file (loop)) ) ) ) ) ) ) ) )
-
 
 ;;; Filename globbing:
 

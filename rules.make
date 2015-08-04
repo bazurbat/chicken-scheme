@@ -1,6 +1,6 @@
 # rules.make - basic build rules -*- Makefile -*-
 #
-# Copyright (c) 2008-2014, The Chicken Team
+# Copyright (c) 2008-2015, The CHICKEN Team
 # Copyright (c) 2000-2007, Felix L. Winkelmann
 # All rights reserved.
 #
@@ -324,14 +324,14 @@ install-dev: install-libs
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(ILIBDIR)"
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(ISHAREDIR)"
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(IEGGDIR)"
-	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(IINCDIR)"
+	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(ICHICKENINCDIR)"
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(IDATADIR)"
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_STATIC_LIBRARY_OPTIONS) lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(A) "$(DESTDIR)$(ILIBDIR)"
 ifneq ($(POSTINSTALL_STATIC_LIBRARY),true)
 	$(POSTINSTALL_STATIC_LIBRARY) $(POSTINSTALL_STATIC_LIBRARY_FLAGS) "$(ILIBDIR)$(SEP)libchicken$(A)"
 endif
-	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)chicken.h "$(DESTDIR)$(IINCDIR)"
-	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(CHICKEN_CONFIG_H) "$(DESTDIR)$(IINCDIR)"
+	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)chicken.h "$(DESTDIR)$(ICHICKENINCDIR)"
+	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(CHICKEN_CONFIG_H) "$(DESTDIR)$(ICHICKENINCDIR)"
 ifeq ($(PLATFORM),macosx)
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)mac.r "$(DESTDIR)$(ISHAREDIR)"
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)CHICKEN.icns "$(DESTDIR)$(IDATADIR)"
@@ -350,7 +350,7 @@ install-bin:
 	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) $(IMPORT_LIBRARIES:%=%.so)
 	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) $(IMPORT_LIBRARIES:%=%.import.so)
 	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) $(LIBCHICKEN_SO_FILE)
-	"$(MAKE)" -f $(SRCDIR)Makefile.$(PLATFORM) CONFIG=$(CONFIG) NEEDS_RELINKING=no RUNTIME_LINKER_PATH="$(LIBDIR)" install-bin
+	"$(MAKE)" PLATFORM=$(PLATFORM) CONFIG=$(CONFIG) NEEDS_RELINKING=no RUNTIME_LINKER_PATH="$(LIBDIR)" install-bin
 # Damn. What was this for, again?
 #
 # 	$(MAKE_WRITABLE_COMMAND) $(CHICKEN_PROGRAM)$(EXE) $(CSI_PROGRAM)$(EXE) $(CSC_PROGRAM)$(EXE) $(CHICKEN_PROFILE_PROGRAM)$(EXE)
@@ -410,12 +410,12 @@ endif
 endif
 
 install-other-files:
-	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(IMANDIR)"
+	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(IMAN1DIR)"
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(IDOCDIR)"
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(IDATADIR)"
 	$(foreach obj, $(MANPAGES), \
 		$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) \
-		$(SRCDIR)$(obj) "$(DESTDIR)$(IMANDIR)" $(NL))
+		$(SRCDIR)$(obj) "$(DESTDIR)$(IMAN1DIR)" $(NL))
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(IDOCDIR)$(SEP)manual"
 	-$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)manual-html$(SEP)* "$(DESTDIR)$(IDOCDIR)$(SEP)manual"
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)README "$(DESTDIR)$(IDOCDIR)"
@@ -452,10 +452,10 @@ endif
 
 	$(foreach obj,$(MANPAGES),\
 		$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) \
-		"$(DESTDIR)$(IMANDIR)$(SEP)$(obj)" $(NL))
+		"$(DESTDIR)$(IMAN1DIR)$(SEP)$(obj)" $(NL))
 
-	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(IINCDIR)$(SEP)chicken.h"
-	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(IINCDIR)$(SEP)$(CHICKEN_CONFIG_H)"
+	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(ICHICKENINCDIR)$(SEP)chicken.h"
+	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(ICHICKENINCDIR)$(SEP)$(CHICKEN_CONFIG_H)"
 	$(REMOVE_COMMAND) $(REMOVE_COMMAND_RECURSIVE_OPTIONS) "$(DESTDIR)$(IDATADIR)"
 	$(REMOVE_COMMAND) $(REMOVE_COMMAND_RECURSIVE_OPTIONS) "$(DESTDIR)$(IEGGDIR)"
 ifdef WINDOWS_SHELL
@@ -506,14 +506,14 @@ expand.c: $(SRCDIR)expand.scm $(SRCDIR)synrules.scm $(SRCDIR)common-declarations
 	$(bootstrap-lib)
 modules.c: $(SRCDIR)modules.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
-extras.c: $(SRCDIR)extras.scm $(SRCDIR)private-namespace.scm $(SRCDIR)common-declarations.scm
+extras.c: $(SRCDIR)extras.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
 posixunix.c: $(SRCDIR)posixunix.scm $(SRCDIR)posix-common.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) 
 posixwin.c: $(SRCDIR)posixwin.scm $(SRCDIR)posix-common.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) 
 srfi-69.c: $(SRCDIR)srfi-69.scm $(SRCDIR)common-declarations.scm
-	$(bootstrap-lib) -extend $(SRCDIR)private-namespace.scm
+	$(bootstrap-lib)
 irregex.c: $(SRCDIR)irregex.scm $(SRCDIR)irregex-core.scm $(SRCDIR)irregex-utils.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
 #
@@ -574,8 +574,8 @@ endef
 $(foreach obj, $(COMPILER_OBJECTS_1),\
           $(eval $(call declare-bootstrap-compiler-object,$(obj))))
 
-csi.c: $(SRCDIR)csi.scm $(SRCDIR)banner.scm $(SRCDIR)private-namespace.scm
-	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ -extend $(SRCDIR)private-namespace.scm
+csi.c: $(SRCDIR)csi.scm $(SRCDIR)banner.scm
+	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@
 chicken-profile.c: $(SRCDIR)chicken-profile.scm
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ 
 chicken-install.c: $(SRCDIR)chicken-install.scm setup-download.c setup-api.c
@@ -653,7 +653,7 @@ testclean:
 
 .PHONY: check 
 
-check: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)$(EXE)
+check: $(TARGETS)
 ifndef WINDOWS_SHELL
 	cd tests; sh runtests.sh
 else
@@ -673,11 +673,11 @@ bench: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)$(EXE
 .PHONY: boot-chicken
 
 boot-chicken:
-	"$(MAKE)" -f Makefile.$(PLATFORM) PLATFORM=$(PLATFORM) PREFIX=/nowhere CONFIG= \
+	"$(MAKE)" PLATFORM=$(PLATFORM) PREFIX=/nowhere CONFIG= \
 	  CHICKEN=$(CHICKEN) PROGRAM_SUFFIX=-boot-stage1 STATICBUILD=1 \
 	  C_COMPILER_OPTIMIZATION_OPTIONS="$(C_COMPILER_OPTIMIZATION_OPTIONS)" C_HACKED_APPLY= BUILDING_CHICKEN_BOOT=1 \
 	  confclean chicken-boot-stage1$(EXE)
-	"$(MAKE)" -f Makefile.$(PLATFORM) PLATFORM=$(PLATFORM) PREFIX=/nowhere CONFIG= \
+	"$(MAKE)" PLATFORM=$(PLATFORM) PREFIX=/nowhere CONFIG= \
 	  CHICKEN=.$(SEP)chicken-boot-stage1$(EXE) PROGRAM_SUFFIX=-boot \
 	  STATICBUILD=1 C_COMPILER_OPTIMIZATION_OPTIONS="$(C_COMPILER_OPTIMIZATION_OPTIONS)" \
 	  touchfiles chicken-boot$(EXE) confclean

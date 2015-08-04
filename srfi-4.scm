@@ -1,6 +1,6 @@
 ;;;; srfi-4.scm - Homogeneous numeric vectors
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2015, The CHICKEN Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -26,10 +26,11 @@
 
 
 (declare
- (unit srfi-4)
- (disable-interrupts)
- (not inline ##sys#user-print-hook ##sys#number-hash-hook)
- (foreign-declare #<<EOF
+  (unit srfi-4)
+  (uses extras)
+  (disable-interrupts)
+  (not inline ##sys#user-print-hook ##sys#number-hash-hook)
+  (foreign-declare #<<EOF
 #define C_copy_subvector(to, from, start_to, start_from, bytes)   \
   (C_memcpy((C_char *)C_data_pointer(to) + C_unfix(start_to), (C_char *)C_data_pointer(from) + C_unfix(start_from), C_unfix(bytes)), \
     C_SCHEME_UNDEFINED)
@@ -639,15 +640,19 @@ EOF
 (define (subf32vector v from to) (subnvector v 'f32vector 4 from to 'subf32vector))
 (define (subf64vector v from to) (subnvector v 'f64vector 8 from to 'subf64vector))
 
-(define (write-u8vector v #!optional (port ##sys#standard-output) (from 0)
-			(to (u8vector-length v)))
+(define (write-u8vector v #!optional (port ##sys#standard-output) (from 0) to)
   (##sys#check-structure v 'u8vector 'write-u8vector)
   (##sys#check-output-port port #t 'write-u8vector)
-  (do ((i from (fx+ i 1)))
-      ((fx>= i to))
-    (##sys#write-char-0 
-     (integer->char (##core#inline "C_u_i_u8vector_ref" v i))
-     port) ) )
+  (let ((len (##core#inline "C_u_i_8vector_length" v)))
+    (check-range from 0 (fx+ (or to len) 1) 'write-u8vector)
+    (when to (check-range to from (fx+ len 1) 'write-u8vector))
+    ; using (write-string) since the "data" slot of a u8vector is
+    ; represented the same as a string
+    ((##sys#slot (##sys#slot port 2) 3) ; write-string
+     port
+     (if (and (fx= from 0) (or (not to) (fx= to len)))
+	 (##sys#slot v 1)
+	 (##sys#slot (subu8vector v from (or to len)) 1)))))
 
 (define (read-u8vector! n dest #!optional (port ##sys#standard-input) (start 0))
   (##sys#check-input-port port #t 'read-u8vector!)
@@ -660,34 +665,9 @@ EOF
       (set! n (fx- size start)))
     (##sys#read-string! n dest port start)))
 
-(define read-u8vector
-  (let ()
-    (define (wrap str n)
-      (##sys#make-structure
-       'u8vector
-       (let ((str2 (##sys#allocate-vector n #t #f #t)))
-	 (##core#inline "C_string_to_bytevector" str2)
-	 (##core#inline "C_substring_copy" str str2 0 n 0)
-	 str2) ) )
-    (lambda (#!optional n (p ##sys#standard-input))
-      (##sys#check-input-port p #t 'read-u8vector)
-      (cond (n (##sys#check-exact n 'read-u8vector)
-	       (let* ((str (##sys#allocate-vector n #t #f #t))
-		      (n2 (##sys#read-string! n str p 0)) )
-		 (##core#inline "C_string_to_bytevector" str)
-		 (if (eq? n n2)
-		     (##sys#make-structure 'u8vector str)
-		     (wrap str n2) ) ) )
-	    (else
-	     (let ([str (open-output-string)])
-	       (let loop ()
-		 (let ([c (##sys#read-char-0 p)])
-		   (if (eof-object? c)
-		       (let* ((s (get-output-string str))
-			      (n (##sys#size s)) )
-			 (wrap s n) )
-		       (begin
-			 (##sys#write-char/port c str)
-			 (loop)))))))))))
+(define (read-u8vector #!optional n (p ##sys#standard-input))
+  (let ((str (##sys#read-string/port n p)))
+    (##core#inline "C_string_to_bytevector" str)
+    (##sys#make-structure 'u8vector str)))
 
 (register-feature! 'srfi-4)
