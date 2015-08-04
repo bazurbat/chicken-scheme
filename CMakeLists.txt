@@ -37,6 +37,8 @@ set(CHICKEN_TARGET_FEATURES "" CACHE STRING
     "Target features")
 mark_as_advanced(CHICKEN_TARGET_NAME CHICKEN_TARGET_FEATURES)
 
+set(CHICKEN_IMPORT_FOLDER "Import Libraries")
+
 enable_testing()
 add_custom_target(BUILD_TESTS)
 
@@ -283,6 +285,9 @@ function(add_stage name out_compiler)
         SUFFIX ${suffix}
         OPTIONS ${PROGRAM_OPTIONS})
 
+    set_property(TARGET libchicken${suffix} chicken-compiler${suffix}
+        PROPERTY FOLDER "Bootstrap Stages")
+
     set(${out_compiler} chicken-compiler${suffix} PARENT_SCOPE)
 endfunction()
 
@@ -327,24 +332,32 @@ foreach(module ${runtime_GENERIC_MODULES})
     add_chicken_library(${module}.import IMPORT_MODULE
         SOURCES ${CHICKEN_IMPORT_DIR}/${module}.import.scm
         OPTIONS ${IMPORT_LIBRARY_OPTIONS})
+    set_property(TARGET ${module}.import PROPERTY
+        FOLDER ${CHICKEN_IMPORT_FOLDER})
 endforeach()
 
 foreach(module ${runtime_CHICKEN_MODULES})
     add_chicken_library(chicken.${module}.import IMPORT_MODULE
         SOURCES ${CHICKEN_IMPORT_DIR}/chicken.${module}.import.scm
         OPTIONS ${IMPORT_LIBRARY_OPTIONS})
+    set_property(TARGET chicken.${module}.import PROPERTY
+        FOLDER ${CHICKEN_IMPORT_FOLDER})
 endforeach()
 
 foreach(module ${compiler_MODULES})
     add_chicken_library(chicken.compiler.${module}.import IMPORT_MODULE
         SOURCES ${CHICKEN_IMPORT_DIR}/chicken.compiler.${module}.import.scm
         OPTIONS ${IMPORT_LIBRARY_OPTIONS})
+    set_property(TARGET chicken.compiler.${module}.import PROPERTY
+        FOLDER ${CHICKEN_IMPORT_FOLDER})
 endforeach()
 
 foreach(module ${chicken_MODULES})
     add_chicken_library(${module}.import IMPORT_MODULE
         SOURCES ${module}.import.scm
         OPTIONS ${IMPORT_LIBRARY_OPTIONS})
+    set_property(TARGET ${module}.import PROPERTY
+        FOLDER ${CHICKEN_IMPORT_FOLDER})
 endforeach()
 
 install(TARGETS libchicken chicken-compiler
@@ -418,6 +431,9 @@ add_chicken_module(setup-api setup-api.scm
 add_chicken_module(setup-download setup-download.scm
     OPTIONS ${LIBRARY_OPTIONS}
     DEPENDS setup-api)
+
+set_property(TARGET setup-api.import setup-download.import PROPERTY
+    FOLDER ${CHICKEN_IMPORT_FOLDER})
 
 foreach(module ${setupapi_MODULES})
     install(TARGETS ${module} ${module}.import
