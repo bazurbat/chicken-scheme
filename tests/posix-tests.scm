@@ -52,7 +52,8 @@
           (str (make-string size)))
       (move-memory! (memory-mapped-file-pointer mmap) str size)
       (assert (blob=? (string->blob data) (string->blob str)))
-      (unmap-file-from-memory mmap))))
+      (unmap-file-from-memory mmap)
+      (delete-file* tnpfilpn))))
 
 (let* ((tmp-dir (create-temporary-directory))
        (tmp-dot (make-pathname (list tmp-dir "foo" "bar") ".baz")))
