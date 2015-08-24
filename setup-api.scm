@@ -528,7 +528,7 @@
 			   cc " "
 			   (if compile-only "-c" "") " "
 			   cflags " " *target-cflags* " "
-			   fname " "
+			   (shellpath fname) " -o " (shellpath oname) " "
 			   (if compile-only
 			       "" 
 			       (conc "-L" *target-lib-home* " " ldflags " " *target-libs*) )
@@ -538,6 +538,7 @@
 		 cmd) ) ) ) )
     (when verb (print (if (zero? r) "succeeded." "failed.")))
     (ignore-errors ($system (sprintf "~A ~A" *remove-command* (shellpath fname))))
+    (ignore-errors ($system (sprintf "~A ~A" *remove-command* (shellpath oname))))
     (zero? r) ) )
 
 (define test-compile try-compile)
