@@ -210,10 +210,6 @@ tests/signal-tests.scm
 tests/version-tests.scm
 tweaks.scm
 utils.scm
-apply-hack.x86.S
-apply-hack.x86-64.S
-apply-hack.ppc.darwin.S
-apply-hack.ppc.sysv.S
 Makefile
 Makefile.android
 Makefile.aix
