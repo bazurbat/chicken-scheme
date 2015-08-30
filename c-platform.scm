@@ -66,8 +66,6 @@
 
 (define units-used-by-default '(library eval chicken-syntax)) 
 (define words-per-flonum 4)
-(define parameter-limit 1024)
-(define small-parameter-limit 128)
 (define unlikely-variables '(unquote unquote-splicing))
 
 (define eq-inline-operator "C_eqp")

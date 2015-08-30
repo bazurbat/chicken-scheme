@@ -216,7 +216,6 @@
  optimization-iterations
  original-program-size
  output
- parameter-limit
  pending-canonicalizations
  perform-closure-conversion
  perform-cps-conversion
