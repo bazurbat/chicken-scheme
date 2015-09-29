@@ -40,7 +40,7 @@ Warning: at toplevel:
   (scrutiny-tests.scm:29) in procedure call to `+', expected argument #2 of type `number', but was given an argument of type `symbol'
 
 Warning: at toplevel:
-  assignment of value of type `fixnum' to toplevel variable `car' does not match declared type `(forall (a179) (procedure car ((pair a179 *)) a179))'
+  assignment of value of type `fixnum' to toplevel variable `car' does not match declared type `(forall (a191) (procedure car ((pair a191 *)) a191))'
 
 Warning: at toplevel:
   expected in `let' binding of `g10' a single result, but were given 2 results
@@ -146,5 +146,14 @@ Note: at toplevel:
 Note: at toplevel:
   (scrutiny-tests.scm:200) in procedure call to `string?', the predicate is called with an argument of type
   `symbol' and will always return false
+
+Warning: at toplevel:
+  (scrutiny-tests.scm:204) in procedure call to `f', expected argument #1 of type `pair', but was given an argument of type `null'
+
+Warning: at toplevel:
+  (scrutiny-tests.scm:206) in procedure call to `f', expected argument #1 of type `null', but was given an argument of type `(list fixnum)'
+
+Warning: at toplevel:
+  (scrutiny-tests.scm:208) in procedure call to `f', expected argument #1 of type `list', but was given an argument of type `(pair fixnum fixnum)'
 
 Warning: redefinition of standard binding: car

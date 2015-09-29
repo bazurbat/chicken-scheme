@@ -1231,20 +1231,17 @@
 			(##sys#put! 
 			 gname '##compiler#local-specializations
 			 (##sys#append
+			  (##sys#get gname '##compiler#local-specializations '())
 			  (list
 			   (cons atypes
 				 (if (and rtypes (pair? rtypes))
 				     (list
 				      (map (cut ##compiler#check-and-validate-type 
-					     <>
-					     'define-specialization)
+						<>
+						'define-specialization)
 					   rtypes)
 				      spec)
-				     (list spec))))
-			  (or (##compiler#variable-mark 
-			       gname
-			       '##compiler#local-specializations)
-			      '())))
+				     (list spec))))))
 			`(##core#begin
 			  (##core#declare (inline ,alias) (hide ,alias))
 			  (,%define (,alias ,@anames)
