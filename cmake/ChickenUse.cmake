@@ -147,6 +147,24 @@ function(_chicken_set_compile_definitions source_file)
     endif()
 endfunction()
 
+function(_chicken_set_compile_flags source_file in_path)
+    set(c_flags "")
+
+    if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL in_path)
+        list(APPEND c_flags -I${CMAKE_CURRENT_SOURCE_DIR})
+    endif()
+
+    if(NOT in_path STREQUAL CMAKE_CURRENT_BINARY_DIR)
+        list(APPEND c_flags -I${in_path})
+    endif()
+
+    # compile flags property can not handle list
+    _chicken_join(c_flags ${c_flags})
+
+    set_property(SOURCE ${source_file} APPEND_STRING PROPERTY
+        COMPILE_FLAGS " ${c_flags}")
+endfunction()
+
 # Helper function for automatic dependecy extraction. Internal.
 function(_chicken_extract_depends out_var dep_path)
     set(imports "")
@@ -187,6 +205,7 @@ function(_chicken_command out_var in_file)
         out_file ${in_file})
 
     get_filename_component(in_path ${in_file} ABSOLUTE)
+    get_filename_component(in_dir  ${in_path} PATH)
 
     if(IS_ABSOLUTE ${out_file})
         set(out_path ${out_file})
@@ -199,6 +218,7 @@ function(_chicken_command out_var in_file)
     endif()
 
     _chicken_get_options(options ${in_file})
+    _chicken_set_compile_flags(${out_path} ${in_dir})
 
     set(outputs ${out_path})
     set(imports "")
