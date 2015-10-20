@@ -360,6 +360,12 @@ foreach(module ${chicken_MODULES})
         FOLDER ${CHICKEN_IMPORT_FOLDER})
 endforeach()
 
+foreach(name ${runtime_GENERIC_MODULES} ${runtime_CHICKEN_MODULES}
+             ${compiler_MODULES} ${chicken_MODULES})
+    install(TARGETS ${name}.import
+        LIBRARY DESTINATION ${INSTALL_EGGDIR})
+endforeach()
+
 install(TARGETS libchicken chicken-compiler
     EXPORT chicken-targets
     ARCHIVE DESTINATION ${INSTALL_LIBDIR}
