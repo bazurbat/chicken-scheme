@@ -523,6 +523,10 @@ install(FILES ${PROJECT_BINARY_DIR}/version.cmake
     DESTINATION ${INSTALL_DATADIR}
     RENAME chicken-config-version.cmake)
 
+if(NOT CMAKE_CROSSCOMPILING)
+    install(CODE "execute_process(COMMAND ./chicken-install -update-db)")
+endif()
+
 ### tests
 
 add_subdirectory(tests EXCLUDE_FROM_ALL)
