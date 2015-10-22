@@ -25,14 +25,14 @@ mark_as_advanced(CHICKEN_REPOSITORY)
 # expression with similar function but it can be used only in certain command
 # arguments which is not always applicable.
 function(_chicken_join out_var)
-    set(result)
+    set(result_string "")
 
-    foreach(arg ${ARGN})
-        set(result "${result} ${arg}")
+    foreach(item ${ARGN})
+        set(result_string "${result_string} ${item}")
     endforeach()
-    string(STRIP "${result}" result)
+    string(STRIP "${result_string}" result_string)
 
-    set(${out_var} ${result} PARENT_SCOPE)
+    set(${out_var} "${result_string}" PARENT_SCOPE)
 endfunction()
 
 # Parses arguments to CHICKEN source wrapping functions. Internal.
