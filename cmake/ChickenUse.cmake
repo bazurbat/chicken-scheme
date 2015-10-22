@@ -354,27 +354,6 @@ function(chicken_wrap_sources out_var)
     set(${out_var} ${${out_var}} PARENT_SCOPE)
 endfunction()
 
-function(chicken_wrap_target target)
-    cmake_parse_arguments(link "STATIC;SHARED;NO_RUNTIME" "" "" ${ARGN})
-
-    if(link_SHARED)
-        target_compile_definitions(${target} PRIVATE PIC)
-    endif()
-
-    if(NOT link_NO_RUNTIME)
-        if(link_STATIC)
-            target_link_libraries(${target} PRIVATE ${CHICKEN_STATIC_LIBRARY})
-        else()
-            target_link_libraries(${target} PRIVATE ${CHICKEN_LIBRARY})
-        endif()
-    endif()
-
-    target_link_libraries(${target} PRIVATE ${CHICKEN_EXTRA_LIBRARIES})
-
-    set_property(TARGET ${target} PROPERTY
-        DEFINE_SYMBOL C_BUILDING_LIBCHICKEN)
-endfunction()
-
 # Convenience wrapper around add_executable.
 function(add_chicken_executable name)
     cmake_parse_arguments(type "STATIC" "" "" ${ARGN})
@@ -386,7 +365,11 @@ function(add_chicken_executable name)
     set(sources "")
     chicken_wrap_sources(sources ${type} ${type_UNPARSED_ARGUMENTS})
     add_executable(${name} ${sources})
-    chicken_wrap_target(${name} ${type})
+    if(type_STATIC)
+        target_link_libraries(${name} ${CHICKEN_STATIC_LIBRARIES})
+    else()
+        target_link_libraries(${name} ${CHICKEN_LIBRARIES})
+    endif()
 endfunction()
 
 # Convenience wrapper around add_library.
@@ -397,7 +380,19 @@ function(add_chicken_library name)
     chicken_wrap_sources(sources ${compile_TYPE} ${ARGN})
 
     add_library(${name} ${compile_TYPE} ${sources})
-    chicken_wrap_target(${name} ${compile_TYPE})
+
+    if(compile_SHARED)
+        target_compile_definitions(${name} PRIVATE PIC)
+    endif()
+
+    if(compile_STATIC)
+        target_link_libraries(${name} ${CHICKEN_STATIC_LIBRARIES})
+    else()
+        target_link_libraries(${name} ${CHICKEN_LIBRARIES})
+    endif()
+
+    set_property(TARGET ${name} PROPERTY
+        DEFINE_SYMBOL C_BUILDING_LIBCHICKEN)
 
     set_property(TARGET ${name} PROPERTY
         LIBRARY_OUTPUT_DIRECTORY ${CHICKEN_REPOSITORY})
