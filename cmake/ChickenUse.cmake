@@ -136,6 +136,9 @@ endfunction()
 # Sets CHICKEN specific compile definitions for the specified C source file.
 # Internal. Assumes that arguments were parsed.
 function(_chicken_set_compile_definitions source_file)
+    set_property(SOURCE ${source_file} APPEND PROPERTY
+        COMPILE_DEFINITIONS ${CHICKEN_DEFINITIONS})
+
     if(compile_SHARED)
         set_property(SOURCE ${source_file} APPEND PROPERTY
             COMPILE_DEFINITIONS C_SHARED)
@@ -145,6 +148,9 @@ function(_chicken_set_compile_definitions source_file)
         set_property(SOURCE ${source_file} APPEND PROPERTY
             COMPILE_DEFINITIONS C_EMBEDDED)
     endif()
+
+    set_property(SOURCE ${source_file} APPEND PROPERTY
+        COMPILE_DEFINITIONS ${compile_DEFINITIONS})
 endfunction()
 
 function(_chicken_set_compile_flags source_file in_path)
@@ -229,9 +235,6 @@ function(_chicken_command out_var in_file)
         list(APPEND imports ${emit}.import.scm)
         set_property(SOURCE ${_filename} PROPERTY CHICKEN_IMPORT_LIBRARY YES)
     endforeach()
-
-    set_property(SOURCE ${out_path} APPEND PROPERTY
-        COMPILE_DEFINITIONS ${compile_DEFINITIONS})
 
     get_property(import_library SOURCE ${in_file}
         PROPERTY CHICKEN_IMPORT_LIBRARY)
@@ -348,8 +351,6 @@ endfunction()
 
 function(chicken_wrap_target target)
     cmake_parse_arguments(link "STATIC;SHARED;NO_RUNTIME" "" "" ${ARGN})
-
-    target_compile_definitions(${target} PRIVATE ${CHICKEN_DEFINITIONS})
 
     if(link_SHARED)
         target_compile_definitions(${target} PRIVATE PIC)
