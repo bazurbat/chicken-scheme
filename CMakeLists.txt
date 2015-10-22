@@ -523,8 +523,20 @@ install(FILES ${PROJECT_BINARY_DIR}/version.cmake
     DESTINATION ${INSTALL_DATADIR}
     RENAME chicken-config-version.cmake)
 
+function(_chicken_update_modules_db)
+    set(_chicken_install "${CMAKE_CURRENT_BINARY_DIR}/chicken-install")
+    set(_chicken_repository "$ENV{DESTDIR}/${CMAKE_INSTALL_PREFIX}/${INSTALL_EGGDIR}")
+
+    install(CODE "execute_process(COMMAND ${CMAKE_COMMAND}
+-DCHICKEN_REPOSITORY=${_chicken_repository}
+-DCOMMAND=${_chicken_install}\;-update-db
+-P ${CHICKEN_RUN})")
+endfunction()
+
+# Updating modules.db requires loading shared module libraries which will fail
+# when cross-compiling.
 if(NOT CMAKE_CROSSCOMPILING)
-    install(CODE "execute_process(COMMAND ./chicken-install -update-db)")
+    _chicken_update_modules_db()
 endif()
 
 ### tests
