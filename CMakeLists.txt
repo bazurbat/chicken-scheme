@@ -207,7 +207,12 @@ function(add_chicken_runtime name)
         OPTIONS ${options} ${COMPILER_OPTIONS})
 
     add_library(${name} ${type} ${sources} ${c_sources})
-    chicken_wrap_target(${name} ${type} NO_RUNTIME)
+    if(runtime_SHARED)
+        target_compile_definitions(${name} PRIVATE PIC)
+    endif()
+    target_link_libraries(${name} PRIVATE ${CHICKEN_EXTRA_LIBRARIES})
+    set_property(TARGET ${name} PROPERTY
+        DEFINE_SYMBOL C_BUILDING_LIBCHICKEN)
 
     set_target_properties(${name} PROPERTIES
         PREFIX "")
@@ -262,7 +267,12 @@ function(add_chicken_compiler name)
         OPTIONS ${options} ${COMPILER_OPTIONS})
 
     add_executable(${name} ${sources})
-    chicken_wrap_target(${name} ${type})
+
+    if(compiler_STATIC)
+        target_link_libraries(${name} PRIVATE ${CHICKEN_STATIC_LIBRARIES})
+    else()
+        target_link_libraries(${name} PRIVATE ${CHICKEN_LIBRARIES})
+    endif()
 
     set_target_properties(${name} PROPERTIES
         OUTPUT_NAME ${compiler_OUTPUT_NAME})
@@ -280,6 +290,7 @@ function(add_stage name out_compiler)
         OPTIONS ${LIBRARY_OPTIONS})
 
     set(CHICKEN_STATIC_LIBRARY libchicken${suffix})
+    set(CHICKEN_STATIC_LIBRARIES ${CHICKEN_STATIC_LIBRARY} ${CHICKEN_EXTRA_LIBRARIES})
 
     add_chicken_compiler(chicken-compiler${suffix} STATIC
         SUFFIX ${suffix}
@@ -320,6 +331,7 @@ add_chicken_runtime(libchicken SHARED
     OPTIONS ${LIBRARY_OPTIONS})
 
 set(CHICKEN_LIBRARY libchicken)
+set(CHICKEN_LIBRARIES ${CHICKEN_LIBRARY} ${CHICKEN_EXTRA_LIBRARIES})
 
 add_chicken_compiler(chicken-compiler OUTPUT_NAME chicken
     OPTIONS ${PROGRAM_OPTIONS})
