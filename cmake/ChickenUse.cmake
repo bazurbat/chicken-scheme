@@ -133,44 +133,6 @@ function(_chicken_get_options out_var source_file)
     set(${out_var} ${options} PARENT_SCOPE)
 endfunction()
 
-# Sets CHICKEN specific compile definitions for the specified C source file.
-# Internal. Assumes that arguments were parsed.
-function(_chicken_set_compile_definitions source_file)
-    set_property(SOURCE ${source_file} APPEND PROPERTY
-        COMPILE_DEFINITIONS ${CHICKEN_DEFINITIONS})
-
-    if(compile_SHARED)
-        set_property(SOURCE ${source_file} APPEND PROPERTY
-            COMPILE_DEFINITIONS C_SHARED)
-    endif()
-
-    if(compile_EMBEDDED)
-        set_property(SOURCE ${source_file} APPEND PROPERTY
-            COMPILE_DEFINITIONS C_EMBEDDED)
-    endif()
-
-    set_property(SOURCE ${source_file} APPEND PROPERTY
-        COMPILE_DEFINITIONS ${compile_DEFINITIONS})
-endfunction()
-
-function(_chicken_set_compile_flags source_file in_path)
-    set(c_flags "")
-
-    if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL in_path)
-        list(APPEND c_flags -I${CMAKE_CURRENT_SOURCE_DIR})
-    endif()
-
-    if(NOT in_path STREQUAL CMAKE_CURRENT_BINARY_DIR)
-        list(APPEND c_flags -I${in_path})
-    endif()
-
-    # compile flags property can not handle list
-    _chicken_join(c_flags ${c_flags})
-
-    set_property(SOURCE ${source_file} APPEND_STRING PROPERTY
-        COMPILE_FLAGS " ${c_flags}")
-endfunction()
-
 # Helper function for automatic dependecy extraction. Internal.
 function(_chicken_extract_depends out_var dep_path)
     set(imports "")
@@ -224,7 +186,6 @@ function(_chicken_command out_var in_file)
     endif()
 
     _chicken_get_options(options ${in_file})
-    _chicken_set_compile_flags(${out_path} ${in_dir})
 
     set(outputs ${out_path})
     set(imports "")
@@ -326,24 +287,68 @@ function(_chicken_command out_var in_file)
     set(${out_var} ${out_path} PARENT_SCOPE)
 endfunction()
 
+# Sets CHICKEN specific compile flags for the specified C source file.
+# Internal. Assumes that arguments were parsed.
+function(_chicken_add_compile_flags output_file input_file)
+    set_property(SOURCE ${output_file} APPEND PROPERTY
+        COMPILE_DEFINITIONS ${CHICKEN_DEFINITIONS} ${compile_DEFINITIONS})
+
+    if(compile_SHARED)
+        set_property(SOURCE ${output_file} APPEND PROPERTY
+            COMPILE_DEFINITIONS C_SHARED)
+    endif()
+
+    if(compile_EMBEDDED)
+        set_property(SOURCE ${output_file} APPEND PROPERTY
+            COMPILE_DEFINITIONS C_EMBEDDED)
+    endif()
+
+    set(c_flags ${CHICKEN_C_FLAGS})
+
+    list(APPEND c_flags \"-I${CMAKE_CURRENT_BINARY_DIR}\")
+    list(APPEND c_flags \"-I${CMAKE_CURRENT_SOURCE_DIR}\")
+
+    if(input_file)
+        # For case when the source file is specified with relative path and
+        # contains inline include declarations.
+        get_filename_component(input_file ${input_file} ABSOLUTE)
+        get_filename_component(input_path ${input_file} DIRECTORY)
+        list(APPEND c_flags \"-I${input_path}\")
+    endif()
+
+    foreach(directory ${CHICKEN_INCLUDE_DIRS})
+        list(APPEND c_flags \"-I${directory}\")
+    endforeach()
+
+    list(REMOVE_DUPLICATES c_flags)
+
+    # compile flags property can not handle list
+    _chicken_join(c_flags ${c_flags})
+
+    set_property(SOURCE ${output_file} APPEND_STRING PROPERTY
+        COMPILE_FLAGS " ${c_flags}")
+endfunction()
+
 # Generates custom commands invoking CHICKEN compiler for the specified source
-# files. The resulting C source file names are added to the 'out_var'.
+# files, adds necessary compiler flags. The resulting C source filepaths are
+# added to the 'out_var'.
 function(chicken_wrap_sources out_var)
     _chicken_parse_arguments(${ARGN})
 
-    foreach(arg ${compile_SOURCES})
+    foreach(input_file ${compile_SOURCES})
         if(compile_IMPORT_MODULE)
-            set_property(SOURCE ${arg} PROPERTY
+            set_property(SOURCE ${input_file} PROPERTY
                 CHICKEN_IMPORT_LIBRARY TRUE)
         endif()
-        _chicken_command(out_file ${arg})
-        _chicken_set_compile_definitions(${out_file})
-        list(APPEND ${out_var} ${arg} ${out_file})
+        _chicken_command(output_file ${input_file})
+        _chicken_add_compile_flags(${output_file} ${input_file})
+        # Adding input files to the final source list shows them in IDEs.
+        list(APPEND ${out_var} ${output_file} ${input_file})
     endforeach()
 
-    foreach(src ${compile_C_SOURCES})
-        _chicken_set_compile_definitions(${src})
-        list(APPEND ${out_var} ${src})
+    foreach(source_file ${compile_C_SOURCES})
+        _chicken_add_compile_flags(${source_file} "")
+        list(APPEND ${out_var} ${source_file})
     endforeach()
 
     set(${out_var} ${${out_var}} PARENT_SCOPE)
@@ -356,8 +361,6 @@ function(chicken_wrap_target target)
         target_compile_definitions(${target} PRIVATE PIC)
     endif()
 
-    target_compile_options(${target} PRIVATE ${CHICKEN_C_FLAGS})
-
     if(NOT link_NO_RUNTIME)
         if(link_STATIC)
             target_link_libraries(${target} PRIVATE ${CHICKEN_STATIC_LIBRARY})
@@ -367,17 +370,6 @@ function(chicken_wrap_target target)
     endif()
 
     target_link_libraries(${target} PRIVATE ${CHICKEN_EXTRA_LIBRARIES})
-
-    # This is necessary to resolve inline CPP include declarations because
-    # generated files are not placed alongside the corresponding scm in case of
-    # out of tree build.
-    if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR)
-        target_include_directories(${target} PRIVATE
-            ${CMAKE_CURRENT_SOURCE_DIR})
-    endif()
-
-    target_include_directories(${target} PRIVATE
-        ${CHICKEN_INCLUDE_DIRS})
 
     set_property(TARGET ${target} PROPERTY
         DEFINE_SYMBOL C_BUILDING_LIBCHICKEN)
