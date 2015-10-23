@@ -57,6 +57,7 @@ macro(_chicken_parse_arguments)
         # All modules are currently compiled as shared libraries.
         set(compile_SHARED TRUE)
     elseif(compile_IMPORT_MODULE)
+        set(compile_SHARED TRUE)
         set(compile_TYPE MODULE)
     endif()
 endmacro()
