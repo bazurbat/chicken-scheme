@@ -194,19 +194,20 @@ else()
     set(C_WINDOWS_SHELL 0)
 endif()
 
-if(APPLE AND CMAKE_SIZEOF_VOID_P EQUAL 8)
-    list(APPEND CMAKE_C_FLAGS -m64)
-    list(APPEND CMAKE_EXE_LINKER_FLAGS -m64)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(DEBUGBUILD 1)
 endif()
 
 set(_chicken_c_flags "")
 
-foreach(D ${CHICKEN_DEFINITIONS})
-    list(APPEND _chicken_c_flags -D${D})
-endforeach()
+if(APPLE AND CMAKE_SIZEOF_VOID_P EQUAL 8)
+    list(APPEND _chicken_c_flags -m64)
+    list(APPEND CMAKE_EXE_LINKER_FLAGS -m64)
+endif()
+
+list(APPEND _chicken_c_flags ${CMAKE_C_FLAGS})
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(DEBUGBUILD 1)
     list(APPEND _chicken_c_flags ${CMAKE_C_FLAGS_DEBUG})
 elseif(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
     list(APPEND _chicken_c_flags ${CMAKE_C_FLAGS_MINSIZEREL})
@@ -216,9 +217,30 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     list(APPEND _chicken_c_flags ${CMAKE_C_FLAGS_RELWITHDEBINFO})
 endif()
 
-list(APPEND _chicken_c_flags ${CMAKE_C_FLAGS})
+list(REMOVE_DUPLICATES _chicken_c_flags)
 
-_chicken_join(C_INSTALL_CFLAGS ${_chicken_c_flags} ${CHICKEN_C_FLAGS})
+_chicken_join(CMAKE_C_FLAGS ${_chicken_c_flags})
+
+set(CMAKE_C_FLAGS_DEBUG "")
+set(CMAKE_C_FLAGS_MINSIZEREL "")
+set(CMAKE_C_FLAGS_RELEASE "")
+set(CMAKE_C_FLAGS_RELWITHDEBINFO "")
+
+set(CMAKE_ASM_FLAGS ${CMAKE_C_FLAGS})
+set(CMAKE_ASM_FLAGS_DEBUG "")
+set(CMAKE_ASM_FLAGS_MINSIZEREL "")
+set(CMAKE_ASM_FLAGS_RELEASE "")
+set(CMAKE_ASM_FLAGS_RELWITHDEBINFO "")
+
+set(_chicken_install_c_flags "")
+
+foreach(D ${CHICKEN_DEFINITIONS})
+    list(APPEND _chicken_install_c_flags -D${D})
+endforeach()
+list(APPEND _chicken_install_c_flags ${_chicken_c_flags} ${CHICKEN_C_FLAGS})
+list(REMOVE_DUPLICATES _chicken_install_c_flags)
+
+_chicken_join(C_INSTALL_CFLAGS ${_chicken_install_c_flags})
 _chicken_join(C_INSTALL_LDFLAGS ${CMAKE_EXE_LINKER_FLAGS})
 
 set(CHICKEN_TARGET_C_FLAGS "${C_INSTALL_CFLAGS}")
