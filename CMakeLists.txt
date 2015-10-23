@@ -405,6 +405,7 @@ set(CHICKEN_DEPENDS "")
 add_chicken_executable(csi
     SOURCES csi.scm
     OPTIONS ${PROGRAM_OPTIONS} ${COMPILER_OPTIONS})
+target_link_libraries(csi ${CHICKEN_LIBRARIES})
 
 install(TARGETS csi
     EXPORT chicken-targets
@@ -422,6 +423,7 @@ set(utility_PROGRAMS
 foreach(program ${utility_PROGRAMS})
     add_chicken_executable(${program} ${program}.scm
         OPTIONS ${PROGRAM_OPTIONS})
+    target_link_libraries(${program} ${CHICKEN_LIBRARIES})
 endforeach()
 
 install(TARGETS ${utility_PROGRAMS}
@@ -434,9 +436,11 @@ if(BUILD_STATIC_PROGRAMS)
     add_chicken_executable(csi-static csi.scm STATIC
         SUFFIX ".static"
         OPTIONS ${PROGRAM_OPTIONS})
+    target_link_libraries(csi-static ${CHICKEN_STATIC_LIBRARIES})
 
     add_chicken_executable(chicken-bug chicken-bug.scm STATIC
         OPTIONS ${PROGRAM_OPTIONS})
+    target_link_libraries(chicken-bug ${CHICKEN_STATIC_LIBRARIES})
 
     install(TARGETS csi-static chicken-bug
         RUNTIME DESTINATION ${INSTALL_BINDIR})

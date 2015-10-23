@@ -357,20 +357,9 @@ endfunction()
 
 # Convenience wrapper around add_executable.
 function(add_chicken_executable name)
-    cmake_parse_arguments(type "STATIC" "" "" ${ARGN})
-
-    if(type_STATIC)
-        set(type STATIC)
-    endif()
-
     set(sources "")
-    chicken_wrap_sources(sources ${type} ${type_UNPARSED_ARGUMENTS})
+    chicken_wrap_sources(sources ${ARGN})
     add_executable(${name} ${sources})
-    if(type_STATIC)
-        target_link_libraries(${name} ${CHICKEN_STATIC_LIBRARIES})
-    else()
-        target_link_libraries(${name} ${CHICKEN_LIBRARIES})
-    endif()
 endfunction()
 
 # Convenience wrapper around add_library.
