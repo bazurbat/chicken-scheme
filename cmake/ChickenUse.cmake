@@ -305,15 +305,16 @@ function(_chicken_add_compile_flags output_file input_file)
 
     set(c_flags ${CHICKEN_C_FLAGS})
 
-    list(APPEND c_flags \"-I${CMAKE_CURRENT_BINARY_DIR}\")
-    list(APPEND c_flags \"-I${CMAKE_CURRENT_SOURCE_DIR}\")
-
+    # For relative inline include paths
     if(input_file)
-        # For case when the source file is specified with relative path and
-        # contains inline include declarations.
         get_filename_component(input_file ${input_file} ABSOLUTE)
         get_filename_component(input_path ${input_file} DIRECTORY)
         list(APPEND c_flags \"-I${input_path}\")
+    endif()
+
+    # For out of source builds
+    if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL input_path)
+        list(APPEND c_flags \"-I${CMAKE_CURRENT_SOURCE_DIR}\")
     endif()
 
     foreach(directory ${CHICKEN_INCLUDE_DIRS})

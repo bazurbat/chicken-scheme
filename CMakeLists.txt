@@ -313,8 +313,11 @@ endfunction()
 # should work as expected.
 
 # Do not use include paths from system
-set(CHICKEN_INCLUDE_DIRS ${chicken_BINARY_DIR})
+set(CHICKEN_INCLUDE_DIRS "")
 set(CHICKEN_DATA_DIR "")
+
+# Find generated chicken-config.h before others
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 if(CHICKEN_BOOTSTRAP AND NOT CMAKE_CROSSCOMPILING)
     add_stage(stage1 CHICKEN_COMPILER)
