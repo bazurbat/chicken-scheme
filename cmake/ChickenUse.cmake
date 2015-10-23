@@ -375,12 +375,6 @@ function(add_chicken_library name)
         target_compile_definitions(${name} PRIVATE PIC)
     endif()
 
-    if(compile_STATIC)
-        target_link_libraries(${name} ${CHICKEN_STATIC_LIBRARIES})
-    else()
-        target_link_libraries(${name} ${CHICKEN_LIBRARIES})
-    endif()
-
     set_property(TARGET ${name} PROPERTY
         DEFINE_SYMBOL C_BUILDING_LIBCHICKEN)
 
@@ -411,6 +405,7 @@ function(add_chicken_module name)
         foreach(m ${compile_EMIT_IMPORTS})
             add_chicken_library(${m}.import MODULE
                 SOURCES ${CHICKEN_IMPORT_DIR}/${m}.import.scm)
+            target_link_libraries(${m}.import ${CHICKEN_LIBRARIES})
         endforeach()
     endif()
 endfunction()
