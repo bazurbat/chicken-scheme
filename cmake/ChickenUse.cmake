@@ -349,7 +349,7 @@ function(chicken_wrap_sources out_var)
     endforeach()
 
     foreach(source_file ${compile_C_SOURCES})
-        _chicken_add_compile_flags(${source_file} "")
+        _chicken_add_compile_flags(${source_file} ${source_file})
         list(APPEND ${out_var} ${source_file})
     endforeach()
 
