@@ -181,7 +181,7 @@ function(add_chicken_runtime name)
     set(c_sources chicken.h runtime.c ${CHICKEN_APPLY_HACK})
 
     foreach(module ${runtime_GENERIC_MODULES})
-        chicken_wrap_sources(sources
+        chicken_wrap_sources(sources ${type}
             SUFFIX ${runtime_SUFFIX}
             SOURCES ${module}.scm
             EMIT_IMPORTS ${module}
@@ -189,7 +189,7 @@ function(add_chicken_runtime name)
     endforeach()
 
     foreach(module ${runtime_CHICKEN_MODULES})
-        chicken_wrap_sources(sources
+        chicken_wrap_sources(sources ${type}
             SUFFIX ${runtime_SUFFIX}
             SOURCES ${module}.scm
             EMIT_IMPORTS chicken.${module}
@@ -197,25 +197,21 @@ function(add_chicken_runtime name)
     endforeach()
 
     chicken_wrap_sources(sources
-        SUFFIX ${runtime_SUFFIX}
+        SUFFIX ${runtime_SUFFIX} ${type}
         SOURCES ${scm_sources}
         OPTIONS ${options})
 
     chicken_wrap_sources(sources
-        SUFFIX ${runtime_SUFFIX}
+        SUFFIX ${runtime_SUFFIX} ${type}
         SOURCES srfi-69.scm
         OPTIONS ${options} ${COMPILER_OPTIONS})
 
     add_library(${name} ${type} ${sources} ${c_sources})
-    if(runtime_SHARED)
-        target_compile_definitions(${name} PRIVATE PIC)
-    endif()
-    target_link_libraries(${name} PRIVATE ${CHICKEN_EXTRA_LIBRARIES})
-    set_property(TARGET ${name} PROPERTY
-        DEFINE_SYMBOL C_BUILDING_LIBCHICKEN)
+    target_link_libraries(${name} ${CHICKEN_EXTRA_LIBRARIES})
 
     set_target_properties(${name} PROPERTIES
-        PREFIX "")
+        DEFINE_SYMBOL C_BUILDING_LIBCHICKEN
+        PREFIX "" SUFFIX "")
 
     if(runtime_SHARED)
         if(APPLE OR ANDROID)
