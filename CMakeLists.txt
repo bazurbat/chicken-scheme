@@ -341,7 +341,7 @@ if(NOT CMAKE_CROSSCOMPILING)
 endif()
 
 foreach(module ${runtime_GENERIC_MODULES})
-    add_chicken_library(${module}.import IMPORT_MODULE
+    chicken_add_library(${module}.import IMPORT_MODULE
         SOURCES ${CHICKEN_IMPORT_DIR}/${module}.import.scm
         OPTIONS ${IMPORT_LIBRARY_OPTIONS})
     target_link_libraries(${module}.import ${CHICKEN_LIBRARIES})
@@ -350,7 +350,7 @@ foreach(module ${runtime_GENERIC_MODULES})
 endforeach()
 
 foreach(module ${runtime_CHICKEN_MODULES})
-    add_chicken_library(chicken.${module}.import IMPORT_MODULE
+    chicken_add_library(chicken.${module}.import IMPORT_MODULE
         SOURCES ${CHICKEN_IMPORT_DIR}/chicken.${module}.import.scm
         OPTIONS ${IMPORT_LIBRARY_OPTIONS})
     target_link_libraries(chicken.${module}.import ${CHICKEN_LIBRARIES})
@@ -359,7 +359,7 @@ foreach(module ${runtime_CHICKEN_MODULES})
 endforeach()
 
 foreach(module ${compiler_MODULES})
-    add_chicken_library(chicken.compiler.${module}.import IMPORT_MODULE
+    chicken_add_library(chicken.compiler.${module}.import IMPORT_MODULE
         SOURCES ${CHICKEN_IMPORT_DIR}/chicken.compiler.${module}.import.scm
         OPTIONS ${IMPORT_LIBRARY_OPTIONS})
     target_link_libraries(chicken.compiler.${module}.import ${CHICKEN_LIBRARIES})
@@ -368,7 +368,7 @@ foreach(module ${compiler_MODULES})
 endforeach()
 
 foreach(module ${chicken_MODULES})
-    add_chicken_library(${module}.import IMPORT_MODULE
+    chicken_add_library(${module}.import IMPORT_MODULE
         SOURCES ${module}.import.scm
         OPTIONS ${IMPORT_LIBRARY_OPTIONS})
     target_link_libraries(${module}.import ${CHICKEN_LIBRARIES})
@@ -403,7 +403,7 @@ set(CHICKEN_DEPENDS "")
 
 ### interpreter
 
-add_chicken_executable(csi
+chicken_add_executable(csi
     SOURCES csi.scm
     OPTIONS ${PROGRAM_OPTIONS} ${COMPILER_OPTIONS})
 target_link_libraries(csi ${CHICKEN_LIBRARIES})
@@ -422,7 +422,7 @@ set(utility_PROGRAMS
     csc)
 
 foreach(program ${utility_PROGRAMS})
-    add_chicken_executable(${program} ${program}.scm
+    chicken_add_executable(${program} ${program}.scm
         OPTIONS ${PROGRAM_OPTIONS})
     target_link_libraries(${program} ${CHICKEN_LIBRARIES})
 endforeach()
@@ -434,12 +434,12 @@ install(TARGETS ${utility_PROGRAMS}
 ### static programs
 
 if(BUILD_STATIC_PROGRAMS)
-    add_chicken_executable(csi-static csi.scm STATIC
+    chicken_add_executable(csi-static csi.scm STATIC
         SUFFIX ".static"
         OPTIONS ${PROGRAM_OPTIONS})
     target_link_libraries(csi-static ${CHICKEN_STATIC_LIBRARIES})
 
-    add_chicken_executable(chicken-bug chicken-bug.scm STATIC
+    chicken_add_executable(chicken-bug chicken-bug.scm STATIC
         OPTIONS ${PROGRAM_OPTIONS})
     target_link_libraries(chicken-bug ${CHICKEN_STATIC_LIBRARIES})
 
@@ -451,10 +451,10 @@ endif()
 
 set(setupapi_MODULES setup-api setup-download)
 
-add_chicken_module(setup-api setup-api.scm
+chicken_add_module(setup-api setup-api.scm
     OPTIONS ${LIBRARY_OPTIONS})
 
-add_chicken_module(setup-download setup-download.scm
+chicken_add_module(setup-download setup-download.scm
     OPTIONS ${LIBRARY_OPTIONS}
     DEPENDS setup-api)
 

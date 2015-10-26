@@ -357,14 +357,14 @@ function(chicken_wrap_sources out_var)
 endfunction()
 
 # Convenience wrapper around add_executable.
-function(add_chicken_executable name)
+function(chicken_add_executable name)
     set(sources "")
     chicken_wrap_sources(sources ${ARGN})
     add_executable(${name} ${sources})
 endfunction()
 
 # Convenience wrapper around add_library.
-function(add_chicken_library name)
+function(chicken_add_library name)
     _chicken_parse_arguments(${ARGN})
 
     set(sources "")
@@ -388,21 +388,21 @@ endfunction()
 
 # Even more convenient wrapper for compiling Chicken modules along with import
 # libraries.
-function(add_chicken_module name)
+function(chicken_add_module name)
     _chicken_parse_arguments(${ARGN})
 
     if(NOT compile_EMIT_IMPORTS)
         set(compile_EMIT_IMPORTS ${name})
     endif()
 
-    add_chicken_library(${name} MODULE ${ARGN}
+    chicken_add_library(${name} MODULE ${ARGN}
         EMIT_IMPORTS ${compile_EMIT_IMPORTS})
 
     target_link_libraries(${name} ${CHICKEN_LIBRARIES})
 
     if(CHICKEN_BUILD_IMPORTS)
         foreach(m ${compile_EMIT_IMPORTS})
-            add_chicken_library(${m}.import MODULE
+            chicken_add_library(${m}.import MODULE
                 SOURCES ${CHICKEN_IMPORT_DIR}/${m}.import.scm)
             target_link_libraries(${m}.import ${CHICKEN_LIBRARIES})
         endforeach()
@@ -410,7 +410,7 @@ function(add_chicken_module name)
 endfunction()
 
 # Used for installing modules. Needs more work.
-function(install_chicken_modules name)
+function(chicken_install_modules name)
     cmake_parse_arguments(install
         ""
         ""
@@ -466,7 +466,7 @@ function(install_chicken_modules name)
 endfunction()
 
 # Used for declaring Chicken extension properties.
-function(define_chicken_extension name)
+function(chicken_define_extension name)
     cmake_parse_arguments(extension
         ""
         "VERSION;DESCRIPTION;CATEGORY;LICENSE;URL"
@@ -485,7 +485,7 @@ function(define_chicken_extension name)
 endfunction()
 
 # A wrapper around find_package to search for Chicken extensions.
-function(find_chicken_extension name)
+function(chicken_find_extension name)
     cmake_parse_arguments(extension
         "REQUIRED"
         "VERSION"
