@@ -296,7 +296,7 @@ function(_chicken_add_compile_flags output_file input_file)
 
     if(compile_SHARED)
         set_property(SOURCE ${output_file} APPEND PROPERTY
-            COMPILE_DEFINITIONS C_SHARED)
+            COMPILE_DEFINITIONS PIC C_SHARED)
     endif()
 
     if(compile_EMBEDDED)
@@ -371,10 +371,6 @@ function(add_chicken_library name)
     chicken_wrap_sources(sources ${compile_TYPE} ${ARGN})
 
     add_library(${name} ${compile_TYPE} ${sources})
-
-    if(compile_SHARED)
-        target_compile_definitions(${name} PRIVATE PIC)
-    endif()
 
     set_property(TARGET ${name} PROPERTY
         DEFINE_SYMBOL C_BUILDING_LIBCHICKEN)
