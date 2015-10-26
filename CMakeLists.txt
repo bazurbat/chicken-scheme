@@ -199,6 +199,7 @@ function(add_chicken_runtime name)
     chicken_wrap_sources(sources
         SUFFIX ${runtime_SUFFIX} ${type}
         SOURCES ${scm_sources}
+        C_SOURCES ${c_sources}
         OPTIONS ${options})
 
     chicken_wrap_sources(sources
@@ -206,7 +207,7 @@ function(add_chicken_runtime name)
         SOURCES srfi-69.scm
         OPTIONS ${options} ${COMPILER_OPTIONS})
 
-    add_library(${name} ${type} ${sources} ${c_sources})
+    add_library(${name} ${type} ${sources})
     target_link_libraries(${name} ${CHICKEN_EXTRA_LIBRARIES})
 
     set_target_properties(${name} PROPERTIES
