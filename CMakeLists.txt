@@ -453,12 +453,10 @@ set(setupapi_MODULES setup-api setup-download)
 
 add_chicken_module(setup-api setup-api.scm
     OPTIONS ${LIBRARY_OPTIONS})
-target_link_libraries(setup-api ${CHICKEN_LIBRARIES})
 
 add_chicken_module(setup-download setup-download.scm
     OPTIONS ${LIBRARY_OPTIONS}
     DEPENDS setup-api)
-target_link_libraries(setup-download ${CHICKEN_LIBRARIES})
 
 set_property(TARGET setup-api.import setup-download.import PROPERTY
     FOLDER ${CHICKEN_IMPORT_FOLDER})

@@ -38,7 +38,6 @@ endfunction()
 
 function(add_test_module name)
     add_chicken_module(${ARGV})
-    target_link_libraries(${name} ${CHICKEN_LIBRARIES})
     add_dependencies(BUILD_TESTS ${name})
     set_target_properties(${name} PROPERTIES FOLDER "Tests")
 endfunction()

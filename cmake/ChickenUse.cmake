@@ -398,6 +398,8 @@ function(add_chicken_module name)
     add_chicken_library(${name} MODULE ${ARGN}
         EMIT_IMPORTS ${compile_EMIT_IMPORTS})
 
+    target_link_libraries(${name} ${CHICKEN_LIBRARIES})
+
     if(CHICKEN_BUILD_IMPORTS)
         foreach(m ${compile_EMIT_IMPORTS})
             add_chicken_library(${m}.import MODULE
