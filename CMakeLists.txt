@@ -215,7 +215,12 @@ function(add_chicken_runtime name)
         PREFIX "" SUFFIX "")
 
     if(runtime_SHARED)
-        if(APPLE OR ANDROID)
+        if(APPLE)
+        elseif(ANDROID)
+            # actually libraries are not version suffixed on Android but
+            # CHICKEN hardcodes this naming scheme
+            set_target_properties(${name} PROPERTIES
+                OUTPUT_NAME ${name}${CMAKE_SHARED_LIBRARY_SUFFIX}.${CHICKEN_API_VERSION})
         elseif(UNIX)
             set_target_properties(${name} PROPERTIES
                 OUTPUT_NAME ${name}${CMAKE_SHARED_LIBRARY_SUFFIX}.${CHICKEN_API_VERSION})
