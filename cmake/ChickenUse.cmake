@@ -292,19 +292,14 @@ endfunction()
 # Internal. Assumes that arguments were parsed.
 function(_chicken_add_compile_flags output_file input_file)
     set_property(SOURCE ${output_file} APPEND PROPERTY
-        COMPILE_DEFINITIONS ${CHICKEN_DEFINITIONS} ${compile_DEFINITIONS})
-
-    if(compile_SHARED)
-        set_property(SOURCE ${output_file} APPEND PROPERTY
-            COMPILE_DEFINITIONS PIC C_SHARED)
-    endif()
+        COMPILE_DEFINITIONS ${compile_DEFINITIONS})
 
     if(compile_EMBEDDED)
         set_property(SOURCE ${output_file} APPEND PROPERTY
             COMPILE_DEFINITIONS C_EMBEDDED)
     endif()
 
-    set(c_flags ${CHICKEN_C_FLAGS})
+    set(c_flags "")
 
     # For relative inline include paths
     if(input_file)
@@ -371,6 +366,10 @@ function(chicken_add_library name)
     chicken_wrap_sources(sources ${compile_TYPE} ${ARGN})
 
     add_library(${name} ${compile_TYPE} ${sources})
+
+    if(compile_SHARED)
+        target_compile_definitions(${name} PRIVATE PIC C_SHARED)
+    endif()
 
     set_property(TARGET ${name} PROPERTY
         DEFINE_SYMBOL C_BUILDING_LIBCHICKEN)

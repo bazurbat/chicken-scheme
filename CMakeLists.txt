@@ -196,18 +196,23 @@ function(add_chicken_runtime name)
             OPTIONS ${options})
     endforeach()
 
-    chicken_wrap_sources(sources
-        SUFFIX ${runtime_SUFFIX} ${type}
+    chicken_wrap_sources(sources ${type}
+        SUFFIX ${runtime_SUFFIX}
         SOURCES ${scm_sources}
         C_SOURCES ${c_sources}
         OPTIONS ${options})
 
-    chicken_wrap_sources(sources
-        SUFFIX ${runtime_SUFFIX} ${type}
+    chicken_wrap_sources(sources ${type}
+        SUFFIX ${runtime_SUFFIX}
         SOURCES srfi-69.scm
         OPTIONS ${options} ${COMPILER_OPTIONS})
 
     add_library(${name} ${type} ${sources})
+    target_compile_definitions(${name} PUBLIC ${CHICKEN_DEFINITIONS})
+    if(runtime_SHARED)
+        target_compile_definitions(${name} PRIVATE PIC C_SHARED)
+    endif()
+    target_compile_options(${name} PUBLIC ${CHICKEN_C_FLAGS})
     target_link_libraries(${name} ${CHICKEN_EXTRA_LIBRARIES})
 
     set_target_properties(${name} PROPERTIES
