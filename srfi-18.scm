@@ -183,7 +183,7 @@
 		   (##sys#make-structure 
 		    'condition '(uncaught-exception)
 		    (list '(uncaught-exception . reason) (##sys#slot thread 7)) ) ) ) )
-		((blocked ready)
+		((blocked ready sleeping)
                  (if limit
                      (return
                       (if tosupplied

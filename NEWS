@@ -17,6 +17,10 @@
      declared types exactly.  Specializations are matched from first to
      last to resolve ambiguities (#1214).
 
+- Core libraries
+   - SRFI-18: thread-join! no longer gives an error when passed a
+      thread in the "sleeping" state (thanks to Joerg Wittenberger)
+
 4.10.1
 
 - Core libraries
