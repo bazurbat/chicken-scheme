@@ -44,14 +44,4 @@ set(CHICKEN_INCLUDE_DIRS ${CHICKEN_INCLUDE_DIR})
 set(CHICKEN_LIBRARIES chicken_libchicken ${CHICKEN_EXTRA_LIBRARIES})
 set(CHICKEN_STATIC_LIBRARIES chicken_libchicken-static ${CHICKEN_EXTRA_LIBRARIES})
 
-include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Chicken DEFAULT_MSG
-    CHICKEN_COMPILER CHICKEN_INTERPRETER CHICKEN_DEPENDS)
-find_package_message(CHICKEN_INTERPRETER
-    "  INTERPRETER: ${CHICKEN_INTERPRETER}"
-    "${CHICKEN_INTERPRETER}")
-find_package_message(CHICKEN_DEPENDS
-    "  DEPENDS: ${CHICKEN_DEPENDS}"
-    "${CHICKEN_DEPENDS}")
-
 include("${CMAKE_CURRENT_LIST_DIR}/ChickenUse.cmake")
