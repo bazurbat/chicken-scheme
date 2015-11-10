@@ -111,8 +111,12 @@ set(CHICKEN_STATIC_LIBRARIES ${CHICKEN_STATIC_LIBRARY} ${CHICKEN_EXTRA_LIBRARIES
 
 # We may need to wrap actual executables for some platforms, so it is
 # recommended to use these logical names in extension setup scripts.
-set(CHICKEN_COMPILER ${CHICKEN_EXECUTABLE})
-set(CHICKEN_INTERPRETER ${CHICKEN_CSI_EXECUTABLE})
+if(NOT CHICKEN_COMPILER)
+    set(CHICKEN_COMPILER ${CHICKEN_EXECUTABLE})
+endif()
+if(NOT CHICKEN_INTERPRETER)
+    set(CHICKEN_INTERPRETER ${CHICKEN_CSI_EXECUTABLE})
+endif()
 
 # Consider Chicken found if we determined that at least the executable is
 # available. Probably more comprehensive logic is needed to warn a user that
