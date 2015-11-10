@@ -124,6 +124,7 @@ endif()
 find_package_handle_standard_args(Chicken DEFAULT_MSG CHICKEN_EXECUTABLE)
 
 # Detailed information useful when cross-compiling or debugging setup scripts. 
+if(NOT Chicken_FIND_QUIETLY)
 find_package_message(CHICKEN_CSI_EXECUTABLE
     "  CHICKEN_CSI_EXECUTABLE: ${CHICKEN_CSI_EXECUTABLE}"
     "${CHICKEN_CSI_EXECUTABLE}")
@@ -142,6 +143,7 @@ find_package_message(CHICKEN_DATA_DIR
 find_package_message(CHICKEN_EXTENSION_DIR
     "  CHICKEN_EXTENSION_DIR: ${CHICKEN_EXTENSION_DIR}"
     "${CHICKEN_EXTENSION_DIR}")
+endif()
 
 # Various macros for user CMakeLists.
 include(${CMAKE_CURRENT_LIST_DIR}/ChickenUse.cmake)
