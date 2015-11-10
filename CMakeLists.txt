@@ -328,14 +328,15 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 if(CHICKEN_BOOTSTRAP AND NOT CMAKE_CROSSCOMPILING)
     add_stage(stage1 CHICKEN_COMPILER)
+    list(APPEND CHICKEN_OPTIONS -specialize -types ${CHICKEN_TYPES_DB})
     add_stage(stage2 CHICKEN_COMPILER)
+else()
+    list(APPEND CHICKEN_OPTIONS -specialize -types ${CHICKEN_TYPES_DB})
 endif()
 
 unset(CHICKEN_IMPORT_DIR)
 
 add_chicken_primitive_modules()
-
-list(APPEND CHICKEN_OPTIONS -specialize -types ${CHICKEN_TYPES_DB})
 
 add_chicken_runtime(libchicken SHARED
     OPTIONS ${LIBRARY_OPTIONS})
