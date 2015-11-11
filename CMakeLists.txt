@@ -217,32 +217,23 @@ function(add_chicken_runtime name)
 
     set_target_properties(${name} PROPERTIES
         DEFINE_SYMBOL C_BUILDING_LIBCHICKEN
-        PREFIX "" SUFFIX "")
+        OUTPUT_NAME chicken${runtime_SUFFIX})
 
     if(runtime_SHARED)
         if(APPLE)
-        elseif(ANDROID)
-            # actually libraries are not version suffixed on Android but
-            # CHICKEN hardcodes this naming scheme
+        else()
             set_target_properties(${name} PROPERTIES
-                OUTPUT_NAME ${name}${CMAKE_SHARED_LIBRARY_SUFFIX}.${CHICKEN_API_VERSION})
-        elseif(UNIX)
-            set_target_properties(${name} PROPERTIES
-                OUTPUT_NAME ${name}${CMAKE_SHARED_LIBRARY_SUFFIX}.${CHICKEN_API_VERSION})
+                SOVERSION ${CHICKEN_API_VERSION})
         endif()
     endif()
 endfunction()
 
 function(add_chicken_compiler name)
     cmake_parse_arguments(compiler
-        "STATIC" "SUFFIX;OUTPUT_NAME" "OPTIONS" ${ARGN})
+        "STATIC" "SUFFIX" "OPTIONS" ${ARGN})
 
     if(compiler_STATIC)
         set(type STATIC)
-    endif()
-
-    if(NOT compiler_OUTPUT_NAME)
-        set(compiler_OUTPUT_NAME ${name})
     endif()
 
     set(options ${compiler_OPTIONS})
@@ -282,7 +273,7 @@ function(add_chicken_compiler name)
     endif()
 
     set_target_properties(${name} PROPERTIES
-        OUTPUT_NAME ${compiler_OUTPUT_NAME})
+        OUTPUT_NAME chicken${compiler_SUFFIX})
 endfunction()
 
 function(add_stage name out_compiler)
@@ -292,21 +283,21 @@ function(add_stage name out_compiler)
 
     add_chicken_primitive_modules(${suffix})
 
-    add_chicken_runtime(libchicken${suffix} STATIC
+    add_chicken_runtime(runtime${suffix} STATIC
         SUFFIX ${suffix}
         OPTIONS ${LIBRARY_OPTIONS})
 
-    set(CHICKEN_STATIC_LIBRARY libchicken${suffix})
+    set(CHICKEN_STATIC_LIBRARY runtime${suffix})
     set(CHICKEN_STATIC_LIBRARIES ${CHICKEN_STATIC_LIBRARY} ${CHICKEN_EXTRA_LIBRARIES})
 
-    add_chicken_compiler(chicken-compiler${suffix} STATIC
+    add_chicken_compiler(compiler${suffix} STATIC
         SUFFIX ${suffix}
         OPTIONS ${PROGRAM_OPTIONS})
 
-    set_property(TARGET libchicken${suffix} chicken-compiler${suffix}
+    set_property(TARGET runtime${suffix} compiler${suffix}
         PROPERTY FOLDER "Bootstrap Stages")
 
-    set(${out_compiler} chicken-compiler${suffix} PARENT_SCOPE)
+    set(${out_compiler} compiler${suffix} PARENT_SCOPE)
 endfunction()
 
 # Bootstrapping when cross-compiling is quite messy process due to necessity to
@@ -338,17 +329,17 @@ unset(CHICKEN_IMPORT_DIR)
 
 add_chicken_primitive_modules()
 
-add_chicken_runtime(libchicken SHARED
+add_chicken_runtime(runtime SHARED
     OPTIONS ${LIBRARY_OPTIONS})
 
-set(CHICKEN_LIBRARY libchicken)
+set(CHICKEN_LIBRARY runtime)
 set(CHICKEN_LIBRARIES ${CHICKEN_LIBRARY} ${CHICKEN_EXTRA_LIBRARIES})
 
-add_chicken_compiler(chicken-compiler OUTPUT_NAME chicken
+add_chicken_compiler(compiler
     OPTIONS ${PROGRAM_OPTIONS})
 
 if(NOT CMAKE_CROSSCOMPILING)
-    set(CHICKEN_COMPILER chicken-compiler)
+    set(CHICKEN_COMPILER compiler)
 endif()
 
 foreach(module ${runtime_GENERIC_MODULES})
@@ -393,19 +384,23 @@ foreach(name ${runtime_GENERIC_MODULES} ${runtime_CHICKEN_MODULES}
         LIBRARY DESTINATION ${INSTALL_EGGDIR})
 endforeach()
 
-install(TARGETS libchicken chicken-compiler
+install(TARGETS runtime
     EXPORT chicken-targets
     ARCHIVE DESTINATION ${INSTALL_LIBDIR}
-    LIBRARY DESTINATION ${INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${INSTALL_LIBDIR})
+
+install(TARGETS compiler
+    EXPORT chicken-targets
     RUNTIME DESTINATION ${INSTALL_BINDIR})
 
 if(BUILD_STATIC_LIBS)
-    add_chicken_runtime(libchicken-static STATIC
+    add_chicken_runtime(runtime-static STATIC
+        SUFFIX -static
         OPTIONS ${LIBRARY_OPTIONS})
 
-    set(CHICKEN_STATIC_LIBRARIES libchicken-static ${CHICKEN_EXTRA_LIBRARIES})
+    set(CHICKEN_STATIC_LIBRARIES runtime-static ${CHICKEN_EXTRA_LIBRARIES})
 
-    install(TARGETS libchicken-static
+    install(TARGETS runtime-static
         EXPORT chicken-targets
         ARCHIVE DESTINATION ${INSTALL_LIBDIR})
 endif()
@@ -420,7 +415,6 @@ chicken_add_executable(csi
 target_link_libraries(csi ${CHICKEN_LIBRARIES})
 
 install(TARGETS csi
-    EXPORT chicken-targets
     RUNTIME DESTINATION ${INSTALL_BINDIR})
 
 ### utilities
@@ -439,7 +433,6 @@ foreach(program ${utility_PROGRAMS})
 endforeach()
 
 install(TARGETS ${utility_PROGRAMS}
-    EXPORT chicken-targets
     RUNTIME DESTINATION ${INSTALL_BINDIR})
 
 ### static programs
@@ -522,7 +515,7 @@ install(FILES README LICENSE
 
 install(EXPORT chicken-targets
     DESTINATION ${INSTALL_DATADIR}
-    NAMESPACE chicken_)
+    NAMESPACE Chicken::)
 
 ### config
 

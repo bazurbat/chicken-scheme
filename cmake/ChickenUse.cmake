@@ -423,7 +423,7 @@ function(chicken_install_modules name)
     find_package_handle_standard_args(ChickenConfig DEFAULT_MSG
         Chicken_CONFIG
         CHICKEN_EXTENSION_DIR CHICKEN_DATA_DIR
-        CHICKEN_RUNTIME_DIR CHICKEN_LIBRARY_DIR)
+        CHICKEN_RUNTIME_DIR)
     if(NOT CHICKENCONFIG_FOUND)
         message(FATAL_ERROR "Chicken config was not found, can not install extensions.")
     endif()
