@@ -1,8 +1,5 @@
 # - Find Chicken module
 
-include(FindPackageHandleStandardArgs)
-include(FindPackageMessage)
-
 # Do not show error messages if the package was not found: there might be no
 # CMake aware Chicken installed or we are cross-compiling, try to quetly guess
 # the paths instead, this can also pull config file from install prefix, but it
@@ -80,6 +77,7 @@ set(CHICKEN_INCLUDE_DIRS ${CHICKEN_INCLUDE_DIR})
 set(CHICKEN_LIBRARIES ${CHICKEN_LIBRARY} ${CHICKEN_EXTRA_LIBRARIES})
 set(CHICKEN_STATIC_LIBRARIES ${CHICKEN_STATIC_LIBRARY} ${CHICKEN_EXTRA_LIBRARIES})
 
+include(FindPackageHandleStandardArgs)
 # Consider Chicken found if we determined that at least the executable is
 # available. Probably more comprehensive logic is needed to warn a user that
 # configuration is incomplete but it causes problems when bootstrapping.
