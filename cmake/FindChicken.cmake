@@ -1,12 +1,7 @@
 # - Find Chicken module
 
-include(FeatureSummary)
 include(FindPackageHandleStandardArgs)
 include(FindPackageMessage)
-
-set_package_properties(Chicken PROPERTIES
-    DESCRIPTION "A practical and portable Scheme system"
-    URL "http://call-cc.org")
 
 # Do not show error messages if the package was not found: there might be no
 # CMake aware Chicken installed or we are cross-compiling, try to quetly guess
