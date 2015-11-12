@@ -63,7 +63,7 @@ endif()
 
 set(CHICKEN_RUN      ${CMAKE_SOURCE_DIR}/cmake/ChickenRun.cmake)
 set(CHICKEN_TYPES_DB ${CMAKE_SOURCE_DIR}/types.db)
-set(CHICKEN_DEPENDS  ${CHICKEN_INTERPRETER} -ss
+set(CHICKEN_DEPENDS  ${CHICKEN_INTERPRETER_EXECUTABLE} -ss
     ${CMAKE_CURRENT_LIST_DIR}/chicken-depends.scm)
 
 include(ChickenConfigure)
@@ -276,7 +276,7 @@ function(add_chicken_compiler name)
         OUTPUT_NAME chicken${compiler_SUFFIX})
 endfunction()
 
-function(add_stage name out_compiler)
+function(add_stage name)
     set(suffix ".${name}")
 
     set(CHICKEN_IMPORT_DIR ${CHICKEN_IMPORT_DIR}${suffix})
@@ -294,10 +294,11 @@ function(add_stage name out_compiler)
         SUFFIX ${suffix}
         OPTIONS ${PROGRAM_OPTIONS})
 
+    # Using parent scope to affect all generated commands after this call
+    set(CHICKEN_COMPILER_EXECUTABLE compiler${suffix} PARENT_SCOPE)
+
     set_property(TARGET runtime${suffix} compiler${suffix}
         PROPERTY FOLDER "Bootstrap Stages")
-
-    set(${out_compiler} compiler${suffix} PARENT_SCOPE)
 endfunction()
 
 # Bootstrapping when cross-compiling is quite messy process due to necessity to
@@ -318,9 +319,9 @@ set(CHICKEN_DATA_DIR "")
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 if(CHICKEN_BOOTSTRAP AND NOT CMAKE_CROSSCOMPILING)
-    add_stage(stage1 CHICKEN_COMPILER)
+    add_stage(stage1)
     list(APPEND CHICKEN_OPTIONS -specialize -types ${CHICKEN_TYPES_DB})
-    add_stage(stage2 CHICKEN_COMPILER)
+    add_stage(stage2)
 else()
     list(APPEND CHICKEN_OPTIONS -specialize -types ${CHICKEN_TYPES_DB})
 endif()
@@ -339,7 +340,7 @@ add_chicken_compiler(compiler
     OPTIONS ${PROGRAM_OPTIONS})
 
 if(NOT CMAKE_CROSSCOMPILING)
-    set(CHICKEN_COMPILER compiler)
+    set(CHICKEN_COMPILER_EXECUTABLE compiler)
 endif()
 
 foreach(module ${runtime_GENERIC_MODULES})
