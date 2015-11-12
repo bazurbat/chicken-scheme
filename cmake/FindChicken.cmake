@@ -114,27 +114,5 @@ set(CHICKEN_STATIC_LIBRARIES ${CHICKEN_STATIC_LIBRARY} ${CHICKEN_EXTRA_LIBRARIES
 # configuration is incomplete but it causes problems when bootstrapping.
 find_package_handle_standard_args(Chicken DEFAULT_MSG CHICKEN_COMPILER)
 
-# Detailed information useful when cross-compiling or debugging setup scripts. 
-if(NOT Chicken_FIND_QUIETLY)
-find_package_message(CHICKEN_INTERPRETER
-    "  CHICKEN_INTERPRETER: ${CHICKEN_INTERPRETER}"
-    "${CHICKEN_INTERPRETER}")
-find_package_message(CHICKEN_INCLUDE_DIR
-    "  CHICKEN_INCLUDE_DIR: ${CHICKEN_INCLUDE_DIR}"
-    "${CHICKEN_INCLUDE_DIR}")
-find_package_message(CHICKEN_LIBRARY
-    "  CHICKEN_LIBRARY: ${CHICKEN_LIBRARY} (${CHICKEN_EXTRA_LIBRARIES})"
-    "${CHICKEN_LIBRARY}")
-find_package_message(CHICKEN_STATIC_LIBRARY
-    "  CHICKEN_STATIC_LIBRARY: ${CHICKEN_STATIC_LIBRARY}"
-    "${CHICKEN_STATIC_LIBRARY}")
-find_package_message(CHICKEN_DATA_DIR
-    "  CHICKEN_DATA_DIR: ${CHICKEN_DATA_DIR}"
-    "${CHICKEN_DATA_DIR}")
-find_package_message(CHICKEN_EXTENSION_DIR
-    "  CHICKEN_EXTENSION_DIR: ${CHICKEN_EXTENSION_DIR}"
-    "${CHICKEN_EXTENSION_DIR}")
-endif()
-
 # Various macros for user CMakeLists.
 include(${CMAKE_CURRENT_LIST_DIR}/ChickenUse.cmake)
