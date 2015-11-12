@@ -45,25 +45,6 @@ find_library(CHICKEN_STATIC_LIBRARY libchicken.a
     NO_SYSTEM_ENVIRONMENT_PATH
     NO_CMAKE_SYSTEM_PATH)
 
-if(NOT Chicken_FOUND)
-    find_path(CHICKEN_DATA_DIR
-        NAME setup.defaults chicken-config.cmake
-        HINTS ${_chicken_prefix}/share
-              $ENV{CHICKEN_PREFIX}/share
-        PATHS /usr/local/share /usr/share
-        PATH_SUFFIXES chicken)
-
-    find_path(CHICKEN_EXTENSION_DIR types.db
-        HINTS ${_chicken_lib_dir}/chicken/${CHICKEN_API_VERSION}
-              $ENV{CHICKEN_REPOSITORY}
-        NO_DEFAULT_PATH)
-
-    find_path(CHICKEN_EXTENSION_DIR types.db
-        HINTS $ENV{CHICKEN_PREFIX}/lib
-        PATHS /usr/local/lib /usr/lib
-        PATH_SUFFIXES chicken/${CHICKEN_API_VERSION})
-endif()
-
 if(WIN32)
     # TODO: add check for x64
     set(CHICKEN_EXTRA_LIBRARIES ws2_32)
