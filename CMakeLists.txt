@@ -63,7 +63,7 @@ endif()
 
 set(CHICKEN_RUN      ${CMAKE_SOURCE_DIR}/cmake/ChickenRun.cmake)
 set(CHICKEN_TYPES_DB ${CMAKE_SOURCE_DIR}/types.db)
-set(CHICKEN_DEPENDS  ${CHICKEN_INTERPRETER_EXECUTABLE} -ss
+set(CHICKEN_DEPENDS  ${CHICKEN_INTERPRETER} -ss
     ${CMAKE_CURRENT_LIST_DIR}/chicken-depends.scm)
 
 include(ChickenConfigure)
@@ -295,7 +295,7 @@ function(add_stage name)
         OPTIONS ${PROGRAM_OPTIONS})
 
     # Using parent scope to affect all generated commands after this call
-    set(CHICKEN_COMPILER_EXECUTABLE compiler${suffix} PARENT_SCOPE)
+    set(CHICKEN_COMPILER compiler${suffix} PARENT_SCOPE)
 
     set_property(TARGET runtime${suffix} compiler${suffix}
         PROPERTY FOLDER "Bootstrap Stages")
@@ -340,7 +340,7 @@ add_chicken_compiler(compiler
     OPTIONS ${PROGRAM_OPTIONS})
 
 if(NOT CMAKE_CROSSCOMPILING)
-    set(CHICKEN_COMPILER_EXECUTABLE compiler)
+    set(CHICKEN_COMPILER compiler)
 endif()
 
 foreach(module ${runtime_GENERIC_MODULES})

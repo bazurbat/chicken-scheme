@@ -19,10 +19,10 @@ mark_as_advanced(CHICKEN_API_VERSION)
 # should not cause any harm.
 find_package(Chicken QUIET CONFIG)
 
-find_program(CHICKEN_COMPILER_EXECUTABLE chicken
+find_program(CHICKEN_COMPILER chicken
     CMAKE_FIND_ROOT_PATH_BOTH)
 
-find_program(CHICKEN_INTERPRETER_EXECUTABLE csi
+find_program(CHICKEN_INTERPRETER csi
     CMAKE_FIND_ROOT_PATH_BOTH)
 
 find_path(CHICKEN_INCLUDE_DIR chicken.h
@@ -112,13 +112,13 @@ set(CHICKEN_STATIC_LIBRARIES ${CHICKEN_STATIC_LIBRARY} ${CHICKEN_EXTRA_LIBRARIES
 # Consider Chicken found if we determined that at least the executable is
 # available. Probably more comprehensive logic is needed to warn a user that
 # configuration is incomplete but it causes problems when bootstrapping.
-find_package_handle_standard_args(Chicken DEFAULT_MSG CHICKEN_COMPILER_EXECUTABLE)
+find_package_handle_standard_args(Chicken DEFAULT_MSG CHICKEN_COMPILER)
 
 # Detailed information useful when cross-compiling or debugging setup scripts. 
 if(NOT Chicken_FIND_QUIETLY)
-find_package_message(CHICKEN_INTERPRETER_EXECUTABLE
-    "  CHICKEN_INTERPRETER_EXECUTABLE: ${CHICKEN_INTERPRETER_EXECUTABLE}"
-    "${CHICKEN_INTERPRETER_EXECUTABLE}")
+find_package_message(CHICKEN_INTERPRETER
+    "  CHICKEN_INTERPRETER: ${CHICKEN_INTERPRETER}"
+    "${CHICKEN_INTERPRETER}")
 find_package_message(CHICKEN_INCLUDE_DIR
     "  CHICKEN_INCLUDE_DIR: ${CHICKEN_INCLUDE_DIR}"
     "${CHICKEN_INCLUDE_DIR}")

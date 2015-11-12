@@ -1,7 +1,7 @@
 project(chicken-tests C)
 
-set(CHICKEN_COMPILER_EXECUTABLE    $<TARGET_FILE:compiler>)
-set(CHICKEN_INTERPRETER_EXECUTABLE $<TARGET_FILE:interpreter>)
+set(CHICKEN_COMPILER    $<TARGET_FILE:compiler>)
+set(CHICKEN_INTERPRETER $<TARGET_FILE:interpreter>)
 
 set(CHICKEN_OPTIONS -ignore-repository
     -types ${CHICKEN_TYPES_DB}
