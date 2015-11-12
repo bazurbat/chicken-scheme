@@ -18,6 +18,10 @@ set(CHICKEN_C_FLAGS         "@CHICKEN_C_FLAGS@")
 
 include("${CMAKE_CURRENT_LIST_DIR}/chicken-targets.cmake")
 
+set(CHICKEN_LIBRARY Chicken::runtime)
+set(CHICKEN_COMPILER_EXECUTABLE Chicken::compiler)
+set(CHICKEN_INTERPRETER_EXECUTABLE Chicken::interpreter)
+
 set(CHICKEN_INCLUDE_DIRS ${CHICKEN_INCLUDE_DIR})
 set(CHICKEN_LIBRARIES chicken_libchicken ${CHICKEN_EXTRA_LIBRARIES})
 set(CHICKEN_STATIC_LIBRARIES chicken_libchicken-static ${CHICKEN_EXTRA_LIBRARIES})
