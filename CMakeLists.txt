@@ -410,12 +410,15 @@ set(CHICKEN_DEPENDS "")
 
 ### interpreter
 
-chicken_add_executable(csi
+chicken_add_executable(interpreter
     SOURCES csi.scm
     OPTIONS ${PROGRAM_OPTIONS} ${COMPILER_OPTIONS})
-target_link_libraries(csi runtime)
+target_link_libraries(interpreter runtime)
+set_target_properties(interpreter
+    PROPERTIES OUTPUT_NAME csi)
 
-install(TARGETS csi
+install(TARGETS interpreter
+    EXPORT chicken-targets
     RUNTIME DESTINATION ${INSTALL_BINDIR})
 
 ### utilities
