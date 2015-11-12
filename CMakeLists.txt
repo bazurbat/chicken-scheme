@@ -269,7 +269,7 @@ function(add_chicken_compiler name)
     if(compiler_STATIC)
         target_link_libraries(${name} PRIVATE ${CHICKEN_STATIC_LIBRARIES})
     else()
-        target_link_libraries(${name} PRIVATE ${CHICKEN_LIBRARIES})
+        target_link_libraries(${name} PRIVATE runtime)
     endif()
 
     set_target_properties(${name} PROPERTIES
@@ -347,7 +347,7 @@ foreach(module ${runtime_GENERIC_MODULES})
     chicken_add_library(${module}.import IMPORT_MODULE
         SOURCES ${CHICKEN_IMPORT_DIR}/${module}.import.scm
         OPTIONS ${IMPORT_LIBRARY_OPTIONS})
-    target_link_libraries(${module}.import ${CHICKEN_LIBRARIES})
+    target_link_libraries(${module}.import runtime)
     set_property(TARGET ${module}.import PROPERTY
         FOLDER ${CHICKEN_IMPORT_FOLDER})
 endforeach()
@@ -356,7 +356,7 @@ foreach(module ${runtime_CHICKEN_MODULES})
     chicken_add_library(chicken.${module}.import IMPORT_MODULE
         SOURCES ${CHICKEN_IMPORT_DIR}/chicken.${module}.import.scm
         OPTIONS ${IMPORT_LIBRARY_OPTIONS})
-    target_link_libraries(chicken.${module}.import ${CHICKEN_LIBRARIES})
+    target_link_libraries(chicken.${module}.import runtime)
     set_property(TARGET chicken.${module}.import PROPERTY
         FOLDER ${CHICKEN_IMPORT_FOLDER})
 endforeach()
@@ -365,7 +365,7 @@ foreach(module ${compiler_MODULES})
     chicken_add_library(chicken.compiler.${module}.import IMPORT_MODULE
         SOURCES ${CHICKEN_IMPORT_DIR}/chicken.compiler.${module}.import.scm
         OPTIONS ${IMPORT_LIBRARY_OPTIONS})
-    target_link_libraries(chicken.compiler.${module}.import ${CHICKEN_LIBRARIES})
+    target_link_libraries(chicken.compiler.${module}.import runtime)
     set_property(TARGET chicken.compiler.${module}.import PROPERTY
         FOLDER ${CHICKEN_IMPORT_FOLDER})
 endforeach()
@@ -374,7 +374,7 @@ foreach(module ${chicken_MODULES})
     chicken_add_library(${module}.import IMPORT_MODULE
         SOURCES ${module}.import.scm
         OPTIONS ${IMPORT_LIBRARY_OPTIONS})
-    target_link_libraries(${module}.import ${CHICKEN_LIBRARIES})
+    target_link_libraries(${module}.import runtime)
     set_property(TARGET ${module}.import PROPERTY
         FOLDER ${CHICKEN_IMPORT_FOLDER})
 endforeach()
@@ -413,7 +413,7 @@ set(CHICKEN_DEPENDS "")
 chicken_add_executable(csi
     SOURCES csi.scm
     OPTIONS ${PROGRAM_OPTIONS} ${COMPILER_OPTIONS})
-target_link_libraries(csi ${CHICKEN_LIBRARIES})
+target_link_libraries(csi runtime)
 
 install(TARGETS csi
     RUNTIME DESTINATION ${INSTALL_BINDIR})
@@ -430,7 +430,7 @@ set(utility_PROGRAMS
 foreach(program ${utility_PROGRAMS})
     chicken_add_executable(${program} ${program}.scm
         OPTIONS ${PROGRAM_OPTIONS})
-    target_link_libraries(${program} ${CHICKEN_LIBRARIES})
+    target_link_libraries(${program} runtime)
 endforeach()
 
 install(TARGETS ${utility_PROGRAMS}
