@@ -8,11 +8,6 @@ set_package_properties(Chicken PROPERTIES
     DESCRIPTION "A practical and portable Scheme system"
     URL "http://call-cc.org")
 
-# Used for guessing repository location if everything else fails.
-set(CHICKEN_API_VERSION 7 CACHE STRING
-    "Chicken API version")
-mark_as_advanced(CHICKEN_API_VERSION)
-
 # Do not show error messages if the package was not found: there might be no
 # CMake aware Chicken installed or we are cross-compiling, try to quetly guess
 # the paths instead, this can also pull config file from install prefix, but it

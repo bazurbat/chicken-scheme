@@ -27,6 +27,10 @@ mark_as_advanced(BUILD_STATIC_PROGRAMS)
 option(CHICKEN_BOOTSTRAP "Bootstrap build" YES)
 mark_as_advanced(CHICKEN_BOOTSTRAP)
 
+set(CHICKEN_API_VERSION 7 CACHE STRING
+    "Chicken API version")
+mark_as_advanced(CHICKEN_API_VERSION)
+
 set(CHICKEN_INSTALL_NAME chicken CACHE STRING
     "The name of CHICKEN library and directories")
 mark_as_advanced(CHICKEN_INSTALL_NAME)
