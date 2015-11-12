@@ -21,6 +21,7 @@ find_library(CHICKEN_LIBRARY chicken
     HINTS $ENV{CHICKEN_PREFIX}/lib
     CMAKE_FIND_ROOT_PATH_BOTH)
 
+# Try harder to find matching static library.
 get_filename_component(_chicken_prefix ${CHICKEN_INCLUDE_DIR} PATH)
 get_filename_component(_chicken_lib_dir ${CHICKEN_LIBRARY} PATH)
 if(${_chicken_prefix})
@@ -31,6 +32,9 @@ find_library(CHICKEN_STATIC_LIBRARY libchicken.a
     HINTS ${_chicken_lib_dir}
     NO_SYSTEM_ENVIRONMENT_PATH
     NO_CMAKE_SYSTEM_PATH)
+
+unset(_chicken_prefix)
+unset(_chicken_lib_dir)
 
 if(WIN32)
     # TODO: add check for x64
