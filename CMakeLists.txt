@@ -144,7 +144,7 @@ function(add_chicken_primitive_modules)
 endfunction()
 
 function(add_chicken_runtime name)
-    cmake_parse_arguments(runtime "STATIC;SHARED" "SUFFIX" "OPTIONS" ${ARGN})
+    cmake_parse_arguments(runtime "STATIC;SHARED" "SUFFIX" "" ${ARGN})
 
     if(runtime_STATIC)
         set(type STATIC)
@@ -153,7 +153,6 @@ function(add_chicken_runtime name)
         set(runtime_SHARED TRUE)
     endif()
 
-    set(options ${runtime_OPTIONS})
     set(sources "")
 
     set(scm_sources
@@ -189,7 +188,7 @@ function(add_chicken_runtime name)
             SUFFIX ${runtime_SUFFIX}
             SOURCES ${module}.scm
             EMIT_IMPORTS ${module}
-            OPTIONS ${options})
+            OPTIONS ${LIBRARY_OPTIONS})
     endforeach()
 
     foreach(module ${runtime_CHICKEN_MODULES})
@@ -197,19 +196,19 @@ function(add_chicken_runtime name)
             SUFFIX ${runtime_SUFFIX}
             SOURCES ${module}.scm
             EMIT_IMPORTS chicken.${module}
-            OPTIONS ${options})
+            OPTIONS ${LIBRARY_OPTIONS})
     endforeach()
 
     chicken_wrap_sources(sources ${type}
         SUFFIX ${runtime_SUFFIX}
         SOURCES ${scm_sources}
         C_SOURCES ${c_sources}
-        OPTIONS ${options})
+        OPTIONS ${LIBRARY_OPTIONS})
 
     chicken_wrap_sources(sources ${type}
         SUFFIX ${runtime_SUFFIX}
         SOURCES srfi-69.scm
-        OPTIONS ${options} ${COMPILER_OPTIONS})
+        OPTIONS ${LIBRARY_OPTIONS} ${COMPILER_OPTIONS})
 
     add_library(${name} ${type} ${sources})
     target_compile_definitions(${name} PUBLIC ${CHICKEN_DEFINITIONS})
@@ -288,8 +287,7 @@ function(add_stage name)
     add_chicken_primitive_modules(${suffix})
 
     add_chicken_runtime(runtime${suffix} STATIC
-        SUFFIX ${suffix}
-        OPTIONS ${LIBRARY_OPTIONS})
+        SUFFIX ${suffix})
 
     set(CHICKEN_STATIC_LIBRARY runtime${suffix})
     set(CHICKEN_STATIC_LIBRARIES ${CHICKEN_STATIC_LIBRARY} ${CHICKEN_EXTRA_LIBRARIES})
@@ -334,8 +332,7 @@ unset(CHICKEN_IMPORT_DIR)
 
 add_chicken_primitive_modules()
 
-add_chicken_runtime(runtime SHARED
-    OPTIONS ${LIBRARY_OPTIONS})
+add_chicken_runtime(runtime SHARED)
 
 set(CHICKEN_LIBRARY runtime)
 set(CHICKEN_LIBRARIES ${CHICKEN_LIBRARY} ${CHICKEN_EXTRA_LIBRARIES})
@@ -400,8 +397,7 @@ install(TARGETS compiler
 
 if(BUILD_STATIC_LIBS)
     add_chicken_runtime(runtime-static STATIC
-        SUFFIX -static
-        OPTIONS ${LIBRARY_OPTIONS})
+        SUFFIX -static)
 
     set(CHICKEN_STATIC_LIBRARIES runtime-static ${CHICKEN_EXTRA_LIBRARIES})
 
