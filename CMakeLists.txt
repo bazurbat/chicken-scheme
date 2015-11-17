@@ -392,10 +392,7 @@ install(TARGETS compiler
     RUNTIME DESTINATION ${INSTALL_BINDIR})
 
 if(BUILD_STATIC_LIBS)
-    add_chicken_runtime(runtime-static STATIC
-        SUFFIX -static)
-
-    set(CHICKEN_STATIC_LIBRARIES runtime-static ${CHICKEN_EXTRA_LIBRARIES})
+    add_chicken_runtime(runtime-static STATIC)
 
     install(TARGETS runtime-static
         EXPORT chicken-targets
@@ -438,14 +435,15 @@ install(TARGETS ${utility_PROGRAMS}
 ### static programs
 
 if(BUILD_STATIC_PROGRAMS)
-    chicken_add_executable(csi-static csi.scm STATIC
-        SUFFIX ".static"
+    chicken_add_executable(csi-static STATIC
+        SOURCES csi.scm
         OPTIONS ${PROGRAM_OPTIONS})
-    target_link_libraries(csi-static ${CHICKEN_STATIC_LIBRARIES})
+    target_link_libraries(csi-static runtime-static)
 
-    chicken_add_executable(chicken-bug chicken-bug.scm STATIC
+    chicken_add_executable(chicken-bug STATIC
+        SOURCES chicken-bug.scm
         OPTIONS ${PROGRAM_OPTIONS})
-    target_link_libraries(chicken-bug ${CHICKEN_STATIC_LIBRARIES})
+    target_link_libraries(chicken-bug runtime-static)
 
     install(TARGETS csi-static chicken-bug
         RUNTIME DESTINATION ${INSTALL_BINDIR})
