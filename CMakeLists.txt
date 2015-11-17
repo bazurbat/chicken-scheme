@@ -232,14 +232,12 @@ function(add_chicken_runtime name)
 endfunction()
 
 function(add_chicken_compiler name)
-    cmake_parse_arguments(compiler
-        "STATIC" "SUFFIX" "OPTIONS" ${ARGN})
+    cmake_parse_arguments(compiler "STATIC" "SUFFIX" "" ${ARGN})
 
     if(compiler_STATIC)
         set(type STATIC)
     endif()
 
-    set(options ${compiler_OPTIONS})
     set(sources "")
 
     set(scm_sources
@@ -259,13 +257,13 @@ function(add_chicken_compiler name)
             SUFFIX ${compiler_SUFFIX}
             SOURCES ${module}.scm
             EMIT_IMPORTS chicken.compiler.${module}
-            OPTIONS ${options})
+            OPTIONS ${PROGRAM_OPTIONS})
     endforeach()
 
     chicken_wrap_sources(sources
         SUFFIX ${compiler_SUFFIX}
         SOURCES ${scm_sources}
-        OPTIONS ${options} ${COMPILER_OPTIONS})
+        OPTIONS ${PROGRAM_OPTIONS} ${COMPILER_OPTIONS})
 
     add_executable(${name} ${sources})
 
@@ -293,8 +291,7 @@ function(add_stage name)
     set(CHICKEN_STATIC_LIBRARIES ${CHICKEN_STATIC_LIBRARY} ${CHICKEN_EXTRA_LIBRARIES})
 
     add_chicken_compiler(compiler${suffix} STATIC
-        SUFFIX ${suffix}
-        OPTIONS ${PROGRAM_OPTIONS})
+        SUFFIX ${suffix})
 
     # Using parent scope to affect all generated commands after this call
     set(CHICKEN_COMPILER compiler${suffix} PARENT_SCOPE)
@@ -337,8 +334,7 @@ add_chicken_runtime(runtime SHARED)
 set(CHICKEN_LIBRARY runtime)
 set(CHICKEN_LIBRARIES ${CHICKEN_LIBRARY} ${CHICKEN_EXTRA_LIBRARIES})
 
-add_chicken_compiler(compiler
-    OPTIONS ${PROGRAM_OPTIONS})
+add_chicken_compiler(compiler)
 
 if(NOT CMAKE_CROSSCOMPILING)
     set(CHICKEN_COMPILER compiler)
