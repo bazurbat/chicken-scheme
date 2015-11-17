@@ -35,7 +35,7 @@ set(CHICKEN_INSTALL_NAME chicken CACHE STRING
     "The name of CHICKEN library and directories")
 mark_as_advanced(CHICKEN_INSTALL_NAME)
 
-set(CHICKEN_TARGET_NAME  ${CHICKEN_INSTALL_NAME} CACHE STRING
+set(CHICKEN_TARGET_NAME ${CHICKEN_INSTALL_NAME} CACHE STRING
     "The name of target CHICKEN library and directories")
 set(CHICKEN_TARGET_FEATURES "" CACHE STRING
     "Target features")
@@ -63,7 +63,6 @@ elseif(XCODE_VERSION)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/build)
     set(CHICKEN_REPOSITORY             ${PROJECT_BINARY_DIR}/build)
 endif()
-
 
 set(CHICKEN_RUN      ${CMAKE_SOURCE_DIR}/cmake/ChickenRun.cmake)
 set(CHICKEN_TYPES_DB ${CMAKE_SOURCE_DIR}/types.db)
@@ -320,8 +319,7 @@ add_chicken_primitive_modules()
 
 add_chicken_runtime(runtime SHARED)
 
-set(CHICKEN_LIBRARY runtime)
-set(CHICKEN_LIBRARIES ${CHICKEN_LIBRARY} ${CHICKEN_EXTRA_LIBRARIES})
+set(CHICKEN_LIBRARIES runtime)
 
 add_chicken_compiler(compiler)
 target_link_libraries(compiler runtime)
@@ -389,6 +387,8 @@ if(BUILD_STATIC_LIBS)
         ARCHIVE DESTINATION ${INSTALL_LIBDIR})
 endif()
 
+# Do not use automatic dependency extraction for misc utilities and tests to
+# speed up the build.
 set(CHICKEN_DEPENDS "")
 
 ### interpreter
@@ -554,20 +554,3 @@ endif()
 ### tests
 
 add_subdirectory(tests EXCLUDE_FROM_ALL)
-
-### cpack
-
-set(CPACK_PACKAGE_NAME "CHICKEN")
-set(CPACK_PACKAGE_VERSION_MAJOR 4)
-set(CPACK_PACKAGE_VERSION_MINOR 9)
-set(CPACK_PACKAGE_VERSION_PATCH 1)
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A practical and portable Scheme system")
-set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
-
-if(UNIX)
-    set(CPACK_GENERATOR STGZ)
-elseif(MSVC)
-    set(CPACK_GENERATOR NSIS)
-endif()
-
-include(CPack)

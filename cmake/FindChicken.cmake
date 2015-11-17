@@ -2,8 +2,7 @@
 
 # Do not show error messages if the package was not found: there might be no
 # CMake aware Chicken installed or we are cross-compiling, try to quetly guess
-# the paths instead, this can also pull config file from install prefix, but it
-# should not cause any harm.
+# the paths instead.
 find_package(Chicken QUIET CONFIG)
 
 find_program(CHICKEN_COMPILER chicken
