@@ -24,7 +24,7 @@ cmake_dependent_option(BUILD_STATIC_PROGRAMS "Build static programs" YES
     "BUILD_STATIC_LIBS" NO)
 mark_as_advanced(BUILD_STATIC_PROGRAMS)
 
-option(CHICKEN_BOOTSTRAP "Bootstrap build" YES)
+option(CHICKEN_BOOTSTRAP "Bootstrap build" NO)
 mark_as_advanced(CHICKEN_BOOTSTRAP)
 
 set(CHICKEN_API_VERSION 7 CACHE STRING
