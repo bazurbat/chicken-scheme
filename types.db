@@ -731,7 +731,7 @@
       ((float) (float) 
        (##core#inline_allocate ("C_a_i_flonum_plus" 4) #(1) '1.0)))
 
-(argc+argv (#(procedure #:clean) argc+argv () fixnum (list-of string) fixnum))
+(argc+argv (#(procedure #:clean) argc+argv () fixnum pointer))
 (argv (#(procedure #:clean) argv () (list-of string)))
 (arithmetic-shift (#(procedure #:clean #:enforce) arithmetic-shift (number number) number))
 
@@ -775,7 +775,7 @@
 (condition->list (#(procedure #:clean #:enforce) condition->list ((struct condition)) (list-of (pair symbol *))))
 (continuation-capture (#(procedure #:enforce) continuation-capture ((procedure ((struct continuation)) . *)) *))
 (continuation-graft (#(procedure #:clean #:enforce) continuation-graft ((struct continuation) (procedure () . *)) *))
-(continuation-return (#(procedure #:enforce) continuation-return (procedure #!rest) . *)) ;XXX make return type more specific?
+(continuation-return (#(procedure #:enforce) continuation-return ((struct continuation) #!rest) . *)) ;XXX make return type more specific?
 
 (continuation? (#(procedure #:pure #:predicate (struct continuation)) continuation? (*) boolean))
 
@@ -2631,7 +2631,7 @@
 (tcp-accept-ready? (#(procedure #:clean #:enforce) tcp-accept-ready? ((struct tcp-listener)) boolean))
 (tcp-accept-timeout (#(procedure #:clean #:enforce) tcp-accept-timeout (#!optional (or false number)) (or false number)))
 (tcp-addresses (#(procedure #:clean #:enforce) tcp-addresses (port) string string))
-(tcp-buffer-size (#(procedure #:clean #:enforce) tcp-buffer-size (#!optional fixnum) fixnum))
+(tcp-buffer-size (#(procedure #:clean #:enforce) tcp-buffer-size (#!optional (or false fixnum)) (or false fixnum)))
 (tcp-close (#(procedure #:clean #:enforce) tcp-close ((struct tcp-listener)) undefined))
 (tcp-connect (#(procedure #:clean #:enforce) tcp-connect (string #!optional fixnum) input-port output-port))
 (tcp-connect-timeout (#(procedure #:clean #:enforce) tcp-connect-timeout (#!optional (or false number)) (or false number)))
