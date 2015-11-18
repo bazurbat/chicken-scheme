@@ -14,10 +14,16 @@ mark_as_advanced(CHICKEN_INCLUDE_DIR)
 
 include(${CMAKE_CURRENT_LIST_DIR}/chicken-targets.cmake)
 
-set(CHICKEN_COMPILER    Chicken::compiler    CACHE FILEPATH "")
-set(CHICKEN_INTERPRETER Chicken::interpreter CACHE FILEPATH "")
-set(CHICKEN_LIBRARY     Chicken::runtime     CACHE FILEPATH "")
-mark_as_advanced(CHICKEN_COMPILER CHICKEN_INTERPRETER CHICKEN_LIBRARY)
+if(NOT CHICKEN_COMPILER)
+    get_target_property(CHICKEN_COMPILER Chicken::compiler LOCATION)
+endif()
+
+if(NOT CHICKEN_INTERPRETER)
+    get_target_property(CHICKEN_INTERPRETER Chicken::interpreter LOCATION)
+endif()
+
+set(CHICKEN_LIBRARY Chicken::runtime CACHE FILEPATH "")
+mark_as_advanced(CHICKEN_LIBRARY)
 
 set(CHICKEN_DEFINITIONS   "@CHICKEN_DEFINITIONS@" CACHE STRING "")
 set(CHICKEN_C_FLAGS       "@CHICKEN_C_FLAGS@"     CACHE STRING "")
