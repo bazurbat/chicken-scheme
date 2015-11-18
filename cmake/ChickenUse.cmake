@@ -410,58 +410,48 @@ function(chicken_add_module name)
     endif()
 endfunction()
 
-# Used for installing modules. Needs more work.
-function(chicken_install_modules name)
-    cmake_parse_arguments(install
-        ""
-        ""
-        "TARGETS;PROGRAMS;FILES"
+function(chicken_install)
+    cmake_parse_arguments(install "MODULES" "EXTENSION" "TARGETS;FILES"
         ${ARGN})
 
-    get_property(modules DIRECTORY PROPERTY CHICKEN_MODULES)
-
-    find_package_handle_standard_args(ChickenConfig DEFAULT_MSG
-        Chicken_CONFIG
-        CHICKEN_EXTENSION_DIR CHICKEN_DATA_DIR
-        CHICKEN_RUNTIME_DIR CHICKEN_LIBRARY_DIR)
-    if(NOT CHICKENCONFIG_FOUND)
-        message(FATAL_ERROR "Chicken config was not found, can not install extensions.")
+    if(install_MODULES)
+        get_property(modules DIRECTORY PROPERTY CHICKEN_MODULES)
+        foreach(module ${modules})
+            list(APPEND install_TARGETS ${module})
+        endforeach()
     endif()
 
-    foreach(m ${modules})
-        install(TARGETS ${m}
-            LIBRARY DESTINATION ${CHICKEN_EXTENSION_DIR})
-    endforeach()
     if(install_TARGETS)
         install(TARGETS ${install_TARGETS}
             RUNTIME DESTINATION ${CHICKEN_RUNTIME_DIR}
             LIBRARY DESTINATION ${CHICKEN_EXTENSION_DIR}
             ARCHIVE DESTINATION ${CHICKEN_EXTENSION_DIR})
     endif()
-    if(install_PROGRAMS)
-        install(PROGRAMS ${install_PROGRAMS}
-            DESTINATION ${CHICKEN_RUNTIME_DIR})
-    endif()
+
     if(install_FILES)
         install(FILES ${install_FILES}
             DESTINATION ${CHICKEN_EXTENSION_DIR})
     endif()
 
-    get_property(EXTENSION_NAME GLOBAL PROPERTY _CHICKEN_${name}_NAME)
-    get_property(EXTENSION_VERSION GLOBAL PROPERTY _CHICKEN_${name}_VERSION)
-    get_property(EXTENSION_DESCRIPTION GLOBAL PROPERTY _CHICKEN_${name}_DESCRIPTION)
-    get_property(EXTENSION_URL GLOBAL PROPERTY _CHICKEN_${name}_URL)
+    if(install_EXTENSION)
+        set(EXTENSION_NAME ${install_EXTENSION})
+        get_property(EXTENSION_VERSION DIRECTORY PROPERTY
+            CHICKEN_${EXTENSION_NAME}_VERSION)
+        get_property(EXTENSION_DESCRIPTION DIRECTORY PROPERTY
+            CHICKEN_${EXTENSION_NAME}_DESCRIPTION)
+        get_property(EXTENSION_URL DIRECTORY PROPERTY
+            CHICKEN_${EXTENSION_NAME}_URL)
 
-    set(config_in_filename ${CHICKEN_DATA_DIR}/ChickenExtensionConfig.cmake.in)
-    set(config_out_filename ${PROJECT_BINARY_DIR}/${name}-config.cmake)
+        set(config_out  ${PROJECT_BINARY_DIR}/${EXTENSION_NAME}-config.cmake)
+        set(version_out ${PROJECT_BINARY_DIR}/${EXTENSION_NAME}-config-version.cmake)
 
-    set(version_in_filename ${CHICKEN_DATA_DIR}/ChickenExtensionVersion.cmake.in)
-    set(version_out_filename ${PROJECT_BINARY_DIR}/${name}-config-version.cmake)
+        configure_file(${CHICKEN_DATA_DIR}/ChickenExtensionConfig.cmake.in
+            ${config_out} @ONLY)
 
-    if(EXISTS ${config_in_filename})
-        configure_file(${config_in_filename} ${config_out_filename} @ONLY)
-        configure_file(${version_in_filename} ${version_out_filename} @ONLY)
-        install(FILES ${config_out_filename} ${version_out_filename}
+        configure_file(${CHICKEN_DATA_DIR}/ChickenExtensionVersion.cmake.in
+            ${version_out} @ONLY)
+
+        install(FILES ${config_out} ${version_out}
             DESTINATION ${CHICKEN_DATA_DIR})
     endif()
 endfunction()
@@ -479,10 +469,9 @@ function(chicken_define_extension name)
     if(NOT extension_URL)
         set(extension_URL "http://wiki.call-cc.org/eggref/4/${name}")
     endif()
-    set_property(GLOBAL PROPERTY _CHICKEN_${name}_NAME ${name})
-    set_property(GLOBAL PROPERTY _CHICKEN_${name}_VERSION ${extension_VERSION})
-    set_property(GLOBAL PROPERTY _CHICKEN_${name}_DESCRIPTION ${extension_DESCRIPTION})
-    set_property(GLOBAL PROPERTY _CHICKEN_${name}_URL ${extension_URL})
+    set_property(DIRECTORY PROPERTY CHICKEN_${name}_VERSION ${extension_VERSION})
+    set_property(DIRECTORY PROPERTY CHICKEN_${name}_DESCRIPTION ${extension_DESCRIPTION})
+    set_property(DIRECTORY PROPERTY CHICKEN_${name}_URL ${extension_URL})
 endfunction()
 
 # A wrapper around find_package to search for Chicken extensions.

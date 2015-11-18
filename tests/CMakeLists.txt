@@ -1,7 +1,7 @@
 project(chicken-tests C)
 
-set(CHICKEN_COMPILER    $<TARGET_FILE:chicken-compiler>)
-set(CHICKEN_INTERPRETER $<TARGET_FILE:csi>)
+set(CHICKEN_COMPILER    $<TARGET_FILE:compiler>)
+set(CHICKEN_INTERPRETER $<TARGET_FILE:interpreter>)
 
 set(CHICKEN_OPTIONS -ignore-repository
     -types ${CHICKEN_TYPES_DB}
@@ -527,7 +527,7 @@ add_chicken_interpreted_test(glob SCRIPT test-glob.scm)
 # compiler/nursery stress test
 
 foreach(s 100000 120000 200000 250000 300000 350000 400000 450000 500000)
-    add_chicken_test(compiler-nursery-stress-${s} chicken-compiler
+    add_chicken_test(compiler-nursery-stress-${s} compiler
         -ignore-repository ${chicken_SOURCE_DIR}/utils.scm -:s${s}
         -output-file tmp.c -include-path ${chicken_SOURCE_DIR}
         -include-path ${CHICKEN_IMPORT_DIR})
@@ -577,7 +577,7 @@ add_chicken_test(private-repository-with-path
 
 # reinstall tests
 
-set(CSC_OPTIONS -compiler $<TARGET_FILE:chicken-compiler> -v
+set(CSC_OPTIONS -compiler $<TARGET_FILE:compiler> -v
     -I${chicken_SOURCE_DIR} -I${chicken_BINARY_DIR}
     -L${chicken_SOURCE_DIR} -L${chicken_BINARY_DIR}
     -rpath ${chicken_BINARY_DIR}
@@ -586,8 +586,8 @@ _chicken_join(CSC_OPTIONS ${CSC_OPTIONS})
 
 set(CSI_OPTIONS "-e (use files setup-api)"
     "-e (register-program \"csc\" \"$<TARGET_FILE:csc>\")"
-    "-e (register-program \"chicken\" \"$<TARGET_FILE:chicken-compiler>\")"
-    "-e (register-program \"csi\" \"$<TARGET_FILE:csi>\")")
+    "-e (register-program \"chicken\" \"$<TARGET_FILE:compiler>\")"
+    "-e (register-program \"csi\" \"$<TARGET_FILE:interpreter>\")")
 _chicken_join(CSI_OPTIONS ${CSI_OPTIONS})
 
 add_chicken_test(reinstall-uninstall
@@ -595,7 +595,7 @@ add_chicken_test(reinstall-uninstall
 
 add_chicken_test(reinstall-install
     $<TARGET_FILE:chicken-install> -t local -l ${CMAKE_CURRENT_SOURCE_DIR}
-    -csi $<TARGET_FILE:csi> reverser:1.0
+    -csi $<TARGET_FILE:interpreter> reverser:1.0
     ENVIRONMENT CSC_OPTIONS=${CSC_OPTIONS} CSI_OPTIONS=${CSI_OPTIONS})
 
 add_chicken_interpreted_test(reinstall-run-rev-app
@@ -603,7 +603,7 @@ add_chicken_interpreted_test(reinstall-run-rev-app
 
 add_chicken_test(reinstall-force
     $<TARGET_FILE:chicken-install> -t local -l ${CMAKE_CURRENT_SOURCE_DIR}
-    -reinstall -force -csi $<TARGET_FILE:csi>
+    -reinstall -force -csi $<TARGET_FILE:interpreter>
     ENVIRONMENT CSC_OPTIONS=${CSC_OPTIONS} CSI_OPTIONS=${CSI_OPTIONS})
 
 add_chicken_interpreted_test(reinstall-run-rev-app-2
@@ -621,7 +621,7 @@ set_tests_properties(reinstall-run-rev-app-2-i PROPERTIES
 # deployment tests
 
 # the same as CSC_OPTIONS but without rpath
-set(CSC_OPTIONS2 -compiler $<TARGET_FILE:chicken-compiler> -v
+set(CSC_OPTIONS2 -compiler $<TARGET_FILE:compiler> -v
     -I${chicken_SOURCE_DIR} -I${chicken_BINARY_DIR}
     -L${chicken_SOURCE_DIR} -L${chicken_BINARY_DIR}
     -include-path ${chicken_SOURCE_DIR})
@@ -636,7 +636,7 @@ add_custom_target(prepare-deployment-tests
 add_dependencies(BUILD_TESTS prepare-deployment-tests)
 
 add_chicken_test(deployment-install $<TARGET_FILE:chicken-install>
-    -t local -l ${CMAKE_CURRENT_SOURCE_DIR} -csi $<TARGET_FILE:csi> reverser
+    -t local -l ${CMAKE_CURRENT_SOURCE_DIR} -csi $<TARGET_FILE:interpreter> reverser
     ENVIRONMENT CSC_OPTIONS=${CSC_OPTIONS2} CSI_OPTIONS=${CSI_OPTIONS}
                 TARGET_LIB_PATH=${chicken_BINARY_DIR})
 set_tests_properties(deployment-install PROPERTIES
@@ -651,7 +651,7 @@ set_tests_properties(deployment-deploy PROPERTIES
     DEPENDS deployment-install)
 
 add_chicken_test(deployment-prefix $<TARGET_FILE:chicken-install>
-    -t local -l ${CMAKE_CURRENT_SOURCE_DIR} -csi $<TARGET_FILE:csi>
+    -t local -l ${CMAKE_CURRENT_SOURCE_DIR} -csi $<TARGET_FILE:interpreter>
     -deploy -prefix rev-app reverser
     ENVIRONMENT CSC_OPTIONS=${CSC_OPTIONS2} CSI_OPTIONS=${CSI_OPTIONS}
                 TARGET_LIB_PATH=${chicken_BINARY_DIR})

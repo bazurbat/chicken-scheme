@@ -27,11 +27,15 @@ mark_as_advanced(BUILD_STATIC_PROGRAMS)
 option(CHICKEN_BOOTSTRAP "Bootstrap build" YES)
 mark_as_advanced(CHICKEN_BOOTSTRAP)
 
+set(CHICKEN_API_VERSION 7 CACHE STRING
+    "Chicken API version")
+mark_as_advanced(CHICKEN_API_VERSION)
+
 set(CHICKEN_INSTALL_NAME chicken CACHE STRING
     "The name of CHICKEN library and directories")
 mark_as_advanced(CHICKEN_INSTALL_NAME)
 
-set(CHICKEN_TARGET_NAME  ${CHICKEN_INSTALL_NAME} CACHE STRING
+set(CHICKEN_TARGET_NAME ${CHICKEN_INSTALL_NAME} CACHE STRING
     "The name of target CHICKEN library and directories")
 set(CHICKEN_TARGET_FEATURES "" CACHE STRING
     "Target features")
@@ -59,7 +63,6 @@ elseif(XCODE_VERSION)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/build)
     set(CHICKEN_REPOSITORY             ${PROJECT_BINARY_DIR}/build)
 endif()
-
 
 set(CHICKEN_RUN      ${CMAKE_SOURCE_DIR}/cmake/ChickenRun.cmake)
 set(CHICKEN_TYPES_DB ${CMAKE_SOURCE_DIR}/types.db)
@@ -140,7 +143,7 @@ function(add_chicken_primitive_modules)
 endfunction()
 
 function(add_chicken_runtime name)
-    cmake_parse_arguments(runtime "STATIC;SHARED" "SUFFIX" "OPTIONS" ${ARGN})
+    cmake_parse_arguments(runtime "STATIC;SHARED" "SUFFIX" "" ${ARGN})
 
     if(runtime_STATIC)
         set(type STATIC)
@@ -149,7 +152,6 @@ function(add_chicken_runtime name)
         set(runtime_SHARED TRUE)
     endif()
 
-    set(options ${runtime_OPTIONS})
     set(sources "")
 
     set(scm_sources
@@ -185,7 +187,7 @@ function(add_chicken_runtime name)
             SUFFIX ${runtime_SUFFIX}
             SOURCES ${module}.scm
             EMIT_IMPORTS ${module}
-            OPTIONS ${options})
+            OPTIONS ${LIBRARY_OPTIONS})
     endforeach()
 
     foreach(module ${runtime_CHICKEN_MODULES})
@@ -193,19 +195,19 @@ function(add_chicken_runtime name)
             SUFFIX ${runtime_SUFFIX}
             SOURCES ${module}.scm
             EMIT_IMPORTS chicken.${module}
-            OPTIONS ${options})
+            OPTIONS ${LIBRARY_OPTIONS})
     endforeach()
 
     chicken_wrap_sources(sources ${type}
         SUFFIX ${runtime_SUFFIX}
         SOURCES ${scm_sources}
         C_SOURCES ${c_sources}
-        OPTIONS ${options})
+        OPTIONS ${LIBRARY_OPTIONS})
 
     chicken_wrap_sources(sources ${type}
         SUFFIX ${runtime_SUFFIX}
         SOURCES srfi-69.scm
-        OPTIONS ${options} ${COMPILER_OPTIONS})
+        OPTIONS ${LIBRARY_OPTIONS} ${COMPILER_OPTIONS})
 
     add_library(${name} ${type} ${sources})
     target_compile_definitions(${name} PUBLIC ${CHICKEN_DEFINITIONS})
@@ -217,35 +219,20 @@ function(add_chicken_runtime name)
 
     set_target_properties(${name} PROPERTIES
         DEFINE_SYMBOL C_BUILDING_LIBCHICKEN
-        PREFIX "" SUFFIX "")
+        OUTPUT_NAME chicken${runtime_SUFFIX})
 
     if(runtime_SHARED)
         if(APPLE)
-        elseif(ANDROID)
-            # actually libraries are not version suffixed on Android but
-            # CHICKEN hardcodes this naming scheme
+        else()
             set_target_properties(${name} PROPERTIES
-                OUTPUT_NAME ${name}${CMAKE_SHARED_LIBRARY_SUFFIX}.${CHICKEN_API_VERSION})
-        elseif(UNIX)
-            set_target_properties(${name} PROPERTIES
-                OUTPUT_NAME ${name}${CMAKE_SHARED_LIBRARY_SUFFIX}.${CHICKEN_API_VERSION})
+                SOVERSION ${CHICKEN_API_VERSION})
         endif()
     endif()
 endfunction()
 
 function(add_chicken_compiler name)
-    cmake_parse_arguments(compiler
-        "STATIC" "SUFFIX;OUTPUT_NAME" "OPTIONS" ${ARGN})
+    cmake_parse_arguments(compiler "" "SUFFIX" "" ${ARGN})
 
-    if(compiler_STATIC)
-        set(type STATIC)
-    endif()
-
-    if(NOT compiler_OUTPUT_NAME)
-        set(compiler_OUTPUT_NAME ${name})
-    endif()
-
-    set(options ${compiler_OPTIONS})
     set(sources "")
 
     set(scm_sources
@@ -265,48 +252,40 @@ function(add_chicken_compiler name)
             SUFFIX ${compiler_SUFFIX}
             SOURCES ${module}.scm
             EMIT_IMPORTS chicken.compiler.${module}
-            OPTIONS ${options})
+            OPTIONS ${PROGRAM_OPTIONS})
     endforeach()
 
     chicken_wrap_sources(sources
         SUFFIX ${compiler_SUFFIX}
         SOURCES ${scm_sources}
-        OPTIONS ${options} ${COMPILER_OPTIONS})
+        OPTIONS ${PROGRAM_OPTIONS} ${COMPILER_OPTIONS})
 
     add_executable(${name} ${sources})
 
-    if(compiler_STATIC)
-        target_link_libraries(${name} PRIVATE ${CHICKEN_STATIC_LIBRARIES})
-    else()
-        target_link_libraries(${name} PRIVATE ${CHICKEN_LIBRARIES})
-    endif()
-
     set_target_properties(${name} PROPERTIES
-        OUTPUT_NAME ${compiler_OUTPUT_NAME})
+        OUTPUT_NAME chicken${compiler_SUFFIX})
 endfunction()
 
-function(add_stage name out_compiler)
+function(add_stage name)
     set(suffix ".${name}")
 
     set(CHICKEN_IMPORT_DIR ${CHICKEN_IMPORT_DIR}${suffix})
 
     add_chicken_primitive_modules(${suffix})
 
-    add_chicken_runtime(libchicken${suffix} STATIC
-        SUFFIX ${suffix}
-        OPTIONS ${LIBRARY_OPTIONS})
+    add_chicken_runtime(runtime${suffix} STATIC
+        SUFFIX ${suffix})
 
-    set(CHICKEN_STATIC_LIBRARY libchicken${suffix})
-    set(CHICKEN_STATIC_LIBRARIES ${CHICKEN_STATIC_LIBRARY} ${CHICKEN_EXTRA_LIBRARIES})
+    add_chicken_compiler(compiler${suffix} STATIC
+        SUFFIX ${suffix})
 
-    add_chicken_compiler(chicken-compiler${suffix} STATIC
-        SUFFIX ${suffix}
-        OPTIONS ${PROGRAM_OPTIONS})
+    target_link_libraries(compiler${suffix} runtime${suffix})
 
-    set_property(TARGET libchicken${suffix} chicken-compiler${suffix}
+    # Using parent scope to affect all generated commands after this call
+    set(CHICKEN_COMPILER compiler${suffix} PARENT_SCOPE)
+
+    set_property(TARGET runtime${suffix} compiler${suffix}
         PROPERTY FOLDER "Bootstrap Stages")
-
-    set(${out_compiler} chicken-compiler${suffix} PARENT_SCOPE)
 endfunction()
 
 # Bootstrapping when cross-compiling is quite messy process due to necessity to
@@ -327,34 +306,33 @@ set(CHICKEN_DATA_DIR "")
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 if(CHICKEN_BOOTSTRAP AND NOT CMAKE_CROSSCOMPILING)
-    add_stage(stage1 CHICKEN_COMPILER)
-    add_stage(stage2 CHICKEN_COMPILER)
+    add_stage(stage1)
+    list(APPEND CHICKEN_OPTIONS -specialize -types ${CHICKEN_TYPES_DB})
+    add_stage(stage2)
+else()
+    list(APPEND CHICKEN_OPTIONS -specialize -types ${CHICKEN_TYPES_DB})
 endif()
 
 unset(CHICKEN_IMPORT_DIR)
 
 add_chicken_primitive_modules()
 
-list(APPEND CHICKEN_OPTIONS -specialize -types ${CHICKEN_TYPES_DB})
+add_chicken_runtime(runtime SHARED)
 
-add_chicken_runtime(libchicken SHARED
-    OPTIONS ${LIBRARY_OPTIONS})
+set(CHICKEN_LIBRARIES runtime)
 
-set(CHICKEN_LIBRARY libchicken)
-set(CHICKEN_LIBRARIES ${CHICKEN_LIBRARY} ${CHICKEN_EXTRA_LIBRARIES})
-
-add_chicken_compiler(chicken-compiler OUTPUT_NAME chicken
-    OPTIONS ${PROGRAM_OPTIONS})
+add_chicken_compiler(compiler)
+target_link_libraries(compiler runtime)
 
 if(NOT CMAKE_CROSSCOMPILING)
-    set(CHICKEN_COMPILER chicken-compiler)
+    set(CHICKEN_COMPILER compiler)
 endif()
 
 foreach(module ${runtime_GENERIC_MODULES})
     chicken_add_library(${module}.import IMPORT_MODULE
         SOURCES ${CHICKEN_IMPORT_DIR}/${module}.import.scm
         OPTIONS ${IMPORT_LIBRARY_OPTIONS})
-    target_link_libraries(${module}.import ${CHICKEN_LIBRARIES})
+    target_link_libraries(${module}.import runtime)
     set_property(TARGET ${module}.import PROPERTY
         FOLDER ${CHICKEN_IMPORT_FOLDER})
 endforeach()
@@ -363,7 +341,7 @@ foreach(module ${runtime_CHICKEN_MODULES})
     chicken_add_library(chicken.${module}.import IMPORT_MODULE
         SOURCES ${CHICKEN_IMPORT_DIR}/chicken.${module}.import.scm
         OPTIONS ${IMPORT_LIBRARY_OPTIONS})
-    target_link_libraries(chicken.${module}.import ${CHICKEN_LIBRARIES})
+    target_link_libraries(chicken.${module}.import runtime)
     set_property(TARGET chicken.${module}.import PROPERTY
         FOLDER ${CHICKEN_IMPORT_FOLDER})
 endforeach()
@@ -372,7 +350,7 @@ foreach(module ${compiler_MODULES})
     chicken_add_library(chicken.compiler.${module}.import IMPORT_MODULE
         SOURCES ${CHICKEN_IMPORT_DIR}/chicken.compiler.${module}.import.scm
         OPTIONS ${IMPORT_LIBRARY_OPTIONS})
-    target_link_libraries(chicken.compiler.${module}.import ${CHICKEN_LIBRARIES})
+    target_link_libraries(chicken.compiler.${module}.import runtime)
     set_property(TARGET chicken.compiler.${module}.import PROPERTY
         FOLDER ${CHICKEN_IMPORT_FOLDER})
 endforeach()
@@ -381,7 +359,7 @@ foreach(module ${chicken_MODULES})
     chicken_add_library(${module}.import IMPORT_MODULE
         SOURCES ${module}.import.scm
         OPTIONS ${IMPORT_LIBRARY_OPTIONS})
-    target_link_libraries(${module}.import ${CHICKEN_LIBRARIES})
+    target_link_libraries(${module}.import runtime)
     set_property(TARGET ${module}.import PROPERTY
         FOLDER ${CHICKEN_IMPORT_FOLDER})
 endforeach()
@@ -392,33 +370,37 @@ foreach(name ${runtime_GENERIC_MODULES} ${runtime_CHICKEN_MODULES}
         LIBRARY DESTINATION ${INSTALL_EGGDIR})
 endforeach()
 
-install(TARGETS libchicken chicken-compiler
+install(TARGETS runtime
     EXPORT chicken-targets
     ARCHIVE DESTINATION ${INSTALL_LIBDIR}
-    LIBRARY DESTINATION ${INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${INSTALL_LIBDIR})
+
+install(TARGETS compiler
+    EXPORT chicken-targets
     RUNTIME DESTINATION ${INSTALL_BINDIR})
 
 if(BUILD_STATIC_LIBS)
-    add_chicken_runtime(libchicken-static STATIC
-        OPTIONS ${LIBRARY_OPTIONS})
+    add_chicken_runtime(runtime-static STATIC)
 
-    set(CHICKEN_STATIC_LIBRARIES libchicken-static ${CHICKEN_EXTRA_LIBRARIES})
-
-    install(TARGETS libchicken-static
+    install(TARGETS runtime-static
         EXPORT chicken-targets
         ARCHIVE DESTINATION ${INSTALL_LIBDIR})
 endif()
 
+# Do not use automatic dependency extraction for misc utilities and tests to
+# speed up the build.
 set(CHICKEN_DEPENDS "")
 
 ### interpreter
 
-chicken_add_executable(csi
+chicken_add_executable(interpreter
     SOURCES csi.scm
     OPTIONS ${PROGRAM_OPTIONS} ${COMPILER_OPTIONS})
-target_link_libraries(csi ${CHICKEN_LIBRARIES})
+target_link_libraries(interpreter runtime)
+set_target_properties(interpreter
+    PROPERTIES OUTPUT_NAME csi)
 
-install(TARGETS csi
+install(TARGETS interpreter
     EXPORT chicken-targets
     RUNTIME DESTINATION ${INSTALL_BINDIR})
 
@@ -434,24 +416,24 @@ set(utility_PROGRAMS
 foreach(program ${utility_PROGRAMS})
     chicken_add_executable(${program} ${program}.scm
         OPTIONS ${PROGRAM_OPTIONS})
-    target_link_libraries(${program} ${CHICKEN_LIBRARIES})
+    target_link_libraries(${program} runtime)
 endforeach()
 
 install(TARGETS ${utility_PROGRAMS}
-    EXPORT chicken-targets
     RUNTIME DESTINATION ${INSTALL_BINDIR})
 
 ### static programs
 
 if(BUILD_STATIC_PROGRAMS)
-    chicken_add_executable(csi-static csi.scm STATIC
-        SUFFIX ".static"
+    chicken_add_executable(csi-static STATIC
+        SOURCES csi.scm
         OPTIONS ${PROGRAM_OPTIONS})
-    target_link_libraries(csi-static ${CHICKEN_STATIC_LIBRARIES})
+    target_link_libraries(csi-static runtime-static)
 
-    chicken_add_executable(chicken-bug chicken-bug.scm STATIC
+    chicken_add_executable(chicken-bug STATIC
+        SOURCES chicken-bug.scm
         OPTIONS ${PROGRAM_OPTIONS})
-    target_link_libraries(chicken-bug ${CHICKEN_STATIC_LIBRARIES})
+    target_link_libraries(chicken-bug runtime-static)
 
     install(TARGETS csi-static chicken-bug
         RUNTIME DESTINATION ${INSTALL_BINDIR})
@@ -521,7 +503,7 @@ install(FILES README LICENSE
 
 install(EXPORT chicken-targets
     DESTINATION ${INSTALL_DATADIR}
-    NAMESPACE chicken_)
+    NAMESPACE Chicken::)
 
 ### config
 
@@ -572,20 +554,3 @@ endif()
 ### tests
 
 add_subdirectory(tests EXCLUDE_FROM_ALL)
-
-### cpack
-
-set(CPACK_PACKAGE_NAME "CHICKEN")
-set(CPACK_PACKAGE_VERSION_MAJOR 4)
-set(CPACK_PACKAGE_VERSION_MINOR 9)
-set(CPACK_PACKAGE_VERSION_PATCH 1)
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A practical and portable Scheme system")
-set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
-
-if(UNIX)
-    set(CPACK_GENERATOR STGZ)
-elseif(MSVC)
-    set(CPACK_GENERATOR NSIS)
-endif()
-
-include(CPack)
