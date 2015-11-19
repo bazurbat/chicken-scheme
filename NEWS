@@ -19,6 +19,8 @@
      declared types exactly.  Specializations are matched from first to
      last to resolve ambiguities (#1214).
   - Compiler rewrites for char{<,>,<=,>=,=}? are now safe (#1122).
+  - When requesting to emit import libraries that don't exist, the
+     compiler now gives an error instead of quietly continuing (#1188).
 
 - Core libraries
    - SRFI-18: thread-join! no longer gives an error when passed a
