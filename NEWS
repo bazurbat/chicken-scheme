@@ -18,6 +18,7 @@
      work, removing the requirement for the inferred types to match
      declared types exactly.  Specializations are matched from first to
      last to resolve ambiguities (#1214).
+  - Compiler rewrites for char{<,>,<=,>=,=}? are now safe (#1122).
 
 - Core libraries
    - SRFI-18: thread-join! no longer gives an error when passed a
