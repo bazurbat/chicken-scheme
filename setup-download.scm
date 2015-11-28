@@ -355,6 +355,8 @@
 			   (else
 			    (set! version v)))
 		     (open-input-string ln))))
+		((irregex-match "^[ ]*\\(error .*\\)[ ]*$" ln)
+		 (open-input-string ln)) ; get-files deals with errors
 		((string-every char-set:whitespace ln)
 		 (skip))
 		(else
