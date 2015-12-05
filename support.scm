@@ -168,7 +168,7 @@
 	((string? x) (string->symbol x))
 	(else (string->symbol (sprintf "~a" x))) ) )
 
-(define (backslashify s) (string-translate (->string s) "\\" "\\\\"))
+(define (backslashify s) (string-translate* (->string s) '(("\\" . "\\\\"))))
 
 (define (uncommentify s) (string-translate* (->string s) '(("*/" . "*_/"))))
   

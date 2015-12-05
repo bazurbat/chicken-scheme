@@ -1827,6 +1827,7 @@ C_fctexport C_cpsproc(C_dump_heap_state) C_noret;
 C_fctexport C_cpsproc(C_filter_heap_objects) C_noret;
 
 C_fctexport time_t C_fcall C_seconds(C_long *ms) C_regparm;
+C_fctexport C_word C_i_dump_statistical_profile();
 C_fctexport C_word C_a_i_list(C_word **a, int c, ...);
 C_fctexport C_word C_a_i_string(C_word **a, int c, ...);
 C_fctexport C_word C_a_i_record(C_word **a, int c, ...);
