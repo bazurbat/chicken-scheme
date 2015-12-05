@@ -265,7 +265,7 @@
  simplified-ops
  simplify-named-call
  simplify-type
- slashify
+ backslashify
  sort-symbols
  source-filename
  source-info->string

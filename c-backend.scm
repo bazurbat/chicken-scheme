@@ -236,7 +236,7 @@
 		    (fn (car subs)) )
 	       (when name
 		 (if emit-trace-info
-		     (gen #t "C_trace(\"" (slashify name-str) "\");")
+		     (gen #t "C_trace(\"" (backslashify name-str) "\");")
 		     (gen #t "/* " (uncommentify name-str) " */") ) )
 	       (cond ((eq? '##core#proc (node-class fn))
 		      (gen #\{)
