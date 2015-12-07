@@ -148,6 +148,7 @@
 ; (##core#let-module-alias ((<alias> <name>) ...) <body>)
 ; (##core#the <type> <strict?> <exp>)
 ; (##core#typecase <info> <exp> (<type> <body>) ... [(else <body>)])
+; (##core#debug-event {<event> <loc>})
 ; (<exp> {<exp>})
 
 ; - Core language:
@@ -166,6 +167,7 @@
 ; [##core#inline_update {<name> <type>} <exp>]
 ; [##core#inline_loc_ref {<type>} <exp>]
 ; [##core#inline_loc_update {<type>} <exp> <exp>]
+; [##core#debug-event {<event> <loc> <ln>}]
 ; [##core#call {<safe-flag> [<debug-info>]} <exp-f> <exp>...]
 ; [##core#callunit {<unitname>} <exp>...]
 ; [##core#switch {<count>} <exp> <const1> <body1> ... <defaultbody>]
@@ -194,6 +196,7 @@
 ; [##core#inline_loc_ref {<type>} <exp>]
 ; [##core#inline_loc_update {<type>} <exp> <exp>]
 ; [##core#inline_unboxed {<op>} <exp> ...]
+; [##core#debug-event {<index> <event> <loc> <ln>}]
 ; [##core#closure {<count>} <exp>...]
 ; [##core#box {} <exp>]
 ; [##core#unbox {} <exp>]
@@ -202,7 +205,7 @@
 ; [##core#updatebox {} <exp> <exp>]
 ; [##core#update_i {<index>} <exp> <exp>]
 ; [##core#updatebox_i {} <exp> <exp>]
-; [##core#call {<safe-flag> [<debug-info> [<call-id> <customizable-flag>]]} <exp-f> <exp>...]
+; [##core#call {<dbg-info-index> <safe-flag> [<debug-info> [<call-id> <customizable-flag>]]} <exp-f> <exp>...]
 ; [##core#callunit {<unitname>} <exp>...]
 ; [##core#cond <exp> <exp> <exp>]
 ; [##core#local {<index>}]
@@ -305,6 +308,7 @@
 (define unsafe #f)
 (define foreign-declarations '())
 (define emit-trace-info #f)
+(define emit-debug-info #f)
 (define block-compilation #f)
 (define line-number-database-size default-line-number-database-size)
 (define target-heap-size #f)
@@ -665,7 +669,13 @@
 				     (se2 (##sys#extend-se se vars aliases))
 				     (body0 (##sys#canonicalize-body 
 					     obody se2 compiler-syntax-enabled))
-				     (body (walk body0 (append aliases e) se2 #f #f dest ln))
+				     (body (walk
+					    (if emit-debug-info
+						`(##core#begin
+						  (##core#debug-event "C_DEBUG_ENTRY" ',dest)
+						  ,body0)
+						body0)
+					    (append aliases e) se2 #f #f dest ln))
 				     (llist2 
 				      (build-lambda-list
 				       aliases argc
@@ -969,7 +979,13 @@
 						  (##sys#alias-global-hook var #t dest)))
 				    (when safe-globals-flag
 				      (mark-variable var '##compiler#always-bound-to-procedure)
-				      (mark-variable var '##compiler#always-bound)))
+				      (mark-variable var '##compiler#always-bound))
+				    (when emit-debug-info
+				      (let ((tmp (gensym)))
+					(set! val
+					  `(let ((,tmp ,val))
+					     (##core#debug-event "C_DEBUG_GLOBAL_ASSIGN" ',var)
+					     ,tmp)))))
 				  (cond ((##sys#macro? var)
 					 (warning 
 					  (sprintf "assigned global variable `~S' is syntax ~A"
@@ -982,6 +998,14 @@
 				  (when (keyword? var)
 				    (warning (sprintf "assignment to keyword `~S'" var) ))
 				  `(set! ,var ,(walk val e se var0 (memq var e) h ln))))))
+
+			((##core#debug-event)
+			 `(##core#debug-event
+			   ,(unquotify (cadr x) se)
+			   ,ln ; this arg is added - from this phase on ##core#debug-event has an additional argument!
+			   ,@(map (lambda (arg)
+				    (unquotify (walk arg e se #f #f h ln) se))
+				  (cddr x))))
 
 			((##core#inline)
 			 `(##core#inline
@@ -1751,7 +1775,7 @@
 	   (mark-variable id '##compiler#callback-lambda)
 	   (cps-lambda id (first (node-parameters lam)) (node-subexpressions lam) k) ) )
 	((##core#inline ##core#inline_allocate ##core#inline_ref ##core#inline_update ##core#inline_loc_ref 
-			##core#inline_loc_update)
+			##core#inline_loc_update ##core#debug-event)
 	 (walk-inline-call class params subs k) )
 	((##core#call) (walk-call (car subs) (cdr subs) params k))
 	((##core#callunit) (walk-call-unit (first params) k))
@@ -2342,7 +2366,7 @@
 		 val) ) )
 
 	  ((if ##core#call ##core#inline ##core#inline_allocate ##core#callunit 
-	       ##core#inline_ref ##core#inline_update 
+	       ##core#inline_ref ##core#inline_update ##core#debug-event
 	       ##core#switch ##core#cond ##core#direct_call ##core#recurse ##core#return 
 	       ##core#inline_loc_ref
 	       ##core#inline_loc_update)
@@ -2524,7 +2548,9 @@
         (signatures '()) 
 	(fastinits 0) 
 	(fastrefs 0) 
-	(fastsets 0) )
+	(fastsets 0)
+        (dbg-index 0)
+        (debug-info '()))
 
     (define (walk-var var e e-count sf)
       (cond [(posq var e)
@@ -2711,11 +2737,20 @@
 		       (list (walk (car subs) e e-count here boxes)) ) ) ) ) ) )
 
 	  ((##core#call) 
-	   (let ([len (length (cdr subs))])
+	   (let* ((len (length (cdr subs)))
+		  (p2 (pair? (cdr params)))
+		  (name (and p2 (second params)))
+		  (name-str (source-info->string name)))
 	     (set! signatures (lset-adjoin = signatures len)) 
 	     (when (and (>= (length params) 3) (eq? here (third params)))
 	       (set! looping (add1 looping)) )
-	     (make-node class params (mapwalk subs e e-count here boxes)) ) )
+	     (if (and emit-debug-info name)
+		 (let ((info (list dbg-index 'C_DEBUG_CALL "" name-str)))
+		   (set! params (cons dbg-index params))
+		   (set! debug-info (cons info debug-info))
+		   (set! dbg-index (add1 dbg-index)))
+		 (set! params (cons #f params)))
+	     (make-node class params (mapwalk subs e e-count here boxes))))
 
 	  ((##core#recurse)
 	   (when (first params) (set! looping (add1 looping)))
@@ -2766,6 +2801,13 @@
 		       (cons* 
 			const body
 			(loop (sub1 j) (cddr subs) (max (- allocated a0) ma))))))))))
+
+	  ((##core#debug-event)
+	   (let* ((i dbg-index)
+		  (params (cons i params)))
+	     (set! debug-info (cons params debug-info))
+	     (set! dbg-index (add1 dbg-index))
+	     (make-node class params '())))
 
 	  (else (make-node class params (mapwalk subs e e-count here boxes)) ) ) ) )
     
@@ -2819,5 +2861,9 @@
 	(debugging 'o "fast global references" fastrefs))
       (when (positive? fastsets)
 	(debugging 'o "fast global assignments" fastsets))
-      (values node2 (##sys#fast-reverse literals)
-              (##sys#fast-reverse lambda-info-literals) lambda-table) ) ) )
+      (values node2
+              (##sys#fast-reverse literals)
+              (##sys#fast-reverse lambda-info-literals)
+              lambda-table
+              (##sys#fast-reverse debug-info))))
+)

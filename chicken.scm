@@ -136,7 +136,8 @@
 		 (case level
 		   ((0) (set! options (cons* 'no-lambda-info 'no-trace options)))
 		   ((1) (set! options (cons 'no-trace options)))
-		   (else (set! options (cons 'scrutinize options))))
+		   ((2) (set! options (cons 'scrutinize options)))
+		   (else (set! options (cons* 'scrutinize 'debug-info options))))
 		 (loop (cdr rest)) ) )
 	      ((memq o valid-compiler-options) (loop rest))
 	      ((memq o valid-compiler-options-with-argument)

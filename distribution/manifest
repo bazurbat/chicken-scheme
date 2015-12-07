@@ -38,6 +38,10 @@ stub.c
 support.c
 tcp.c
 utils.c
+feathers.in
+feathers.bat.in
+feathers.tcl
+feathers.1
 buildversion
 buildbranch
 c-backend.scm

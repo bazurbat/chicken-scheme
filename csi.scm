@@ -334,7 +334,7 @@ EOF
 				[xn (eval n)] )
 			   (dump xe xn) ) )
 			((r) (report))
-			((q) (##sys#quit-hook))
+			((q) (##sys#quit-hook #f))
 			((l)
 			 (let ((fns (string-split (read-line))))
 			   (for-each load fns)

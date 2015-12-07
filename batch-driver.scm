@@ -52,9 +52,13 @@
 	      arg) ) ) )
   (initialize-compiler)
   (set! explicit-use-flag (memq 'explicit-use options))
+  (set! emit-debug-info (memq 'debug-info options))
   (let ((initforms `((##core#declare
 		      ,@(append 
 			 default-declarations
+			 (if emit-debug-info
+			     '((uses debugger-client))
+			     '())
 			 (if explicit-use-flag
 			     '()
 			     `((uses ,@units-used-by-default)) ) ) ) ) )
@@ -671,19 +675,19 @@
 			    (when a-only (exit 0))
 			    (begin-time)
 			    ;; Preparation
-			    (receive 
-			     (node literals lliterals lambda-table)
-			     (prepare-for-code-generation node2 db)
-			     (end-time "preparation")
-			     (begin-time)
-			     ;; Code generation
-			     (let ((out (if outfile (open-output-file outfile) (current-output-port))) )
-			       (dribble "generating `~A' ..." outfile)
-			       (generate-code literals lliterals lambda-table out filename dynamic db)
-			       (when outfile
-				 (close-output-port out)))
-			     (end-time "code generation")
-			     (when (memq 't debugging-chicken)
-			       (##sys#display-times (##sys#stop-timer)))
-			     (compiler-cleanup-hook)
-			     (dribble "compilation finished.") ) ) ) ) ) ) ) ) ) ) ) )
+			    (receive (node literals lliterals lambda-table dbg-info)
+				(prepare-for-code-generation node2 db)
+			      (end-time "preparation")
+			      (begin-time)
+			      ;; Code generation
+			      (let ((out (if outfile (open-output-file outfile) (current-output-port))) )
+				(dribble "generating `~A' ..." outfile)
+				(generate-code literals lliterals lambda-table out filename
+					       dynamic db dbg-info)
+				(when outfile
+				  (close-output-port out)))
+			      (end-time "code generation")
+			      (when (memq 't debugging-chicken)
+				(##sys#display-times (##sys#stop-timer)))
+			      (compiler-cleanup-hook)
+			      (dribble "compilation finished.") ) ) ) ) ) ) ) ) ) ) ) )

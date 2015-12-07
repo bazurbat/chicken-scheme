@@ -59,10 +59,12 @@
 
 ;;; Generate target code:
 
-(define (generate-code literals lliterals lambda-table out source-file dynamic db)
+(define (generate-code literals lliterals lambda-table out source-file dynamic db
+                       dbg-info-table)
+  (let ((non-av-proc #f))
+
   ;; Don't truncate floating-point precision!
   (flonum-print-precision (+ flonum-maximum-decimal-exponent 1))
-  (let ()
 
     ;; Some helper procedures
 
@@ -226,18 +228,24 @@
 	     (let* ((args (cdr subs))
 		    (n (length args))
 		    (nc i)
-		    (nf (add1 n)) 
-		    (p2 (pair? (cdr params)))
-		    (name (and p2 (second params)))
+		    (nf (add1 n))
+		    (dbi (first params))
+		    (p2 (pair? (cddr params)))
+		    (name (and p2 (third params)))
 		    (name-str (source-info->string name))
-		    (call-id (and p2 (pair? (cddr params)) (third params))) 
-		    (customizable (and call-id (fourth params)))
+		    (call-id (and p2 (pair? (cdddr params)) (fourth params)))
+		    (customizable (and call-id (fifth params)))
 		    (empty-closure (and customizable (zero? (lambda-literal-closure-size (find-lambda call-id)))))
 		    (fn (car subs)) )
 	       (when name
-		 (if emit-trace-info
-		     (gen #t "C_trace(\"" (backslashify name-str) "\");")
-		     (gen #t "/* " (uncommentify name-str) " */") ) )
+		 (cond (emit-debug-info
+			(when dbi
+			  (gen #t "C_debugger(&(C_debug_info[" dbi "]),"
+			       (if non-av-proc "0,NULL" "c,av") ");")))
+		       (emit-trace-info
+			(gen #t "C_trace(\"" (backslashify name-str) "\");"))
+		       (else
+			(gen #t "/* " (uncommentify name-str) " */") ) ) )
 	       (cond ((eq? '##core#proc (node-class fn))
 		      (gen #\{)
 		      (push-args args i "0")
@@ -382,6 +390,10 @@
 	     (gen (first params) #\()
 	     (expr-args subs i)
 	     (gen #\)) )
+
+	    ((##core#debug-event)
+	     (gen "C_debugger(&(C_debug_info[" (first params) "]),"
+                  (if non-av-proc "0,NULL" "c,av") ")"))
 
 	    ((##core#inline_allocate)
 	     (gen (first params) "(&a," (length subs))
@@ -780,6 +792,8 @@
 		    (gen #t "C_word *a;"
 			 #t "if(toplevel_initialized) {C_kontinue(t1,C_SCHEME_UNDEFINED);}"
 			 #t "else C_toplevel_entry(C_text(\"" topname "\"));")
+		    (when emit-debug-info
+		      (gen #t "C_register_debug_info(C_debug_info);"))
 		    (when disable-stack-overflow-checking
 		      (gen #t "C_disable_overflow_check=1;") )
 		    (unless unit-name
@@ -850,6 +864,7 @@
 			       (else
 				(gen "C_save_and_reclaim((void *)" id #\, n ",av);}")))]))
 		 (else (gen #\})))
+           (set! non-av-proc customizable)
 	   (expression
 	    (lambda-literal-body ll)
 	    (if rest
@@ -868,14 +883,32 @@
     (prototypes)
     (generate-foreign-callback-stubs foreign-callback-stubs db)
     (trampolines)
+    (when emit-debug-info
+      (emit-debug-table dbg-info-table))
     (procedures)
-    (emit-procedure-table-info lambda-table source-file)
+    (emit-procedure-table lambda-table source-file)
     (trailer) ) )
+
+
+;;; Emit global tables for debug-info
+
+(define (emit-debug-table dbg-info-table)
+  (gen #t #t "static C_DEBUG_INFO C_debug_info[]={")
+  (for-each
+   (lambda (info)
+     (gen #t "{" (second info) ",0,")
+     (for-each
+      (lambda (x)
+	(gen "\"" (backslashify (->string x)) "\","))
+      (cddr info))
+     (gen "},"))
+   (sort dbg-info-table (lambda (i1 i2) (< (car i1) (car i2)))))
+  (gen #t "{0,0,NULL,NULL}};\n"))
 
 
 ;;; Emit procedure table:
 
-(define (emit-procedure-table-info lambda-table sf)
+(define (emit-procedure-table lambda-table sf)
   (gen #t #t "#ifdef C_ENABLE_PTABLES"
        #t "static C_PTABLE_ENTRY ptable[" (add1 (##sys#hash-table-size lambda-table)) "] = {")
   (##sys#hash-table-for-each

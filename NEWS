@@ -28,6 +28,10 @@
    - Irregex has been updated to 0.9.4, which fixes severe performance
       problems with {n,m} repeating patterns (thanks to Caolan McMahon).
 
+- Tools
+  - A debugger is now available, known as "feathers", which allows
+    basic source-level debugging of compiled Scheme code.
+
 - Unit "posix": The following posix procedures now work on port
     objects: file-stat, file-size, file-owner, file-permissions,
     file-modification-time, file-access-time, file-change-time,
