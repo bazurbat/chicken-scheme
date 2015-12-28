@@ -2054,6 +2054,7 @@
 		    global
 		    (null? references)
 		    (not (variable-mark sym '##compiler#unused))
+		    (not (variable-hidden? sym))
 		    (not (variable-visible? sym))
 		    (not (variable-mark sym '##compiler#constant)) )
 	   (##sys#notice 

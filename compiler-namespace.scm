@@ -298,6 +298,7 @@
  valid-compiler-options
  valid-compiler-options-with-argument
  validate-type
+ variable-hidden?
  variable-mark
  variable-visible?
  varnode

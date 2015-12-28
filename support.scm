@@ -1588,6 +1588,9 @@
 (define (export-variable sym)
   (mark-variable sym '##compiler#visibility 'exported))
 
+(define (variable-hidden? sym)
+  (eq? (##sys#get sym '##compiler#visibility) 'hidden))
+
 (define (variable-visible? sym)
   (let ((p (##sys#get sym '##compiler#visibility)))
     (case p
