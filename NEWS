@@ -33,6 +33,8 @@
 - Tools
   - A debugger is now available, known as "feathers", which allows
     basic source-level debugging of compiled Scheme code.
+  - A statistical profiler has been added, enabling sampling-based
+    runtime profiling of compiled programs.
 
 - Unit "posix": The following posix procedures now work on port
     objects: file-stat, file-size, file-owner, file-permissions,
