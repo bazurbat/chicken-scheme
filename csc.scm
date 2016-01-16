@@ -27,7 +27,7 @@
 
 (declare
   (block)
-  (uses data-structures ports srfi-1 srfi-13 utils files extras))
+  (uses posix data-structures ports srfi-1 srfi-13 utils files extras))
 
 (define-foreign-variable INSTALL_BIN_HOME c-string "C_INSTALL_BIN_HOME")
 (define-foreign-variable INSTALL_CC c-string "C_INSTALL_CC")
