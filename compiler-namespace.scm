@@ -115,6 +115,7 @@
  enable-inline-files
  enable-specialization
  encode-literal
+ encodeable-literal?
  eq-inline-operator
  estimate-foreign-result-location-size
  estimate-foreign-result-size
