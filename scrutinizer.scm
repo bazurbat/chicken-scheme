@@ -112,10 +112,10 @@
 (define-constant +maximal-union-type-length+ 20)
 (define-constant +maximal-complex-object-constructor-result-type-length+ 256)
 
+(define-inline (unrename-type x) (strip-syntax x))
 
 (define specialization-statistics '())
 (define trail '())
-
 
 (define (multiples n)
   (if (= n 1) "" "s"))
@@ -164,16 +164,13 @@
 	     (lambda (a)
 	       (cond
 		((eq? a 'deprecated)
-		 (report
-		  loc
-		  (sprintf "use of deprecated `~a'" id))
+		 (report loc "use of deprecated `~a'" id)
 		 '(*))
 		((and (pair? a) (eq? (car a) 'deprecated))
 		 (report
 		  loc
-		  (sprintf 
-		      "use of deprecated `~a' - consider `~a'"
-		    id (cadr a)))
+		  "use of deprecated `~a' - consider `~a'"
+		  id (cadr a))
 		 '(*))
 		(else (list a)))))
 	    (else '(*))))
@@ -195,10 +192,10 @@
 	    ((assq id e) =>
 	     (lambda (a)
 	       (cond ((eq? 'undefined (cdr a))
-		      #;(report 
+		      #;(report
 		       loc
-		       (sprintf "access to variable `~a' which has an undefined value"
-			 (real-name id db)))
+		       "access to variable `~a' which has an undefined value"
+		       (real-name id db))
 		      '(*))
 		     (else (list (cdr a))))))
 	    (else (global-result id loc))))
@@ -215,12 +212,11 @@
     (define (always-true t loc x)
       (let ((f (always-true1 t)))
 	(when f
-	  (report-notice 
+	  (report-notice
 	   loc
-	   (sprintf
-	       "expected value of type boolean in conditional but were given a value of type\n  `~a' which is always true:~%~%~a"
-	     t
-	     (pp-fragment x))))
+	   "expected a value of type boolean in conditional, but \
+	    was given a value of type `~a' which is always true:~%~%~a"
+	   t (pp-fragment x)))
 	f))
 
     (define (single what tv loc)
@@ -231,30 +227,31 @@
 		  ((zero? n)
 		   (report
 		    loc
-		    (sprintf "expected ~a a single result, but were given zero results" what))
+		    "expected a single result ~a, but received zero results"
+		    what)
 		   'undefined)
 		  (else
 		   (report
 		    loc
-		    (sprintf "expected ~a a single result, but were given ~a result~a"
-		      what n (multiples n)))
+		    "expected a single result ~a, but received ~a result~a"
+		    what n (multiples n))
 		   (first tv))))))
 
-    (define (report-notice loc desc #!optional (show complain))
-      (when show
+    (define (report-notice loc msg . args)
+      (when complain
 	(##sys#notice
-	 (conc (location-name loc) desc))))
+	 (conc (location-name loc)
+	       (sprintf "~?" msg (map unrename-type args))))))
 
-    (define (report loc desc #!optional (show complain))
-      (when show
+    (define (report loc msg . args)
+      (when complain
 	(warning
-	 (conc (location-name loc) desc))))
+	 (conc (location-name loc)
+	       (sprintf "~?" msg (map unrename-type args))))))
 
-    (define (report-error loc desc #!optional (show complain))
-      (when show
-	(warning 
-	 (conc (location-name loc) desc)))
-      (set! errors #t))
+    (define (report-error loc msg . args)
+      (set! errors #t)
+      (apply report loc msg args))
 
     (define (location-name loc)
       (define (lname loc1)
@@ -320,23 +317,21 @@
 	(cond ((and (not pptype?) (not (match-types xptype ptype typeenv)))
 	       (report
 		loc
-		(sprintf
-		    "~aexpected a value of type `~a', but was given a value of type `~a'"
-		  (pname) 
-		  (resolve xptype typeenv)
-		  (resolve ptype typeenv)))
+		"~aexpected a value of type `~a' but was given a value of type `~a'"
+		(pname)
+		(resolve xptype typeenv)
+		(resolve ptype typeenv))
 	       (values '* #f))
 	      (else
 	       (let-values (((atypes values-rest ok alen)
 			     (procedure-argument-types ptype nargs typeenv)))
 		 (unless ok
-		   (report 
+		   (report
 		    loc
-		    (sprintf
-			"~aexpected ~a argument~a, but was given ~a argument~a"
-		      (pname)
-		      alen (multiples alen)
-		      nargs (multiples nargs))))
+		    "~aexpected ~a argument~a but was given ~a argument~a"
+		    (pname)
+		    alen (multiples alen)
+		    nargs (multiples nargs)))
 		 (do ((actualtypes (cdr actualtypes) (cdr actualtypes))
 		      (atypes atypes (cdr atypes))
 		      (i 1 (add1 i)))
@@ -347,12 +342,11 @@
 			    typeenv)
 		     (report
 		      loc
-		      (sprintf
-			  "~aexpected argument #~a of type `~a', but was given an argument of type `~a'"
-			(pname) 
-			i
-			(resolve (car atypes) typeenv)
-			(resolve (car actualtypes) typeenv)))))
+		      "~aexpected argument #~a of type `~a' but was given an argument of type `~a'"
+		      (pname)
+		      i
+		      (resolve (car atypes) typeenv)
+		      (resolve (car actualtypes) typeenv))))
 		 (when (noreturn-procedure-type? ptype)
 		   (set! noreturn #t))
 		 (let ((r (procedure-result-types ptype values-rest (cdr actualtypes) typeenv)))
@@ -365,9 +359,9 @@
 				     (cond ((match-argument-types (list pt) (cdr actualtypes) typeenv)
 					    (report-notice
 					     loc
-					     (sprintf 
-						 "~athe predicate is called with an argument of type\n  `~a' and will always return true"
-					       (pname) (cadr actualtypes)))
+					     "~athe predicate is called with an argument of type `~a' \
+					      and will always return true"
+					     (pname) (cadr actualtypes))
 					    (when specialize
 					      (specialize-node!
 					       node (cdr args)
@@ -378,9 +372,9 @@
 					      (match-argument-types (list `(not ,pt)) (cdr actualtypes) typeenv))
 					    (report-notice
 					     loc
-					     (sprintf 
-						 "~athe predicate is called with an argument of type\n  `~a' and will always return false"
-					       (pname) (cadr actualtypes)))
+					     "~athe predicate is called with an argument of type `~a' \
+					      and will always return false"
+					     (pname) (cadr actualtypes))
 					    (when specialize
 					      (specialize-node!
 					       node (cdr args)
@@ -521,9 +515,8 @@
 					       (not (= (length r1) (length r2))))
 					  (report
 					   loc
-					   (sprintf
-					       "branches in conditional expression differ in the number of results:~%~%~a"
-					     (pp-fragment n)))
+					   "branches in conditional expression differ in the number of results:~%~%~a"
+					   (pp-fragment n))
 					  '*)
 					 (nor1 r2)
 					 (nor2 r1)
@@ -622,10 +615,9 @@
 			       (not (match-types type rt typeenv)))
 		      ((if strict-variable-types report-error report)
 		       loc
-		       (sprintf 
-			   "assignment of value of type `~a' to toplevel variable `~a' does not match declared type `~a'"
-			 rt var type)
-		       #t))
+		       "assignment of value of type `~a' to toplevel variable `~a' \
+			does not match declared type `~a'"
+		       rt var type))
 		    (when (and (not type) ;XXX global declaration could allow this
 			       (not b)
 			       (not (eq? '* rt))
@@ -655,10 +647,8 @@
 			       (unless (compatible-types? ot rt)
 				 (report
 				  loc
-				  (sprintf 
-				      "variable `~a' of type `~a' was modified to a value of type `~a'"
-				    var ot rt)
-				  #t)))))
+				  "variable `~a' of type `~a' was modified to a value of type `~a'"
+				  var ot rt)))))
 		      ;; don't use "add-to-blist" since the current operation does not affect aliases
 		      (let ((t (if (or strict-variable-types
 				       (not (get db var 'captured)))
@@ -802,23 +792,21 @@
 			  ((null? rt)
 			   (report
 			    loc
-			    (sprintf
-				"expression returns zero values but is declared to have a single result of type `~a'"
-			      t)))
+			    "expression returns zero values but is declared to have \
+			     a single result of type `~a'" t))
 			  (else
 			   (when (> (length rt) 1)
 			     (report
 			      loc
-			      (sprintf 
-				  "expression returns ~a values but is declared to have a single result"
-				(length rt))))
+			      "expression returns ~a values but is declared to have \
+			       a single result" (length rt)))
 			   (when (and (second params)
 				      (not (type<=? t (first rt))))
 			     ((if strict-variable-types report-error report-notice)
 			      loc
-			      (sprintf
-				  "expression returns a result of type `~a', but is declared to return `~a', which is not a subtype"
-				(first rt) t)))))
+			      "expression returns a result of type `~a' but is \
+			       declared to return `~a', which is not a subtype"
+			      (first rt) t))))
 		    (list t)))
 		 ((##core#typecase)
 		  (let* ((ts (walk (first subs) e loc #f #f flow ctags))
@@ -1172,12 +1160,6 @@
 	    ((pair? x)
 	     (cons (subst (car x)) (subst (cdr x))))
 	    (else x)))
-    (define (rename v)
-      (cond ((assq v typeenv) => cdr)
-	    (else
-	     (let ((new (gensym v)))
-	       (set! typeenv (alist-cons v new typeenv))
-	       new))))
     (define (simplify t)
       ;;(dd "simplify/rec: ~s" t)
       (call/cc 
@@ -1189,7 +1171,9 @@
 		     (set! typeenv
 		       (append (map (lambda (v)
 				      (let ((v (if (symbol? v) v (first v))))
-					(cons v (gensym v))) )
+					(let ((v* (gensym v)))
+					  (mark-variable v* '##core#real-name v)
+					  (cons v v*))))
 				    typevars)
 			       typeenv))
 		     (set! constraints 
@@ -1300,7 +1284,6 @@
 				     (lambda (c)
 				       (list v (simplify (cadr c)))))
 				    (else v)))))
-				     
 		     typeenv)
 		   ,(subst t2))))
       (dd "simplify: ~a -> ~a" t t2)
@@ -1771,12 +1754,18 @@
 	   ;; correct, because type variables have to be renamed:
 	   (let-values (((t pred pure) (validate-type new name)))
 	     (unless t
-	       (warning "invalid type specification" name new))
+	       (warning
+		(sprintf "invalid type specification for `~a': ~a"
+			 name
+			 (unrename-type new))))
 	     (when (and old (not (compatible-types? old t)))
 	       (warning
 		(sprintf
-		    "type-definition `~a' for toplevel binding `~a' conflicts with previously loaded type `~a'"
-		  name new old)))
+		 "type definition for toplevel binding `~a' \
+		  conflicts with previously loaded type:\
+		  ~n  New type:      ~a\
+		  ~n  Original type: ~a"
+		 name (unrename-type old) (unrename-type new))))
 	     (mark-variable name '##compiler#type t)
 	     ;; We only allow db-loaded types to affect core code
 	     ;; because core isn't properly namespaced.  User code may
