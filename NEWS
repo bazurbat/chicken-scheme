@@ -28,6 +28,10 @@
 - Core libraries
    - SRFI-18: thread-join! no longer gives an error when passed a
      thread in the "sleeping" state (thanks to Joerg Wittenberger)
+   - SRFI-18: mutex-lock! will not set ownership of mutexes when
+     passed #f as the owner (#1231), not disown a mutex from owner if
+     locking fails for timeout and not keep the last thread which held
+     a mutex until the next lock (thanks to Joerg Wittenberger).
    - SRFI-39: When a parameter's "guard" procedure raises an exception,
      "parameterize" now correctly resets the original values of all
      parameters (fixes #1227, thanks to Joo ChurlSoo).
