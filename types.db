@@ -174,18 +174,21 @@
 (reverse (forall (a) (#(procedure #:clean #:enforce) reverse ((list-of a)) (list-of a)))
          ((null) (null) (let ((#(tmp) #(1))) '())))
 
-(memq (forall (a b) (#(procedure #:clean) memq (a (list-of b)) (or false (list-of b))))
+(memq (forall (a) (#(procedure #:clean) memq (* (list-of a))
+		   (or false (list-of a))))
       ((* null) (let ((#(tmp) #(1))) '#f))
       ((* list) (##core#inline "C_u_i_memq" #(1) #(2))))
 
-(memv (forall (a b) (#(procedure #:clean) memv (a (list-of b)) (or false (list-of b))))
+(memv (forall (a) (#(procedure #:clean) memv (* (list-of a))
+		   (or false (list-of a))))
       ((* null) (let ((#(tmp) #(1))) '#f))
       (((or symbol procedure immediate) list)
        (##core#inline "C_u_i_memq" #(1) #(2))))
 
-(member (forall (a b) (#(procedure #:clean) member
-		       (a (list-of b) #!optional (procedure (b a) *)) ; sic
-		       (or false (list-of b))))
+(member
+ (forall (a b) (#(procedure #:clean) member
+		(a (list-of b) #!optional (procedure (a b) *)) ; sic
+		(or false (list-of b))))
 	((* null) (let ((#(tmp) #(1))) '#f))
 	(((or symbol procedure immediate) list)
 	 (##core#inline "C_u_i_memq" #(1) #(2)))
@@ -197,7 +200,7 @@
       ((* null) (let ((#(tmp) #(1))) '#f))
       ((* (list-of pair)) (##core#inline "C_u_i_assq" #(1) #(2))))
 
-(assv (forall (a b) (#(procedure #:clean) assv (* (list-of (pair a b))) 
+(assv (forall (a b) (#(procedure #:clean) assv (* (list-of (pair a b)))
 		     (or false (pair a b))))
       ((* null) (let ((#(tmp) #(1))) '#f))
       (((or symbol immediate procedure) (list-of pair))
@@ -205,9 +208,9 @@
       ((* (list-of (pair (or symbol procedure immediate) *)))
        (##core#inline "C_u_i_assq" #(1) #(2))))
 
-(assoc (forall (a b c) (#(procedure #:clean) assoc (a (list-of (pair b c))
-						      #!optional (procedure (b a) *)) ; sic
-			(or false (pair b c))))
+(assoc (forall (a b c) (#(procedure #:clean) assoc
+			(a (list-of (pair b c)) #!optional (procedure (a b) *))
+			(or false (pair b c))))   ; sic
        ((* null) (let ((#(tmp) #(1))) '#f))
        (((or symbol procedure immediate) (list-of pair))
 	(##core#inline "C_u_i_assq" #(1) #(2)))
@@ -1202,9 +1205,19 @@
 (->string (procedure ->string (*) string)
 	  ((string) #(1)))
 
-(alist-ref (#(procedure #:clean #:enforce) alist-ref (* (list-of pair) #!optional (procedure (* *) *) *) *))
-(alist-update! (#(procedure #:enforce) alist-update! (* * (list-of pair) #!optional (procedure (* *) *)) *))
-(alist-update (#(procedure #:clean #:enforce) alist-update (* * (list-of pair) #!optional (procedure (* *) *) *) *))
+(alist-ref (forall (a b c d) (#(procedure #:clean) alist-ref (a (list-of (pair b c)) #!optional (procedure (a b) *) d) (or false c d))))
+
+(alist-update!
+ (forall (a b c d)
+	 (#(procedure) alist-update!
+	  (a b (list-of (pair c d)) #!optional (procedure (a c) *))
+	  (list-of (pair c (or b d))))))
+
+(alist-update
+ (forall (a b c d)
+         (#(procedure #:clean) alist-update
+          (a b (list-of (pair c d)) #!optional (procedure (a c) *))
+          (list-of (pair c (or b d))))))
 
 (any? (#(procedure #:pure) any? (*) boolean)
       ((*) (let ((#(tmp) #(1))) '#t)))
@@ -1259,7 +1272,11 @@
 (queue-remove! (#(procedure #:clean #:enforce) queue-remove! ((struct queue)) *))
 (queue? (#(procedure #:pure #:predicate (struct queue)) queue? (*) boolean))
 
-(rassoc (#(procedure #:clean #:enforce) rassoc (* (list-of pair) #!optional (procedure (* *) *)) *))
+(rassoc
+ (forall (a b c) (#(procedure #:clean) rassoc
+                  (a (list-of (pair b c)) #!optional (procedure (a b) *))
+                  (or false (pair b c)))))
+
 (reverse-string-append (#(procedure #:clean #:enforce) reverse-string-append ((list-of string)) string))
 
 (sort
@@ -1851,10 +1868,21 @@
 
 ;; srfi-1
 
-(alist-cons (forall (a b c) (#(procedure #:clean) alist-cons (a b (list-of c)) (pair a (pair b (list-of c))))))
-(alist-copy (forall (a) (#(procedure #:clean #:enforce) alist-copy ((list-of a)) (list-of a))))
-(alist-delete (forall (a b) (#(procedure #:enforce) alist-delete (a (list-of b) #!optional (procedure (a b) *)) list)))
-(alist-delete! (forall (a b) (#(procedure #:enforce) alist-delete! (a (list-of b) #!optional (procedure (a b) *)) undefined)))
+(alist-cons
+ (forall (a b c) (#(procedure #:pure) alist-cons (a b (list-of c))
+		  (pair (pair a b) (list-of c)))))
+(alist-copy
+ (forall (a b) (#(procedure #:clean #:enforce) alist-copy
+		((list-of (pair a b))) (list-of (pair a b)))))
+(alist-delete
+ (forall (a b c) (#(procedure #:clean) alist-delete
+		  (a (list-of (pair b c)) #!optional (procedure (a b) *))
+		  (list-of (pair b c)))))
+(alist-delete!
+ (forall (a b c) (#(procedure) alist-delete!
+		  (a (list-of (pair b c)) #!optional (procedure (a b) *))
+		  (list-of (pair b c)))))
+
 (any (forall (a) (#(procedure #:enforce) any ((procedure (a #!rest) *) (list-of a) #!rest list) *)))
 (append! (#(procedure #:enforce) append! (#!rest list) list))
 
