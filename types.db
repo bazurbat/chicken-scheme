@@ -195,13 +195,13 @@
 	((* (list-of (or symbol procedure immediate)))
 	 (##core#inline "C_u_i_memq" #(1) #(2))))
 
-(assq (forall (a b) (#(procedure #:clean) assq (* (list-of (pair a b)))
-		     (or false (pair a b))))
+(assq (forall (a b c) (#(procedure #:clean) assq (a (list-of (pair b c)))
+		       (or false (pair a c))))
       ((* null) (let ((#(tmp) #(1))) '#f))
       ((* (list-of pair)) (##core#inline "C_u_i_assq" #(1) #(2))))
 
-(assv (forall (a b) (#(procedure #:clean) assv (* (list-of (pair a b)))
-		     (or false (pair a b))))
+(assv (forall (a b c) (#(procedure #:clean) assv (a (list-of (pair b c)))
+		       (or false (pair a c))))
       ((* null) (let ((#(tmp) #(1))) '#f))
       (((or symbol immediate procedure) (list-of pair))
        (##core#inline "C_u_i_assq" #(1) #(2)))
