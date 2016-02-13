@@ -174,13 +174,13 @@
 (reverse (forall (a) (#(procedure #:clean #:enforce) reverse ((list-of a)) (list-of a)))
          ((null) (null) (let ((#(tmp) #(1))) '())))
 
-(memq (forall (a) (#(procedure #:clean) memq (* (list-of a))
-		   (or false (list-of a))))
+(memq (forall (a b) (#(procedure #:clean) memq (a (list-of b))
+                     (or false (pair a (list-of b)))))
       ((* null) (let ((#(tmp) #(1))) '#f))
       ((* list) (##core#inline "C_u_i_memq" #(1) #(2))))
 
-(memv (forall (a) (#(procedure #:clean) memv (* (list-of a))
-		   (or false (list-of a))))
+(memv (forall (a b) (#(procedure #:clean) memv (a (list-of b))
+                     (or false (pair a (list-of b)))))
       ((* null) (let ((#(tmp) #(1))) '#f))
       (((or symbol procedure immediate) list)
        (##core#inline "C_u_i_memq" #(1) #(2))))
