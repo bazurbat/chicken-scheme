@@ -54,6 +54,11 @@
 
 (define +logged-debugging-modes+ '(o x S))
 
+(define (test-debugging-mode mode enabled)
+  (if (symbol? mode)
+      (memq mode enabled)
+      (pair? (lset-intersection eq? mode enabled))))
+
 (define (debugging mode msg . args)
   (define (text)
     (with-output-to-string
@@ -67,15 +72,15 @@
 	(newline))))
   (define (dump txt)
     (fprintf collected-debugging-output "~a|~a" mode txt))
-  (cond ((memq mode debugging-chicken)
+  (cond ((test-debugging-mode mode debugging-chicken)
 	 (let ((txt (text)))
 	   (display txt)
 	   (flush-output)
-	   (when (memq mode +logged-debugging-modes+)
+	   (when (test-debugging-mode mode +logged-debugging-modes+)
 	     (dump txt))
 	   #t))
 	(else
-	 (when (memq mode +logged-debugging-modes+)
+	 (when (test-debugging-mode mode +logged-debugging-modes+)
 	   (dump (text)))
 	 #f)))
 
@@ -87,17 +92,13 @@
 	 (if (pair? mode) (car mode) mode)
 	 ln))
      (string-split text "\n")))
-  (define (test-mode mode set)
-    (if (symbol? mode)
-	(memq mode set)
-	(pair? (lset-intersection eq? mode set))))
-  (cond ((test-mode mode debugging-chicken)
+  (cond ((test-debugging-mode mode debugging-chicken)
 	 (let ((txt (with-output-to-string thunk)))
 	   (display txt)
 	   (flush-output)
-	   (when (test-mode mode +logged-debugging-modes+)
+	   (when (test-debugging-mode mode +logged-debugging-modes+)
 	     (collect txt))))
-	((test-mode mode +logged-debugging-modes+)
+	((test-debugging-mode mode +logged-debugging-modes+)
 	 (collect (with-output-to-string thunk)))))
 
 (define (quit msg . args)
