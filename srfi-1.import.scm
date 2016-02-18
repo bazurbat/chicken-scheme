@@ -66,6 +66,7 @@
    first
    fold
    fold-right
+   for-each
    fourth
    iota
    last
