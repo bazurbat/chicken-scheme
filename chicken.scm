@@ -27,9 +27,10 @@
 
 (declare
   (uses chicken-syntax chicken-ffi-syntax 
-	srfi-1 srfi-4 utils files extras data-structures support
-	compiler optimizer lfa2 compiler-syntax scrutinizer driver platform backend 
-	srfi-69))
+	srfi-1 srfi-4 utils files extras data-structures srfi-69
+	lolevel ; unused, but loaded to make foldable bindings available
+	support compiler optimizer lfa2 compiler-syntax scrutinizer
+	driver platform backend))
 
 
 (include "compiler-namespace")
