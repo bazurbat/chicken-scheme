@@ -854,6 +854,7 @@ EOF
     (let ((update #f)
 	  (scan #f)
 	  (listeggs #f)
+	  (print-repository #f)
           (rx (irregex "([^:]+):(.+)")))
       (setup-proxy (get-environment-variable "http_proxy"))
       (let loop ((args args) (eggs '()))
@@ -862,7 +863,8 @@ EOF
 		 (unless *prefix*
 		   (error
 		    "`-deploy' only makes sense in combination with `-prefix DIRECTORY`")))
-               (cond (update (update-db))
+	       (cond (print-repository (print (repo-path)))
+		     (update (update-db))
 		     (scan (scan-directory scan))
                      (else
 		      (let ((defaults (load-defaults)))
@@ -915,8 +917,8 @@ EOF
                             (string=? arg "--help"))
                         (usage 0))
                        ((string=? arg "-repository")
-                        (print (repo-path))
-                        (exit 0))
+                        (set! print-repository #t)
+                        (loop (cdr args) eggs))
                        ((string=? arg "-force")
                         (set! *force* #t)
                         (loop (cdr args) eggs))
