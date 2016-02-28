@@ -1078,6 +1078,7 @@ typedef void (C_ccall *C_proc)(C_word, C_word *) C_noret;
 
 #if C_STACK_GROWS_DOWNWARD
 # define C_demand(n)              (C_stress && ((C_word)(C_stack_pointer - C_stack_limit) > (n)))
+/* OBSOLETE: */
 # define C_stack_probe(p)         (C_stress && ((C_word *)(p) >= C_stack_limit))
 
 # define C_stack_check1(err)      if(!C_disable_overflow_check) {	\
@@ -1089,6 +1090,7 @@ typedef void (C_ccall *C_proc)(C_word, C_word *) C_noret;
 
 #else
 # define C_demand(n)              (C_stress && ((C_word)(C_stack_limit - C_stack_pointer) > (n)))
+/* OBSOLETE: */
 # define C_stack_probe(p)         (C_stress && ((C_word *)(p) < C_stack_limit))
 
 # define C_stack_check1(err)      if(!C_disable_overflow_check) {	\
