@@ -5,6 +5,7 @@ include(FeatureSummary)
 include(FindPackageHandleStandardArgs)
 
 option(CHICKEN_BUILD_IMPORTS "Compile emitted import libraries" YES)
+option(CHICKEN_USE_TYPES "Try to extract use type information for modules" NO)
 
 if(MSVC)
     # MSBuild goes crazy over this and tries to rebuild everything as many
@@ -135,7 +136,7 @@ function(_chicken_get_options out_var source_file)
 endfunction()
 
 # Helper function for automatic dependecy extraction. Internal.
-function(_chicken_extract_depends out_var dep_path)
+function(_chicken_extract_depends dep_path out_paths out_imports)
     set(imports "")
     set(includes "")
     set(result "")
@@ -162,7 +163,8 @@ function(_chicken_extract_depends out_var dep_path)
         endif()
     endforeach()
 
-    set(${out_var} ${result} PARENT_SCOPE)
+    set(${out_paths} ${result} PARENT_SCOPE)
+    set(${out_imports} ${imports} PARENT_SCOPE)
 endfunction()
 
 # Adds custom commands for calling the CHICKEN compiler and other housekeeping
@@ -186,20 +188,36 @@ function(_chicken_command out_var in_file)
         get_filename_component(out_path ${CMAKE_CURRENT_BINARY_DIR}/${out_name} ABSOLUTE)
     endif()
 
+    # When exported module name does not match actual file name
+    list(GET compile_EMIT_IMPORTS 0 module_name)
+
+    get_property(import_library SOURCE ${in_file}
+        PROPERTY CHICKEN_IMPORT_LIBRARY)
+
     _chicken_get_options(options ${in_file})
 
     set(outputs ${out_path})
     set(imports "")
 
-    foreach(emit ${compile_EMIT_IMPORTS})
-        set(_filename ${CHICKEN_IMPORT_DIR}/${emit}.import.scm)
-        list(APPEND outputs ${_filename})
-        list(APPEND imports ${emit}.import.scm)
-        set_property(SOURCE ${_filename} PROPERTY CHICKEN_IMPORT_LIBRARY YES)
-    endforeach()
+    if(NOT import_library)
+        foreach(emit ${compile_EMIT_IMPORTS})
+            set(_filename ${CHICKEN_IMPORT_DIR}/${emit}.import.scm)
+            list(APPEND outputs ${_filename})
+            list(APPEND imports ${emit}.import.scm)
+            set_property(SOURCE ${_filename} PROPERTY CHICKEN_IMPORT_LIBRARY YES)
+        endforeach()
 
-    get_property(import_library SOURCE ${in_file}
-        PROPERTY CHICKEN_IMPORT_LIBRARY)
+        # Handles common case when single file exports single (possibly
+        # differently named) module. CHICKEN emits only single type file per
+        # input source file. More complexity with custom commands for copying
+        # and dependencies is needed for this hopefully obscure case.  I'm not
+        # ready to properly debug it at this time.
+        if(CHICKEN_USE_TYPES AND module_name)
+            set(_filename ${CHICKEN_IMPORT_DIR}/${module_name}.types)
+            list(APPEND options -emit-type-file ${_filename})
+            list(APPEND outputs ${_filename})
+        endif()
+    endif()
 
     if(CHICKEN_DEPENDS AND NOT import_library)
         string(REGEX REPLACE
@@ -222,10 +240,27 @@ function(_chicken_command out_var in_file)
         endif()
 
         set(xdepends "")
-        _chicken_extract_depends(xdepends ${dep_path})
+        set(ximports "")
+        _chicken_extract_depends(${dep_path} xdepends ximports)
     endif()
 
     set(depends ${compile_DEPENDS} ${xdepends})
+
+    if(CHICKEN_USE_TYPES)
+        set(depends_types "")
+
+        # Skip include files contained in extracted dependencies by default.
+        foreach(name ${compile_DEPENDS} ${ximports})
+            get_filename_component(_name ${name} NAME_WE)
+            set(_filename ${CHICKEN_IMPORT_DIR}/${_name}.types)
+            if(EXISTS ${_filename})
+                list(APPEND options -types ${_filename})
+                list(APPEND depends_types ${_filename})
+            endif()
+        endforeach()
+
+        set(depends ${depends} ${depends_types})
+    endif()
 
     set(chicken_command ${CHICKEN_COMPILER} ${in_path})
 
