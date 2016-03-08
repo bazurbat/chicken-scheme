@@ -2689,7 +2689,7 @@
 		  (set! temporaries temps)
 		  (set! ubtemporaries ubtemps)
 		  (set! allocated alc)
-		  (set! signatures sigs)
+		  (set! signatures (lset-adjoin = sigs argc))
 		  (make-node '##core#proc (list (first params)) '()) ) ) ) ) )
 
 	  ((let)
