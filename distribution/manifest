@@ -15,6 +15,8 @@ csc.c
 csi.c
 eval.c
 data-structures.c
+dbg-stub.c
+debugger-client.c
 ports.c
 files.c
 extras.c
@@ -64,6 +66,7 @@ csibatch.bat
 eval.scm
 extras.scm
 data-structures.scm
+debugger-client.scm
 ports.scm
 files.scm
 chicken-bug.1
@@ -317,6 +320,7 @@ manual-html/Bibliography.html
 manual-html/Bugs and limitations.html
 manual-html/C interface.html
 manual-html/Callbacks.html
+manual-html/Debugging.html
 manual-html/Exceptions.html
 manual-html/Cross development.html
 manual-html/Data representation.html
