@@ -598,7 +598,7 @@
 							    (##sys#canonicalize-extension-path 
 							     id 'require-extension)
 							    #f)) ) ) 
-					(warning 
+					(void 
 					 (sprintf "extension `~A' is currently not installed" realid)))
 				      `(##core#begin ,exp ,(loop (cdr ids))) ) ) ) )
 			    e se dest ldest h ln) ) )
