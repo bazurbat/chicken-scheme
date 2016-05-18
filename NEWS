@@ -1,3 +1,9 @@
+4.11.1
+
+- Runtime system:
+  - C_locative_ref has been deprecated in favor of C_a_i_locative_ref,
+    which is faster because it is inlined (#1260, thanks to Kooda).
+
 4.11.0
 
 - Security fixes
