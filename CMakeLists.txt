@@ -78,7 +78,7 @@ set(IMPORT_LIBRARY_OPTIONS -no-trace)
 set(COMPILER_OPTIONS -extend private-namespace.scm)
 
 if(DEFINED DEBUGBUILD)
-    list(APPEND CHICKEN_OPTIONS -feature debugbuild -verbose)
+    list(APPEND CHICKEN_OPTIONS -feature debugbuild -verbose -debug-info)
 else()
     list(APPEND CHICKEN_OPTIONS -no-warnings)
     list(APPEND PROGRAM_OPTIONS -no-trace)
