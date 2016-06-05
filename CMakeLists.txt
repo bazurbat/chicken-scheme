@@ -160,6 +160,7 @@ function(add_chicken_runtime name)
         chicken-ffi-syntax.scm
         chicken-syntax.scm
         data-structures.scm
+        debugger-client.scm
         eval.scm
         expand.scm
         extras.scm
@@ -471,7 +472,7 @@ install(FILES chicken.h ${CHICKEN_CONFIG_H}
 install(FILES types.db
     DESTINATION ${INSTALL_EGGDIR})
 
-install(FILES setup.defaults chicken-depends.scm
+install(FILES setup.defaults chicken-depends.scm feathers.tcl
     DESTINATION ${INSTALL_DATADIR})
 
 install(FILES
@@ -490,7 +491,8 @@ set(MAN_PAGES
     chicken-status
     chicken-uninstall
     csc
-    csi)
+    csi
+    feathers)
 
 foreach(man ${MAN_PAGES})
     install(FILES ${man}.1
@@ -504,6 +506,13 @@ install(FILES README LICENSE
 install(EXPORT chicken-targets
     DESTINATION ${INSTALL_DATADIR}
     NAMESPACE Chicken::)
+
+### debugger wrapper
+
+configure_file(cmake/feathers.in feathers)
+
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/feathers
+    DESTINATION ${INSTALL_BINDIR})
 
 ### config
 
