@@ -12,17 +12,22 @@ set(CMAKE_MACOSX_RPATH YES)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-include(CMakeDependentOption)
-
 project(chicken C ASM)
 
 option(BUILD_SHARED_LIBS "Build shared libraries" YES)
 option(BUILD_STATIC_LIBS "Build static libraries" NO)
 mark_as_advanced(BUILD_SHARED_LIBS BUILD_STATIC_LIBS)
 
-cmake_dependent_option(BUILD_STATIC_PROGRAMS "Build static programs" YES
-    "BUILD_STATIC_LIBS" NO)
+option(BUILD_STATIC_PROGRAMS "Build static programs" NO)
 mark_as_advanced(BUILD_STATIC_PROGRAMS)
+
+if(BUILD_STATIC_PROGRAMS)
+    set(BUILD_STATIC_LIBS YES)
+endif()
+
+if(NOT BUILD_SHARED_LIBS AND NOT BUILD_STATIC_LIBS)
+    message(FATAL_ERROR "Shared and static library builds are both disabled, can not continue")
+endif()
 
 option(CHICKEN_BOOTSTRAP "Bootstrap build" NO)
 mark_as_advanced(CHICKEN_BOOTSTRAP)
@@ -253,13 +258,15 @@ function(add_chicken_compiler name)
             SUFFIX ${compiler_SUFFIX}
             SOURCES ${module}.scm
             EMIT_IMPORTS chicken.compiler.${module}
-            OPTIONS ${PROGRAM_OPTIONS})
+            OPTIONS ${PROGRAM_OPTIONS}
+            ${compiler_UNPARSED_ARGUMENTS})
     endforeach()
 
     chicken_wrap_sources(sources
         SUFFIX ${compiler_SUFFIX}
         SOURCES ${scm_sources}
-        OPTIONS ${PROGRAM_OPTIONS} ${COMPILER_OPTIONS})
+        OPTIONS ${PROGRAM_OPTIONS} ${COMPILER_OPTIONS}
+        ${compiler_UNPARSED_ARGUMENTS})
 
     add_executable(${name} ${sources})
 
@@ -299,7 +306,7 @@ endfunction()
 # rebuild everything twice. But rebuilding caused by modified source files
 # should work as expected.
 
-# Do not use include paths from system
+# Do not use include paths from the system
 set(CHICKEN_INCLUDE_DIRS "")
 set(CHICKEN_DATA_DIR "")
 
@@ -315,6 +322,8 @@ else()
 endif()
 
 unset(CHICKEN_IMPORT_DIR)
+
+if(BUILD_SHARED_LIBS)
 
 add_chicken_primitive_modules()
 
@@ -380,6 +389,8 @@ install(TARGETS compiler
     EXPORT chicken-targets
     RUNTIME DESTINATION ${INSTALL_BINDIR})
 
+endif(BUILD_SHARED_LIBS)
+
 if(BUILD_STATIC_LIBS)
     add_chicken_runtime(runtime-static STATIC)
 
@@ -391,6 +402,8 @@ endif()
 # Do not use automatic dependency extraction for misc utilities and tests to
 # speed up the build.
 set(CHICKEN_DEPENDS "")
+
+if(BUILD_SHARED_LIBS)
 
 ### interpreter
 
@@ -423,23 +436,6 @@ endforeach()
 install(TARGETS ${utility_PROGRAMS}
     RUNTIME DESTINATION ${INSTALL_BINDIR})
 
-### static programs
-
-if(BUILD_STATIC_PROGRAMS)
-    chicken_add_executable(csi-static STATIC
-        SOURCES csi.scm
-        OPTIONS ${PROGRAM_OPTIONS})
-    target_link_libraries(csi-static runtime-static)
-
-    chicken_add_executable(chicken-bug STATIC
-        SOURCES chicken-bug.scm
-        OPTIONS ${PROGRAM_OPTIONS})
-    target_link_libraries(chicken-bug runtime-static)
-
-    install(TARGETS csi-static chicken-bug
-        RUNTIME DESTINATION ${INSTALL_BINDIR})
-endif()
-
 ### setup api modules
 
 set(setupapi_MODULES setup-api setup-download)
@@ -463,6 +459,35 @@ endforeach()
 add_dependencies(chicken-install   ${setupapi_MODULES})
 add_dependencies(chicken-uninstall ${setupapi_MODULES})
 add_dependencies(chicken-status    ${setupapi_MODULES})
+
+endif(BUILD_SHARED_LIBS)
+
+### static programs
+
+function(_build_static_programs)
+    set(suffix "-static")
+
+    add_chicken_compiler(compiler${suffix} STATIC
+        SUFFIX ${suffix})
+    target_link_libraries(compiler${suffix} runtime-static)
+
+    chicken_add_executable(csi${suffix} STATIC
+        SOURCES csi.scm
+        OPTIONS ${PROGRAM_OPTIONS})
+    target_link_libraries(csi${suffix} runtime-static)
+
+    chicken_add_executable(chicken-bug STATIC
+        SOURCES chicken-bug.scm
+        OPTIONS ${PROGRAM_OPTIONS})
+    target_link_libraries(chicken-bug runtime-static)
+
+    install(TARGETS compiler${suffix} csi${suffix} chicken-bug
+        RUNTIME DESTINATION ${INSTALL_BINDIR})
+endfunction()
+
+if(BUILD_STATIC_PROGRAMS)
+    _build_static_programs()
+endif()
 
 ### misc files
 
@@ -562,4 +587,6 @@ endif()
 
 ### tests
 
-add_subdirectory(tests EXCLUDE_FROM_ALL)
+if(BUILD_SHARED_LIBS)
+    add_subdirectory(tests EXCLUDE_FROM_ALL)
+endif()
