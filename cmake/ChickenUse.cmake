@@ -450,19 +450,17 @@ function(chicken_install)
         ${ARGN})
 
     # Try to strip absolute paths found by configure to not add DESTDIR twice.
- 
-    if("${PACKAGE_PREFIX_DIR}" STRGREATER "")
-        set(prefix "${PACKAGE_PREFIX_DIR}")
-    elseif("$ENV{DESTDIR}" STRGREATER "")
+
+    if("$ENV{DESTDIR}" STRGREATER "")
         set(prefix "$ENV{DESTDIR}")
     endif()
 
     if("${prefix}" STRGREATER "")
-        string(REGEX REPLACE "^$ENV{DESTDIR}" ""
+        string(REGEX REPLACE "^${prefix}" ""
             runtime_dir "${CHICKEN_RUNTIME_DIR}")
-        string(REGEX REPLACE "^$ENV{DESTDIR}" ""
+        string(REGEX REPLACE "^${prefix}" ""
             extension_dir "${CHICKEN_EXTENSION_DIR}")
-        string(REGEX REPLACE "^$ENV{DESTDIR}" ""
+        string(REGEX REPLACE "^${prefix}" ""
             data_dir "${CHICKEN_DATA_DIR}")
     else()
         set(runtime_dir "${CHICKEN_RUNTIME_DIR}")
