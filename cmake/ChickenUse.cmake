@@ -449,6 +449,27 @@ function(chicken_install)
     cmake_parse_arguments(install "MODULES" "EXTENSION" "TARGETS;FILES"
         ${ARGN})
 
+    # Try to strip absolute paths found by configure to not add DESTDIR twice.
+ 
+    if("${PACKAGE_PREFIX_DIR}" STRGREATER "")
+        set(prefix "${PACKAGE_PREFIX_DIR}")
+    elseif("$ENV{DESTDIR}" STRGREATER "")
+        set(prefix "$ENV{DESTDIR}")
+    endif()
+
+    if("${prefix}" STRGREATER "")
+        string(REGEX REPLACE "^$ENV{DESTDIR}" ""
+            runtime_dir "${CHICKEN_RUNTIME_DIR}")
+        string(REGEX REPLACE "^$ENV{DESTDIR}" ""
+            extension_dir "${CHICKEN_EXTENSION_DIR}")
+        string(REGEX REPLACE "^$ENV{DESTDIR}" ""
+            data_dir "${CHICKEN_DATA_DIR}")
+    else()
+        set(runtime_dir "${CHICKEN_RUNTIME_DIR}")
+        set(extension_dir "${CHICKEN_EXTENSION_DIR}")
+        set(data_dir "${CHICKEN_DATA_DIR}")
+    endif()
+
     if(install_MODULES)
         get_property(modules DIRECTORY PROPERTY CHICKEN_MODULES)
         foreach(module ${modules})
@@ -458,14 +479,14 @@ function(chicken_install)
 
     if(install_TARGETS)
         install(TARGETS ${install_TARGETS}
-            RUNTIME DESTINATION ${CHICKEN_RUNTIME_DIR}
-            LIBRARY DESTINATION ${CHICKEN_EXTENSION_DIR}
-            ARCHIVE DESTINATION ${CHICKEN_EXTENSION_DIR})
+            RUNTIME DESTINATION ${runtime_dir}
+            LIBRARY DESTINATION ${extension_dir}
+            ARCHIVE DESTINATION ${extension_dir})
     endif()
 
     if(install_FILES)
         install(FILES ${install_FILES}
-            DESTINATION ${CHICKEN_EXTENSION_DIR})
+            DESTINATION ${extension_dir})
     endif()
 
     if(install_EXTENSION)
@@ -480,14 +501,14 @@ function(chicken_install)
         set(config_out  ${PROJECT_BINARY_DIR}/${EXTENSION_NAME}-config.cmake)
         set(version_out ${PROJECT_BINARY_DIR}/${EXTENSION_NAME}-config-version.cmake)
 
-        configure_file(${CHICKEN_DATA_DIR}/ChickenExtensionConfig.cmake.in
+        configure_file(${data_dir}/ChickenExtensionConfig.cmake.in
             ${config_out} @ONLY)
 
-        configure_file(${CHICKEN_DATA_DIR}/ChickenExtensionVersion.cmake.in
+        configure_file(${data_dir}/ChickenExtensionVersion.cmake.in
             ${version_out} @ONLY)
 
         install(FILES ${config_out} ${version_out}
-            DESTINATION ${CHICKEN_DATA_DIR})
+            DESTINATION ${data_dir})
     endif()
 endfunction()
 
