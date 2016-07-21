@@ -449,18 +449,12 @@ function(chicken_install)
     cmake_parse_arguments(install "MODULES" "EXTENSION" "TARGETS;FILES"
         ${ARGN})
 
-    # Try to strip absolute paths found by configure to not add DESTDIR twice.
-
-    if("$ENV{DESTDIR}" STRGREATER "")
-        set(prefix "$ENV{DESTDIR}")
-    endif()
-
-    if("${prefix}" STRGREATER "")
-        string(REGEX REPLACE "^${prefix}" ""
+    if("${CHICKEN_SYSROOT}" STRGREATER "")
+        string(REGEX REPLACE "^${CHICKEN_SYSROOT}" ""
             runtime_dir "${CHICKEN_RUNTIME_DIR}")
-        string(REGEX REPLACE "^${prefix}" ""
+        string(REGEX REPLACE "^${CHICKEN_SYSROOT}" ""
             extension_dir "${CHICKEN_EXTENSION_DIR}")
-        string(REGEX REPLACE "^${prefix}" ""
+        string(REGEX REPLACE "^${CHICKEN_SYSROOT}" ""
             data_dir "${CHICKEN_DATA_DIR}")
     else()
         set(runtime_dir "${CHICKEN_RUNTIME_DIR}")
